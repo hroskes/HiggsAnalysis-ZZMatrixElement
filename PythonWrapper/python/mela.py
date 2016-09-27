@@ -113,6 +113,19 @@ class MultiDimensionalCppArray(object):
 class Mela(object):
   counter = 0
   doneinit = False
+  computeptemplate = """
+    #include <ZZMatrixElement/MELA/interface/Mela.h>
+    float computeP(Mela& mela, bool useconstant) {
+      float result;
+      mela.computeP(result, useconstant);
+      return result;
+    }
+    float computeProdP(Mela& mela, bool useconstant) {
+      float result;
+      mela.computeProdP(result, useconstant);
+      return result;
+    }
+  """
   def __init__(self, *args, **kwargs):
     self.__mela = ROOT.Mela(*args, **kwargs)
     self.index = self.counter
@@ -148,8 +161,11 @@ class Mela(object):
                                         )
                )
         f = getattr(self, name).writecpp(f)
+    bkpgErrorIgnoreLevel, ROOT.gErrorIgnoreLevel = ROOT.gErrorIgnoreLevel, ROOT.kInfo+1
+    f.write(self.computeptemplate)
     for name, dimensions in arrays:
         getattr(self, name).compilecpp(f)
+    ROOT.gErrorIgnoreLevel = bkpgErrorIgnoreLevel
     self.doneinit = True
 
   def __getattr__(self, name):
@@ -161,7 +177,7 @@ class Mela(object):
     else:
       super(Mela, self).__setattr__(name, value)
 
-  def setInputEvent_fromLHE(self, event):
+  def setInputEvent_fromLHE(self, event, isgen):
     lines = event.split("\n")
     lines = [line for line in lines if not ("<event>" in line or "</event>" in line or not line.split("#")[0].strip())]
     nparticles, _, _, _, _, _ = lines[0].split()
@@ -189,27 +205,19 @@ class Mela(object):
             break
           mother2 = mother2s[mother1]
           mother1 = mother1s[mother1]
-    self.setInputEvent(SimpleParticleCollection_t(daughters), SimpleParticleCollection_t(associated), SimpleParticleCollection_t(mothers))
+    #print "mothers"
+    #for _ in mothers: print _
+    #print "daughters"
+    #for _ in daughters: print _
+    #print "associated"
+    #for _ in associated: print _
+    self.setInputEvent(SimpleParticleCollection_t(daughters), SimpleParticleCollection_t(associated), SimpleParticleCollection_t(mothers), isgen)
 
-  def computeP(self, *args):
-    if len(args) == 1 and isinstance(args[0], int) or len(args) == 0:
-      #then args[0] is useconstant, and we should return the probability
-      result = array.array("f", [0])
-      self.computeP(result, *args)
-      return result[0]
+  def computeP(self, useconstant):
+    return ROOT.computeP(self.__mela, useconstant)
 
-    else:
-      return self.__mela.computeP(*args)
-
-  def computeProdP(self, *args):
-    if len(args) == 1 and isinstance(args[0], int) or len(args) == 0:
-      #then args[0] is useconstant, and we should return the probability
-      result = array.array("f", [0])
-      self.computeProdP(result, *args)
-      return result[0]
-
-    else:
-      return self.__mela.computeP(*args)
+  def computeProdP(self, useconstant):
+    return ROOT.computeProdP(self.__mela, useconstant)
 
 def SimpleParticleCollection_t(iterable=None):
   if iterable is None: return ROOT.SimpleParticleCollection_t()
@@ -234,7 +242,7 @@ def SimpleParticle_t(lineorid, pxortlv=None, py=None, pz=None, e=None):
 
 if __name__ == "__main__":
   m = Mela()
-  m.setInputEvent_fromLHE("""
+  event1 = """
 <event>
 12  50   1.0000000E+00   1.2500000E+02   7.8125000E-03   1.2380607E-01
         2   -1    0    0  503    0  0.00000000000E+00  0.00000000000E+00  1.65430825479E+03  1.65430825479E+03  0.00000000000E+00 0.00000000000E+00  1.
@@ -250,9 +258,48 @@ if __name__ == "__main__":
       -13    1    8    8    0    0  8.81223774828E+00  8.87930337607E+01  5.03683096793E+02  5.11525690007E+02  1.05660000328E-01 0.00000000000E+00  1.
        13    1    8    8    0    0  1.35573729372E+01 -1.61584720283E+01  3.14029050479E+02  3.14736642748E+02  1.05659999907E-01 0.00000000000E+00  1.
 </event>
-  """)
+  """
+  event2 = """
+<event>
+12  50   1.0000000E+00   1.2500000E+02   7.8125000E-03   1.2380607E-01
+        1   -1    0    0  503    0  0.00000000000E+00  0.00000000000E+00  1.58591490197E+03  1.58591490197E+03  0.00000000000E+00 0.00000000000E+00  1.
+       -1   -1    0    0    0  503  0.00000000000E+00  0.00000000000E+00 -8.99084923758E+00  8.99084923758E+00  0.00000000000E+00 0.00000000000E+00  1.
+       23    2    1    2    0    0  4.31808951699E+01  1.18843550193E+01  8.22005355890E+02  8.28398612649E+02  9.24425698805E+01 0.00000000000E+00  1.
+       25    2    1    2    0    0 -4.31808951699E+01 -1.18843550193E+01  7.54918696840E+02  7.66507138556E+02  1.25000508063E+02 0.00000000000E+00  1.
+       11    1    3    3    0    0 -1.35803884002E+01 -5.28931958672E+00  5.41360784563E+02  5.41556924907E+02  5.11072900539E-04 0.00000000000E+00  1.
+      -11    1    3    3    0    0  5.67612835701E+01  1.71736746060E+01  2.80644571326E+02  2.86841687743E+02  5.11012071458E-04 0.00000000000E+00  1.
+       23    2    4    4    0    0 -2.43038338852E+01  5.06442605250E+00  2.48359236741E+02  2.53284239962E+02  4.30612469142E+01 0.00000000000E+00  1.
+       23    2    4    4    0    0 -1.88770612847E+01 -1.69487810718E+01  5.06559460099E+02  5.13222898594E+02  7.84324703350E+01 0.00000000000E+00  1.
+      -13    1    7    7    0    0 -3.25370809281E+01 -6.79837669312E+00  2.02354268485E+02  2.05066186143E+02  1.05659999991E-01 0.00000000000E+00  1.
+       13    1    7    7    0    0  8.23324704291E+00  1.18628027456E+01  4.60049682560E+01  4.82180538193E+01  1.05659999989E-01 0.00000000000E+00  1.
+      -13    1    8    8    0    0  4.59433181687E+00 -3.18015647781E+01  4.39027117172E+02  4.40201395027E+02  1.05659999655E-01 0.00000000000E+00  1.
+       13    1    8    8    0    0 -2.34713931016E+01  1.48527837063E+01  6.75323429266E+01  7.30215035668E+01  1.05660000010E-01 0.00000000000E+00  1.
+</event>
+  """
+  event3 = """
+<event>
+11  60   1.0000000E+00   1.2500000E+02   7.8125000E-03   1.2380607E-01
+        1   -1    0    0  501    0  0.00000000000E+00  0.00000000000E+00  8.38349783822E+01  8.38349783822E+01  0.00000000000E+00 0.00000000000E+00  1.
+        2   -1    0    0  502    0  0.00000000000E+00  0.00000000000E+00 -8.69647303563E+02  8.69647303563E+02  0.00000000000E+00 0.00000000000E+00  1.
+        4    1    1    2  501    0  4.93534233194E+01 -7.45486758049E+00  2.54822242213E+01  5.60417629563E+01  0.00000000000E+00 0.00000000000E+00  1.
+        1    1    1    2  502    0 -4.29482465415E+01  4.39907893858E+01 -7.51475061906E+02  7.53985749267E+02  0.00000000000E+00 0.00000000000E+00  1.
+       25    2    1    2    0    0 -6.40517677787E+00 -3.65359218053E+01 -5.98194874970E+01  1.43454769722E+02  1.25000000000E+02 0.00000000000E+00  1.
+       23    2    5    5    0    0 -1.61638014503E+01 -3.55963825472E+01 -2.51394501445E+01  1.03431837860E+02  9.24001201399E+01 0.00000000000E+00  1.
+       23    2    5    5    0    0  9.75862467247E+00 -9.39539258134E-01 -3.46800373525E+01  4.00229318615E+01  1.74073718437E+01 0.00000000000E+00  1.
+      -11    1    6    6    0    0  3.37109433312E+01 -2.97615359833E+01  4.38251799494E+00  4.51816687231E+01  5.11000134768E-04 0.00000000000E+00  1.
+       11    1    6    6    0    0 -4.98747447816E+01 -5.83484656388E+00 -2.95219681394E+01  5.82501691374E+01  5.11001208360E-04 0.00000000000E+00  1.
+      -13    1    7    7    0    0  1.46596263059E+01  5.33582780943E-01 -2.31337995488E+01  2.73929406894E+01  1.05660000000E-01 0.00000000000E+00  1.
+       13    1    7    7    0    0 -4.90100163341E+00 -1.47312203908E+00 -1.15462378037E+01  1.26299911721E+01  1.05660000000E-01 0.00000000000E+00  1.
+</event>
+  """
+
+  m.setInputEvent_fromLHE(event1, True)
 
   m.selfDHzzcoupl[0][0][0] = 1
   m.selfDHzzcoupl[0][3][0] = 1
   m.setProcess(ROOT.TVar.SelfDefine_spin0, ROOT.TVar.JHUGen, ROOT.TVar.Lep_WH)
-  print m.computeProdP()
+  print m.computeProdP(False)
+  m.selfDHzzcoupl[0][0][0] = 1
+  m.selfDHzzcoupl[0][3][0] = 1
+  m.setProcess(ROOT.TVar.SelfDefine_spin0, ROOT.TVar.JHUGen, ROOT.TVar.ZZINDEPENDENT)
+  print m.computeP(False)
