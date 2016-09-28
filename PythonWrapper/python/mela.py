@@ -1,3 +1,40 @@
+"""
+Python wrapper for MELA
+>>> from ZZMatrixElement.PythonWrapper.mela import Mela, SimpleParticle_t, SimpleParticleCollection_t, TVar
+>>> m = Mela(13, 125)
+Then you can use m mostly like a C++ mela object.
+
+>>> m.setProcess(TVar.SelfDefine_spin0, TVar.JHUGen, TVar.ZZINDEPENDENT)
+
+The main change is that computeP and computeProdP return the ME instead of modifying a reference
+The other computeP_* functions are not implemented here yet.
+They probably wouldn't work in the current code because PyROOT does not like float&.
+
+>>> print m.computeP(False)
+
+You can modify the couplings either by
+>>> m.selfDHzzcoupl[0][0][0] = 1
+>>> m.selfDHzzcoupl[0][0][1] = 2
+or by the more convenient way
+>>> m.ghz1 = 1+2j
+
+SimpleParticle_t and SimpleParticleCollection_t are implemented to take inputs in ways more normal for python.
+>>> daughters = SimpleParticleCollection_t([
+...                                         "11 -71.89 30.50 -47.20 91.25",
+...                                         #...other daughters
+...                                        ])
+
+There's also a function for convenience
+>>> m.setInputEvent_fromLHE('''
+... <event>
+... #(...)
+... </event>
+... ''')
+which is useful for quick tests.
+
+See examples at the bottom.
+"""
+
 from collections import OrderedDict
 import os
 import ROOT
@@ -8,6 +45,8 @@ def include(filename):
 
 ROOT.gROOT.Macro(os.path.join(os.environ["CMSSW_BASE"], "src", "ZZMatrixElement", "MELA", "test", "loadMELA.C+"))
 include("ZZMatrixElement/MELA/interface/Mela.h")
+
+from ROOT import TVar
 
 class MultiDimensionalCppArray(object):
   functionfiletemplate = """
@@ -508,6 +547,8 @@ if __name__ == "__main__":
                   SimpleParticleCollection_t(line.split() for line in mothers.split("\n") if line.split()),
                   True,
                  )
+  #or:
+  #m.setInputEvent_fromLHE(event1)
 
   couplings = (
                (1, 0, 0, 0),
@@ -520,9 +561,9 @@ if __name__ == "__main__":
               )
   for _ in couplings:
     m.ghz1, m.ghz2, m.ghz4, m.ghz1_prime2 = _
-    m.setProcess(ROOT.TVar.SelfDefine_spin0, ROOT.TVar.JHUGen, ROOT.TVar.Lep_WH)
+    m.setProcess(TVar.SelfDefine_spin0, TVar.JHUGen, TVar.Lep_WH)
     prod = m.computeProdP(False)
     m.ghz1, m.ghz2, m.ghz4, m.ghz1_prime2 = _
-    m.setProcess(ROOT.TVar.SelfDefine_spin0, ROOT.TVar.JHUGen, ROOT.TVar.ZZINDEPENDENT)
+    m.setProcess(TVar.SelfDefine_spin0, TVar.JHUGen, TVar.ZZINDEPENDENT)
     dec = m.computeP(False)
     print prod, dec, prod*dec
