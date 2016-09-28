@@ -1,4 +1,3 @@
-import array
 from collections import OrderedDict
 import os
 import ROOT
@@ -110,6 +109,38 @@ class MultiDimensionalCppArray(object):
         raise IndexError("Index {} out of range (0-{})".format(item, self.dimensions[0]))
       self.setitem(*(self.othercppargs.values()+[item, value]))
 
+class SelfDParameter(object):
+  def __init__(self, arrayname, *indices):
+    self.arrayname = arrayname
+    self.indices = indices
+
+  def __get__(self, obj, objtype):
+    array = getattr(obj, self.arrayname)
+    for index in self.indices[:-1]:
+      array = array[index]
+    return array[self.indices[-1]]
+
+  def __set__(self, obj, val):
+    array = getattr(obj, self.arrayname)
+    for index in self.indices[:-1]:
+      array = array[index]
+    array[self.indices[-1]] = val
+
+class SelfDCoupling(object):
+  def __init__(self, arrayname, *indices):
+    self.arrayname = arrayname
+    self.indices = indices
+    self.real = SelfDParameter(arrayname, *indices+(0,))
+    self.imag = SelfDParameter(arrayname, *indices+(1,))
+
+  def __get__(self, obj, objtype):
+    #self.real does not call __get__ on real, because it's an instance variable not a class variable
+    return complex(self.real.__get__(obj, objtype), self.imag.__get__(obj, objtype))
+
+  def __set__(self, obj, val):
+    self.real.__set__(obj, val.real)
+    self.imag.__set__(obj, val.imag)
+
 class Mela(object):
   counter = 0
   doneinit = False
@@ -172,7 +203,7 @@ class Mela(object):
     return getattr(self.__mela, name)
 
   def __setattr__(self, name, value):
-    if self.doneinit:
+    if self.doneinit and hasattr(self.__mela, name):
       return setattr(self.__mela, name, value)
     else:
       super(Mela, self).__setattr__(name, value)
@@ -218,6 +249,162 @@ class Mela(object):
 
   def computeProdP(self, useconstant):
     return ROOT.computeProdP(self.__mela, useconstant)
+
+  ghg2 = SelfDCoupling("selfDHggcoupl", 0, 0)
+  ghg3 = SelfDCoupling("selfDHggcoupl", 0, 1)
+  ghg4 = SelfDCoupling("selfDHggcoupl", 0, 2)
+
+  #https://github.com/cms-analysis/HiggsAnalysis-ZZMatrixElement/blob/41232f911b4f03065ae2b83752b5bcd4daacaa2c/MELA/fortran/mod_JHUGenMELA.F90#L123-L168
+  ghz1 = SelfDCoupling("selfDHzzcoupl", 0, 0)
+  ghz2 = SelfDCoupling("selfDHzzcoupl", 0, 1)
+  ghz3 = SelfDCoupling("selfDHzzcoupl", 0, 2)
+  ghz4 = SelfDCoupling("selfDHzzcoupl", 0, 3)
+
+  ghzgs2 = SelfDCoupling("selfDHzzcoupl", 0, 4)
+  ghzgs3 = SelfDCoupling("selfDHzzcoupl", 0, 5)
+  ghzgs4 = SelfDCoupling("selfDHzzcoupl", 0, 6)
+  ghgsgs2 = SelfDCoupling("selfDHzzcoupl", 0, 7)
+  ghgsgs3 = SelfDCoupling("selfDHzzcoupl", 0, 8)
+  ghgsgs4 = SelfDCoupling("selfDHzzcoupl", 0, 9)
+
+  ghz1_prime = SelfDCoupling("selfDHzzcoupl", 0, 10)
+  ghz1_prime2 = SelfDCoupling("selfDHzzcoupl", 0, 11)
+  ghz1_prime3 = SelfDCoupling("selfDHzzcoupl", 0, 12)
+  ghz1_prime4 = SelfDCoupling("selfDHzzcoupl", 0, 13)
+  ghz1_prime5 = SelfDCoupling("selfDHzzcoupl", 0, 14)
+
+  ghz2_prime = SelfDCoupling("selfDHzzcoupl", 0, 15)
+  ghz2_prime2 = SelfDCoupling("selfDHzzcoupl", 0, 16)
+  ghz2_prime3 = SelfDCoupling("selfDHzzcoupl", 0, 17)
+  ghz2_prime4 = SelfDCoupling("selfDHzzcoupl", 0, 18)
+  ghz2_prime5 = SelfDCoupling("selfDHzzcoupl", 0, 19)
+
+  ghz3_prime = SelfDCoupling("selfDHzzcoupl", 0, 20)
+  ghz3_prime2 = SelfDCoupling("selfDHzzcoupl", 0, 21)
+  ghz3_prime3 = SelfDCoupling("selfDHzzcoupl", 0, 22)
+  ghz3_prime4 = SelfDCoupling("selfDHzzcoupl", 0, 23)
+  ghz3_prime5 = SelfDCoupling("selfDHzzcoupl", 0, 24)
+
+  ghz4_prime = SelfDCoupling("selfDHzzcoupl", 0, 25)
+  ghz4_prime2 = SelfDCoupling("selfDHzzcoupl", 0, 26)
+  ghz4_prime3 = SelfDCoupling("selfDHzzcoupl", 0, 27)
+  ghz4_prime4 = SelfDCoupling("selfDHzzcoupl", 0, 28)
+  ghz4_prime5 = SelfDCoupling("selfDHzzcoupl", 0, 29)
+
+  ghzgs1_prime2 = SelfDCoupling("selfDHzzcoupl", 0, 30)
+
+  ghz1_prime6 = SelfDCoupling("selfDHzzcoupl", 0, 31)
+  ghz1_prime7 = SelfDCoupling("selfDHzzcoupl", 0, 32)
+  ghz2_prime6 = SelfDCoupling("selfDHzzcoupl", 0, 33)
+  ghz2_prime7 = SelfDCoupling("selfDHzzcoupl", 0, 34)
+  ghz3_prime6 = SelfDCoupling("selfDHzzcoupl", 0, 35)
+  ghz3_prime7 = SelfDCoupling("selfDHzzcoupl", 0, 36)
+  ghz4_prime6 = SelfDCoupling("selfDHzzcoupl", 0, 37)
+  ghz4_prime7 = SelfDCoupling("selfDHzzcoupl", 0, 38)
+
+  cz_q1sq = SelfDParameter("selfDHzzCLambda_qsq", 0, 0)
+  Lambda_z11 = SelfDParameter("selfDHzzLambda_qsq", 0, 0)
+  Lambda_z12 = SelfDParameter("selfDHzzLambda_qsq", 0, 1)
+  Lambda_z13 = SelfDParameter("selfDHzzLambda_qsq", 0, 2)
+  Lambda_z14 = SelfDParameter("selfDHzzLambda_qsq", 0, 3)
+
+  cz_q2sq = SelfDParameter("selfDHzzCLambda_qsq", 0, 1)
+  Lambda_z21 = SelfDParameter("selfDHzzLambda_qsq", 0, 4)
+  Lambda_z22 = SelfDParameter("selfDHzzLambda_qsq", 0, 5)
+  Lambda_z23 = SelfDParameter("selfDHzzLambda_qsq", 0, 6)
+  Lambda_z24 = SelfDParameter("selfDHzzLambda_qsq", 0, 7)
+
+  cz_q12sq = SelfDParameter("selfDHzzCLambda_qsq", 0, 2)
+  Lambda_z01 = SelfDParameter("selfDHzzLambda_qsq", 0, 8)
+  Lambda_z02 = SelfDParameter("selfDHzzLambda_qsq", 0, 9)
+  Lambda_z03 = SelfDParameter("selfDHzzLambda_qsq", 0, 10)
+  Lambda_z04 = SelfDParameter("selfDHzzLambda_qsq", 0, 11)
+
+  ghw1 = SelfDCoupling("selfDHwwcoupl", 0, 0)
+  ghw2 = SelfDCoupling("selfDHwwcoupl", 0, 1)
+  ghw3 = SelfDCoupling("selfDHwwcoupl", 0, 2)
+  ghw4 = SelfDCoupling("selfDHwwcoupl", 0, 3)
+
+  ghw1_prime = SelfDCoupling("selfDHwwcoupl", 0, 10)
+  ghw1_prime2 = SelfDCoupling("selfDHwwcoupl", 0, 11)
+  ghw1_prime3 = SelfDCoupling("selfDHwwcoupl", 0, 12)
+  ghw1_prime4 = SelfDCoupling("selfDHwwcoupl", 0, 13)
+  ghw1_prime5 = SelfDCoupling("selfDHwwcoupl", 0, 14)
+
+  ghw2_prime = SelfDCoupling("selfDHwwcoupl", 0, 15)
+  ghw2_prime2 = SelfDCoupling("selfDHwwcoupl", 0, 16)
+  ghw2_prime3 = SelfDCoupling("selfDHwwcoupl", 0, 17)
+  ghw2_prime4 = SelfDCoupling("selfDHwwcoupl", 0, 18)
+  ghw2_prime5 = SelfDCoupling("selfDHwwcoupl", 0, 19)
+
+  ghw3_prime = SelfDCoupling("selfDHwwcoupl", 0, 20)
+  ghw3_prime2 = SelfDCoupling("selfDHwwcoupl", 0, 21)
+  ghw3_prime3 = SelfDCoupling("selfDHwwcoupl", 0, 22)
+  ghw3_prime4 = SelfDCoupling("selfDHwwcoupl", 0, 23)
+  ghw3_prime5 = SelfDCoupling("selfDHwwcoupl", 0, 24)
+
+  ghw4_prime = SelfDCoupling("selfDHwwcoupl", 0, 25)
+  ghw4_prime2 = SelfDCoupling("selfDHwwcoupl", 0, 26)
+  ghw4_prime3 = SelfDCoupling("selfDHwwcoupl", 0, 27)
+  ghw4_prime4 = SelfDCoupling("selfDHwwcoupl", 0, 28)
+  ghw4_prime5 = SelfDCoupling("selfDHwwcoupl", 0, 29)
+
+  ghw1_prime6 = SelfDCoupling("selfDHwwcoupl", 0, 31)
+  ghw1_prime7 = SelfDCoupling("selfDHwwcoupl", 0, 32)
+  ghw2_prime6 = SelfDCoupling("selfDHwwcoupl", 0, 33)
+  ghw2_prime7 = SelfDCoupling("selfDHwwcoupl", 0, 34)
+  ghw3_prime6 = SelfDCoupling("selfDHwwcoupl", 0, 35)
+  ghw3_prime7 = SelfDCoupling("selfDHwwcoupl", 0, 36)
+  ghw4_prime6 = SelfDCoupling("selfDHwwcoupl", 0, 37)
+  ghw4_prime7 = SelfDCoupling("selfDHwwcoupl", 0, 38)
+
+  cw_q1sq = SelfDParameter("selfDHwwCLambda_qsq", 0, 0)
+  Lambda_w11 = SelfDParameter("selfDHwwLambda_qsq", 0, 0)
+  Lambda_w12 = SelfDParameter("selfDHwwLambda_qsq", 0, 1)
+  Lambda_w13 = SelfDParameter("selfDHwwLambda_qsq", 0, 2)
+  Lambda_w14 = SelfDParameter("selfDHwwLambda_qsq", 0, 3)
+
+  cw_q2sq = SelfDParameter("selfDHwwCLambda_qsq", 0, 1)
+  Lambda_w21 = SelfDParameter("selfDHwwLambda_qsq", 0, 4)
+  Lambda_w22 = SelfDParameter("selfDHwwLambda_qsq", 0, 5)
+  Lambda_w23 = SelfDParameter("selfDHwwLambda_qsq", 0, 6)
+  Lambda_w24 = SelfDParameter("selfDHwwLambda_qsq", 0, 7)
+
+  cw_q12sq = SelfDParameter("selfDHwwCLambda_qsq", 0, 2)
+  Lambda_w01 = SelfDParameter("selfDHwwLambda_qsq", 0, 8)
+  Lambda_w02 = SelfDParameter("selfDHwwLambda_qsq", 0, 9)
+  Lambda_w03 = SelfDParameter("selfDHwwLambda_qsq", 0, 10)
+  Lambda_w04 = SelfDParameter("selfDHwwLambda_qsq", 0, 11)
+
+  kappa = SelfDCoupling("selfDHqqcoupl", 0)
+  kappa_tilde = SelfDCoupling("selfDHqqcoupl", 1)
+
+  zprime_qq_left = SelfDCoupling("selfDZqqcoupl", 0)
+  zprime_qq_right = SelfDCoupling("selfDZqqcoupl", 1)
+  zprime_zz_1 = SelfDCoupling("selfDZvvcoupl", 0)
+  zprime_zz_2 = SelfDCoupling("selfDZvvcoupl", 1)
+
+  graviton_qq_left = SelfDCoupling("selfDGqqcoupl", 0)
+  graviton_qq_right = SelfDCoupling("selfDGqqcoupl", 1)
+
+  a1 = SelfDCoupling("selfDGggcoupl", 0)
+  a2 = SelfDCoupling("selfDGggcoupl", 1)
+  a3 = SelfDCoupling("selfDGggcoupl", 2)
+  a4 = SelfDCoupling("selfDGggcoupl", 3)
+  a5 = SelfDCoupling("selfDGggcoupl", 4)
+
+  b1 = SelfDCoupling("selfDGvvcoupl", 0)
+  b2 = SelfDCoupling("selfDGvvcoupl", 1)
+  b3 = SelfDCoupling("selfDGvvcoupl", 2)
+  b4 = SelfDCoupling("selfDGvvcoupl", 3)
+  b5 = SelfDCoupling("selfDGvvcoupl", 4)
+  b6 = SelfDCoupling("selfDGvvcoupl", 5)
+  b7 = SelfDCoupling("selfDGvvcoupl", 6)
+  b8 = SelfDCoupling("selfDGvvcoupl", 7)
+  b9 = SelfDCoupling("selfDGvvcoupl", 8)
+  b10 = SelfDCoupling("selfDGvvcoupl", 9)
+
+
 
 def SimpleParticleCollection_t(iterable=None):
   if iterable is None: return ROOT.SimpleParticleCollection_t()
@@ -300,13 +487,42 @@ if __name__ == "__main__":
 </event>
   """
 
-  m.setInputEvent_fromLHE(event1, True)
+  daughters = """
+  11 -71.89077865749999319 30.50307494750000004 -47.20025487019999844 91.25012710839999386
+  -11 -25.13451734110000046 -18.85931656560000036 -81.42283896300000379 87.27597887359999618
+  11 -51.80274100940000181 1.64269040236999997 -41.79162596869999646 66.57899375339999892
+  -11 -93.72924763700000028 39.45060783929999815 -92.98363978320000456 137.79506373300000632
+  """
+  associated = """
+  -11 211.33318543799998679 -14.90577872979999974 3.74371777679000006 211.89127619999999297
+  12 31.22409920730000010 -37.83127789369999761 1.23465418111000003 49.06805813689999951
+  """
+  mothers = """
+  -1 0.00000000000000000 0.00000000000000000 192.71975508899998886 192.71975508899998886
+  2 0.00000000000000000 0.00000000000000000 -451.13974271600000066 451.13974271600000066
+  """
 
-  m.selfDHzzcoupl[0][0][0] = 1
-  m.selfDHzzcoupl[0][3][0] = 1
-  m.setProcess(ROOT.TVar.SelfDefine_spin0, ROOT.TVar.JHUGen, ROOT.TVar.Lep_WH)
-  print m.computeProdP(False)
-  m.selfDHzzcoupl[0][0][0] = 1
-  m.selfDHzzcoupl[0][3][0] = 1
-  m.setProcess(ROOT.TVar.SelfDefine_spin0, ROOT.TVar.JHUGen, ROOT.TVar.ZZINDEPENDENT)
-  print m.computeP(False)
+  m.setInputEvent(
+                  SimpleParticleCollection_t(line.split() for line in daughters.split("\n") if line.split()),
+                  SimpleParticleCollection_t(line.split() for line in associated.split("\n") if line.split()),
+                  SimpleParticleCollection_t(line.split() for line in mothers.split("\n") if line.split()),
+                  True,
+                 )
+
+  couplings = (
+               (1, 0, 0, 0),
+               (0, 1, 0, 0),
+               (0, 0, 1, 0),
+               (0, 0, 0, 1),
+               (1, 1.663195, 0, 0),
+               (1, 0, 2.55502, 0),
+               (1, 0, 0, -12110.20),
+              )
+  for _ in couplings:
+    m.ghz1, m.ghz2, m.ghz4, m.ghz1_prime2 = _
+    m.setProcess(ROOT.TVar.SelfDefine_spin0, ROOT.TVar.JHUGen, ROOT.TVar.Lep_WH)
+    prod = m.computeProdP(False)
+    m.ghz1, m.ghz2, m.ghz4, m.ghz1_prime2 = _
+    m.setProcess(ROOT.TVar.SelfDefine_spin0, ROOT.TVar.JHUGen, ROOT.TVar.ZZINDEPENDENT)
+    dec = m.computeP(False)
+    print prod, dec, prod*dec
