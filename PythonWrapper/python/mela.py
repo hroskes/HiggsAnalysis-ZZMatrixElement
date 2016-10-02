@@ -6,9 +6,8 @@ Then you can use m mostly like a C++ mela object.
 
 >>> m.setProcess(TVar.SelfDefine_spin0, TVar.JHUGen, TVar.ZZINDEPENDENT)
 
-The main change is that computeP and computeProdP return the ME instead of modifying a reference
-The other computeP_* functions are not implemented here yet.
-They probably wouldn't work in the current code because PyROOT does not like float&.
+The main change is that computeP and similar functions return the ME instead of modifying a reference.
+(computeP_selfD* are not implemented here, but you can access the functionality through computeP)
 
 >>> print m.computeP(False)
 
@@ -35,7 +34,7 @@ which is useful for quick tests.
 See examples at the bottom.
 """
 
-from collections import OrderedDict
+from collections import namedtuple, OrderedDict
 import os
 import ROOT
 import tempfile
@@ -108,6 +107,7 @@ class MultiDimensionalCppArray(object):
     if self.functionfilecontents not in self.functionfiles:
       if f is None:
         f = tempfile.NamedTemporaryFile(suffix=".C", bufsize=0)
+      self.functionfiles[self.functionfilecontents] = f
       f.write(self.functionfilecontents.replace("NAME", self.uniqueid))
       return f
     else:
@@ -119,7 +119,7 @@ class MultiDimensionalCppArray(object):
         subarray.compilecpp(f)
       return
 
-    if self.functionfilecontents not in self.functionfiles:
+    if self.functionfilecontents not in self.getitems:
       ROOT.gROOT.ProcessLine(".L {}+".format(f.name))
       self.functionfiles[self.functionfilecontents] = f
       self.getitems[self.functionfilecontents] = getattr(ROOT, "{}_getitem".format(self.uniqueid))
@@ -185,14 +185,66 @@ class Mela(object):
   doneinit = False
   computeptemplate = """
     #include <ZZMatrixElement/MELA/interface/Mela.h>
+    float getPAux(Mela& mela) {
+      float result;
+      mela.getPAux(result);
+      return result;
+    }
+    vector<float> computeDecayAngles(Mela& mela) {
+      vector<float> result(8);
+      mela.computeDecayAngles(
+        result[0],
+        result[1],
+        result[2],
+        result[3],
+        result[4],
+        result[5],
+        result[6],
+        result[7]
+      );
+      return result;
+    }
+    //not implementing the computeP_selfD* functions here
+    //would be easier to do in pure python but not worth it anyway
     float computeP(Mela& mela, bool useconstant) {
       float result;
       mela.computeP(result, useconstant);
       return result;
     }
+    float computeD_CP(Mela& mela, TVar::MatrixElement myME, TVar::Process myType) {
+      float result;
+      mela.computeD_CP(myME, myType, result);
+      return result;
+    }
     float computeProdP(Mela& mela, bool useconstant) {
       float result;
       mela.computeProdP(result, useconstant);
+      return result;
+    }
+    float computeProdDecP(Mela& mela, bool useconstant) {
+      float result;
+      mela.computeProdDecP(result, useconstant);
+      return result;
+    }
+    //not implementing the separate computeProdP_VH, etc.  Just use computeProdP.
+    float compute4FermionWeight(Mela& mela) {
+      float result;
+      mela.compute4FermionWeight(result);
+      return result;
+    }
+    float getXPropagator(Mela& mela, TVar::ResonancePropagatorScheme scheme) {
+      float result;
+      mela.getXPropagator(scheme, result);
+      return result;
+    }
+    float computePM4l(Mela& mela, TVar::SuperMelaSyst syst) {
+      float result;
+      mela.computePM4l(syst, result);
+      return result;
+    }
+    float computeD_gg(Mela& mela, TVar::MatrixElement myME, TVar::Process myType) {
+      float result;
+      mela.computeD_gg(myME, myType, result);
       return result;
     }
   """
@@ -283,11 +335,17 @@ class Mela(object):
     #for _ in associated: print _
     self.setInputEvent(SimpleParticleCollection_t(daughters), SimpleParticleCollection_t(associated), SimpleParticleCollection_t(mothers), isgen)
 
-  def computeP(self, useconstant):
-    return ROOT.computeP(self.__mela, useconstant)
-
-  def computeProdP(self, useconstant):
-    return ROOT.computeProdP(self.__mela, useconstant)
+  def getPAux(self): return ROOT.getPAux(self.__mela)
+  DecayAngles = namedtuple("DecayAngles", "qH m1 m2 costheta1 costheta2 Phi costhetastar Phi1")
+  def computeDecayAngles(self): return self.DecayAngles(*ROOT.computeDecayAngles(self.__mela))
+  def computeP(self, useconstant=True): return ROOT.computeP(self.__mela, useconstant)
+  def computeD_CP(self, myME, myType): return ROOT.computeD_CP(self.__mela, myME, myType)
+  def computeProdP(self, useconstant=True): return ROOT.computeProdP(self.__mela, useconstant)
+  def computeProdDecP(self, useconstant=True): return ROOT.computeProdDecP(self.__mela, useconstant)
+  def compute4FermionWeight(self): return ROOT.compute4FermionWeight(self.__mela)
+  def getXPropagator(self, scheme): return ROOT.getXPropagator(self.__mela, scheme)
+  def computePM4l(self, syst): return ROOT.computePM4l(self.__mela, syst)
+  def computeD_gg(self, myME, myType): return ROOT.myME(self.__mela, myME, myType)
 
   ghg2 = SelfDCoupling("selfDHggcoupl", 0, 0)
   ghg3 = SelfDCoupling("selfDHggcoupl", 0, 1)
@@ -567,3 +625,8 @@ if __name__ == "__main__":
     m.setProcess(TVar.SelfDefine_spin0, TVar.JHUGen, TVar.ZZINDEPENDENT)
     dec = m.computeP(False)
     print prod, dec, prod*dec
+
+  print m.computeDecayAngles()
+  print "propagator:"
+  print "   BW:", m.getXPropagator(TVar.FixedWidth)
+  print "  CPS:", m.getXPropagator(TVar.CPS)
