@@ -59,6 +59,16 @@ bool PDGHelpers::isAHiggs(const int id){
 void PDGHelpers::setHVVmass(double mymass){
   PDGHelpers::HVVmass=mymass;
 }
+int PDGHelpers::getCoupledVertex(const int idfirst, const int idsecond, int* hel, int* useAHcoupl){
+  int ids[2]={ idfirst, idsecond };
+  int ids_jhu[2]={ convertLHEreverse(&(ids[0])), convertLHEreverse(&(ids[1])) };
+  int zahswitch=0;
+  if (useAHcoupl!=0) zahswitch = *useAHcoupl;
+  int heleff=-1;
+  if (hel!=0) heleff = *hel;
+  int Vid_jhu = CoupledVertex(ids_jhu, &heleff, &zahswitch);
+  return convertLHE(&Vid_jhu);
+}
 int PDGHelpers::convertPythiaStatus(int pSt){
   if (pSt==0) return 1;
   else if (pSt==1 || pSt==23) return 1;

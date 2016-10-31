@@ -57,7 +57,7 @@ all:    libs
 	@echo " "
 	@echo " WARNING: if you updated the fortran code,"
 	@echo "          you need to move libjhugenmela.so"
-	@echo '          to ../data/$$SCRAM_ARCH/libjhugenmela.so'
+	@echo '          to the appropriate folder in data/'
 	@echo "          and then scram b.  Otherwise your changes"
 	@echo "          will not apply to any code you run."
 	@echo "          If you are running setup.sh this is done automatically."

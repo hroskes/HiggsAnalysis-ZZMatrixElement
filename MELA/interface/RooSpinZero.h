@@ -32,11 +32,11 @@ public:
     RooRealVar* Lambda_z4;
     RooRealVar* Lambda_Q;
 
-    RooAbsReal* Lambda_z1qsq[3];
-    RooAbsReal* Lambda_z2qsq[3];
-    RooAbsReal* Lambda_z3qsq[3];
-    RooAbsReal* Lambda_z4qsq[3];
-    RooAbsReal* cLambda_qsq[3];
+    RooAbsReal* Lambda_z1qsq[SIZE_HVV_CQSQ];
+    RooAbsReal* Lambda_z2qsq[SIZE_HVV_CQSQ];
+    RooAbsReal* Lambda_z3qsq[SIZE_HVV_CQSQ];
+    RooAbsReal* Lambda_z4qsq[SIZE_HVV_CQSQ];
+    RooAbsReal* cLambda_qsq[SIZE_HVV_CQSQ];
   };
 
   RooSpinZero(){};

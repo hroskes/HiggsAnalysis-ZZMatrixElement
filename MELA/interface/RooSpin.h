@@ -1,6 +1,9 @@
 #ifndef ROOSPIN
 #define ROOSPIN
 
+#include <cmath>
+#include <vector>
+#include "TVar.hh"
 #include "RooAbsPdf.h"
 #include "RooRealProxy.h"
 #include "RooCategoryProxy.h"
@@ -9,8 +12,6 @@
 #include "RooFormulaVar.h"
 #include "RooAbsCategory.h"
 #include "Riostream.h" 
-#include <cmath>
-#include <vector>
 #include "TMath.h"
 
 using namespace TMath;

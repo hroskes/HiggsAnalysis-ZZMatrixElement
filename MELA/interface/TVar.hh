@@ -5,12 +5,12 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include "TLorentzVector.h"
 #include "TCouplings.hh"
 #include "MelaIO.h"
-#include "TH2F.h"
+#include "TString.h"
 #include "TH1F.h"
-
+#include "TH2F.h"
+#include "TLorentzVector.h"
 
 #define fbGeV2 0.389379E12
 #define smallnumber 1e-15
@@ -21,6 +21,7 @@
 // typedefs for use in simple_event_record
 typedef std::pair<int, TLorentzVector> SimpleParticle_t;
 typedef std::vector<SimpleParticle_t> SimpleParticleCollection_t;
+
 
 class TVar{
 public:
@@ -56,36 +57,63 @@ public:
     ANALYTICAL = 2
   };
   enum Production{
-    ZZGG = 0,
-    ZZQQB = 1,
-    ZZQQB_STU = 2,
-    ZZQQB_S = 3,
-    ZZQQB_TU = 4,
-    ZZINDEPENDENT= 5,
-    JJQCD = 6, // SBF
-    JJVBF = 7, // WBF or WBF(+)Had_VH
-    JQCD = 8, // ? + 1 jet
-    Lep_ZH = 9, // ZH, Z->ll/nunu
-    Lep_WH = 10, // W(+/-)H, W->lnu
-    Had_ZH = 11, // ZH, Z->uu/dd
-    Had_WH = 12, // W(+/-)H, W->ud
-    GammaH = 13, // gammaH, stable A
-    ttH = 14, // ttH
-    bbH = 15 // bbH
+    ZZGG,
+    ZZQQB,
+    ZZQQB_STU, // Should be the same as ZZQQB, just for crosscheck
+    ZZINDEPENDENT,
+
+    ttH, // ttH
+    bbH, // bbH
+
+    JQCD, // ? + 1 jet
+
+    JJQCD, // SBF
+    JJVBF, // VBF
+    JJEW, // VBF+VH (had.)
+    JJEWQCD, // VBF+VH+QCD, all hadronic
+    Had_ZH, // ZH, Z->uu/dd
+    Had_WH, // W(+/-)H, W->ud
+    Lep_ZH, // ZH, Z->ll/nunu
+    Lep_WH, // W(+/-)H, W->lnu
+
+    // s-channel contributions
+    ZZQQB_S,
+    JJQCD_S,
+    JJVBF_S,
+    JJEW_S,
+    JJEWQCD_S,
+    Had_ZH_S,
+    Had_WH_S,
+    Lep_ZH_S,
+    Lep_WH_S,
+
+    // t+u-channel contributions
+    ZZQQB_TU,
+    JJQCD_TU,
+    JJVBF_TU,
+    JJEW_TU,
+    JJEWQCD_TU,
+    Had_ZH_TU,
+    Had_WH_TU,
+    Lep_ZH_TU,
+    Lep_WH_TU,
+
+    GammaH, // gammaH, stable A (could implement S and TU in the future
     //
+    nProductions
   };
   enum LeptonInterference{
-    DefaultLeptonInterf = 0,
-    InterfOn = 1,
-    InterfOff=2
+    DefaultLeptonInterf,
+    InterfOn,
+    InterfOff
   };
   enum FermionMassRemoval{
-    NoRemoval = 0,
-    ConserveDifermionMass = 1,
-    MomentumToEnergy = 2,
-    nFermionMassRemovalSchemes = 3
+    NoRemoval,
+    ConserveDifermionMass,
+    MomentumToEnergy,
+    nFermionMassRemovalSchemes
   };
-  enum ResonancePropagatorScheme{
+  enum ResonancePropagatorScheme{ // Assigned specific integer value on purpose, translated directly to the JHUGen propagator indices
     NoPropagator=0,
     RunningWidth=1,
     FixedWidth=2,
@@ -150,7 +178,7 @@ public:
     SelfDefine_spin1,
     SelfDefine_spin2,
 
-    Null
+    nProcesses
   };
   enum SuperMelaSyst{
     SMSyst_None      = 0, // nominal value
@@ -172,89 +200,74 @@ public:
     Dynamic_qJJH,
     Dynamic_qJJ_qH,
     Dynamic_qJ_qJ_qH,
-    Dynamic_HT
+    Dynamic_HT,
+
+    nEventScaleSchemes
   };
 
   //---------------------------------
   // Function
   //---------------------------------
-  static TString ProcessName(int temp){
+  static TString ProcessName(TVar::Process temp){
     if (temp==TVar::HSMHiggs) return TString("HSMHiggs");
     else if (temp==TVar::H0minus) return TString("H0minus");
     else if (temp==TVar::H0hplus) return TString("H0hplus");
-
-    else if (temp==TVar::H1minus) return TString("H1minus");
-    else if (temp==TVar::H1plus) return TString("H1plus");
-
-    else if (temp==TVar::H2_g8) return TString("H2_g8");
-    else if (temp==TVar::H2_g4) return TString("H2_g4");
-    else if (temp==TVar::H2_g5) return TString("H2_g5");
-    else if (temp==TVar::H2_g1g5) return TString("H2_g1g5");
-    else if (temp == TVar::H2_g2) return TString("H2_g2");
-    else if (temp == TVar::H2_g3) return TString("H2_g3");
-    else if (temp == TVar::H2_g6) return TString("H2_g6");
-    else if (temp == TVar::H2_g7) return TString("H2_g7");
-    else if (temp == TVar::H2_g9) return TString("H2_g9");
-    else if (temp == TVar::H2_g10) return TString("H2_g10");
-
-
-    else if (temp==TVar::bkgZZ) return TString("bkgZZ");
-    else if (temp==TVar::bkgZZ_SMHiggs) return TString("bkgZZ_SMHiggs");
-
     else if (temp==TVar::H0_g1prime2) return TString("H0_g1prime2");
+    else if (temp==TVar::H0_Zgs) return TString("H0_Zgs");
+    else if (temp==TVar::H0_gsgs) return TString("H0_gsgs");
+    else if (temp==TVar::H0_Zgs_PS) return TString("H0_Zgs_PS");
+    else if (temp==TVar::H0_gsgs_PS) return TString("H0_gsgs_PS");
+    else if (temp==TVar::H0_Zgsg1prime2) return TString("H0_Zgsg1prime2");
 
     else if (temp==TVar::D_g1g4) return TString("D_g1g4");
     else if (temp==TVar::D_g1g4_pi_2) return TString("D_g1g4_pi_2");
     else if (temp==TVar::D_g1g2) return TString("D_g1g2");
     else if (temp==TVar::D_g1g2_pi_2) return TString("D_g1g2_pi_2");
     else if (temp==TVar::D_g1g1prime2) return TString("D_g1g1prime2");
+    else if (temp==TVar::D_zzzg) return TString("D_zzzg");
+    else if (temp==TVar::D_zzgg) return TString("D_zzgg");
+    else if (temp==TVar::D_zzzg_PS) return TString("D_zzzg_PS");
+    else if (temp==TVar::D_zzgg_PS) return TString("D_zzgg_PS");
+    else if (temp==TVar::D_zzzg_g1prime2) return TString("D_zzzg_g1prime2");
+    else if (temp==TVar::D_zzzg_g1prime2_pi_2) return TString("D_zzzg_g1prime2_pi_2");
+
+    else if (temp==TVar::H1minus) return TString("H1minus");
+    else if (temp==TVar::H1plus) return TString("H1plus");
+
+    else if (temp==TVar::H2_g1) return TString("H2_g1");
+    else if (temp==TVar::H2_g2) return TString("H2_g2");
+    else if (temp==TVar::H2_g3) return TString("H2_g3");
+    else if (temp==TVar::H2_g4) return TString("H2_g4");
+    else if (temp==TVar::H2_g5) return TString("H2_g5");
+    else if (temp==TVar::H2_g1g5) return TString("H2_g1g5");
+    else if (temp==TVar::H2_g6) return TString("H2_g6");
+    else if (temp==TVar::H2_g7) return TString("H2_g7");
+    else if (temp==TVar::H2_g8) return TString("H2_g8");
+    else if (temp==TVar::H2_g9) return TString("H2_g9");
+    else if (temp==TVar::H2_g10) return TString("H2_g10");
+
+    else if (temp==TVar::bkgZGamma) return TString("bkgZGamma");
+    else if (temp==TVar::bkgZJets) return TString("bkgZJets");
+    else if (temp==TVar::bkgZZ) return TString("bkgZZ");
+    else if (temp==TVar::bkgWW) return TString("bkgWW");
+    else if (temp==TVar::bkgWWZZ) return TString("bkgWWZZ");
+    else if (temp==TVar::bkgZZ_SMHiggs) return TString("bkgZZ_SMHiggs");
+    else if (temp==TVar::bkgWW_SMHiggs) return TString("bkgWW_SMHiggs");
+    else if (temp==TVar::bkgWWZZ_SMHiggs) return TString("bkgWWZZ_SMHiggs");
+    else if (temp==TVar::HSMHiggs_WWZZ) return TString("HSMHiggs_WWZZ");
+
+    else if (temp==TVar::D_gg10) return TString("D_gg10");
 
     else if (temp==TVar::SelfDefine_spin0) return TString("SelfDefine_spin0");
     else if (temp==TVar::SelfDefine_spin1) return TString("SelfDefine_spin1");
     else if (temp==TVar::SelfDefine_spin2) return TString("SelfDefine_spin2");
 
-    else if (temp==TVar::D_gg10) return TString("D_gg10");
-
-    else if (temp==TVar::H0_Zgs) return TString("H0_Zgs");
-    else if (temp==TVar::H0_gsgs) return TString("H0_gsgs");
-    else if (temp==TVar::D_zzzg) return TString("D_zzzg");
-    else if (temp==TVar::D_zzgg) return TString("D_zzgg");
-
-    else if (temp==TVar::H0_Zgs_PS) return TString("H0_Zgs_PS");
-    else if (temp==TVar::H0_gsgs_PS) return TString("H0_gsgs_PS");
-    else if (temp==TVar::D_zzzg_PS) return TString("D_zzzg_PS");
-    else if (temp==TVar::D_zzgg_PS) return TString("D_zzgg_PS");
-
-    else if (temp==TVar::H0_Zgsg1prime2) return TString("H0_Zgsg1prime2");
-    else if (temp==TVar::D_zzzg_g1prime2) return TString("D_zzzg_g1prime2");
-
-    else return TString("UnKnown");
+    else return TString("Unknown");
   };
 
   inline virtual ~TVar(){};
   ClassDef(TVar, 0)
 };
-
-
-struct branch_particle {
-  int PdgCode;
-  int Charge;
-  double Px;
-  double Py;
-  double Pz;
-  double E;
-  double Eta;
-  double Phi;
-};
-static const TString branch_format_particle =
-  "PdgCode/I:"
-  "Charge/I:"
-  "Px/D:"
-  "Py/D:"
-  "Pz/D:"
-  "E/D:"
-  "Eta/D:"
-  "Phi/D";
 
 struct simple_event_record{ // Somewhat not-so-simple particles
   int AssociationCode;

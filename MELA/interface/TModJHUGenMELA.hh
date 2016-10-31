@@ -1,6 +1,8 @@
 #ifndef _TMODJHUGENMELA_HH_
 #define _TMODJHUGENMELA_HH_
 
+#include "TCouplingsBase.hh"
+
 // NOTE: LOGICAL==INT, LOGICAL*1==BOOL(!???): http://www.yolinux.com/TUTORIALS/LinuxTutorialMixingFortranAndC.html
 
 extern "C" {
@@ -13,12 +15,11 @@ extern "C" {
   void __modjhugenmela_MOD_resetmubarhgabarh();
   void __modjhugenmela_MOD_setmvgv();
   void __modjhugenmela_MOD_setmvgvfromvertex(int* idV);
-  void __modjhugenmela_MOD_setspinonecouplings(double qqcoupl[2][2], double vvcoupl[2][2]);
-  void __modjhugenmela_MOD_setspintwocouplings(double acoupl[5][2], double bcoupl[10][2], double qlr[2][2]);
-  void __modjhugenmela_MOD_setspinzeroggcouplings(double ggcoupl[3][2]);
-  void __modjhugenmela_MOD_setspinzeroqqcouplings(double qqcoupl[2][2]);
-  void __modjhugenmela_MOD_setspinzerovvcouplings(double vvcoupl[39][2], int cqsq[3], double Lambda_qsq[4][3], int* usewwcoupl); // YES, THE LAST ARGUMENT IS AN INT!
-  void __modjhugenmela_MOD_setspinzerovvcouplings_nogamma(double vvcoupl[32][2], int cqsq[3], double Lambda_qsq[4][3], int* usewwcoupl); // YES, THE LAST ARGUMENT IS AN INT!
+  void __modjhugenmela_MOD_setspinonecouplings(double qqcoupl[SIZE_ZQQ][2], double vvcoupl[SIZE_ZVV][2]);
+  void __modjhugenmela_MOD_setspintwocouplings(double acoupl[SIZE_GGG][2], double bcoupl[SIZE_GVV][2], double qlr[SIZE_GQQ][2]);
+  void __modjhugenmela_MOD_setspinzeroggcouplings(double ggcoupl[SIZE_HGG][2]);
+  void __modjhugenmela_MOD_setspinzeroqqcouplings(double qqcoupl[SIZE_HQQ][2]);
+  void __modjhugenmela_MOD_setspinzerovvcouplings(double vvcoupl[SIZE_HVV][2], int cqsq[SIZE_HVV_CQSQ], double Lambda_qsq[SIZE_HVV_LAMBDAQSQ][SIZE_HVV_CQSQ], int* usewwcoupl); // YES, THE LAST ARGUMENT IS AN INT!
   void __modjhugenmela_MOD_settopdecays(int* flag);
 
   void __modjhugenmela_MOD_getmvgv(double* mv, double* gv);

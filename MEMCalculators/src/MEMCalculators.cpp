@@ -944,7 +944,7 @@ int MEMs::cacheMELAcalculation(int process, MEMCalcs calculator, vector<TLorentz
       if (process==kSpin0_gg || process==kSpin0_prodIndep){
         double translation[nSupportedHiggses][SIZE_HVV][2]={ { { 0 } } };
         if (DecayCouplings!=0){
-          for (int i=0; i<min((int)(*DecayCouplings).size(), SIZE_HVV); i++){
+          for (int i=0; i<min((int)(*DecayCouplings).size(), (int)SIZE_HVV); i++){
             translation[0][i][0] = (*DecayCouplings)[i].real();
             translation[0][i][1] = (*DecayCouplings)[i].imag();
           }
@@ -969,13 +969,13 @@ int MEMs::cacheMELAcalculation(int process, MEMCalcs calculator, vector<TLorentz
         double translationProd[SIZE_ZQQ][2];
 
         if (DecayCouplings!=0){
-          for (int i=0; i<min((int)(*DecayCouplings).size(), SIZE_ZVV); i++){
+          for (int i=0; i<min((int)(*DecayCouplings).size(), (int)SIZE_ZVV); i++){
             translation[i][0] = (*DecayCouplings)[i].real();
             translation[i][1] = (*DecayCouplings)[i].imag();
           }
         }
         if (ProdCouplings!=0){
-          for (int i=0; i<min((int)(*ProdCouplings).size(), SIZE_ZQQ); i++){
+          for (int i=0; i<min((int)(*ProdCouplings).size(), (int)SIZE_ZQQ); i++){
             translationProd[i][0] = (*ProdCouplings)[i].real();
             translationProd[i][1] = (*ProdCouplings)[i].imag();
           }
@@ -1005,20 +1005,20 @@ int MEMs::cacheMELAcalculation(int process, MEMCalcs calculator, vector<TLorentz
         double translation[SIZE_GVV][2];
         double translationProd[SIZE_GGG][2];
         if (DecayCouplings!=0){
-          for (int i=0; i<min((int)(*DecayCouplings).size(), SIZE_GVV); i++){
+          for (int i=0; i<min((int)(*DecayCouplings).size(), (int)SIZE_GVV); i++){
             translation[i][0] = (*DecayCouplings)[i].real();
             translation[i][1] = (*DecayCouplings)[i].imag();
           }
         }
         if (ProdCouplings!=0){
           if (process==kSpin2_gg){
-            for (int i=0; i<min((int)(*ProdCouplings).size(), SIZE_GGG); i++){
+            for (int i=0; i<min((int)(*ProdCouplings).size(), (int)SIZE_GGG); i++){
               translationProd[i][0] = (*ProdCouplings)[i].real();
               translationProd[i][1] = (*ProdCouplings)[i].imag();
             }
           }
           else if (process==kSpin2_qqbar){
-            for (int i=0; i<min((int)(*ProdCouplings).size(), SIZE_GQQ); i++){
+            for (int i=0; i<min((int)(*ProdCouplings).size(), (int)SIZE_GQQ); i++){
               translationProd[i][0] = (*ProdCouplings)[i].real();
               translationProd[i][1] = (*ProdCouplings)[i].imag();
             }

@@ -168,7 +168,10 @@ void newZZMatrixElement::set_mHiggs_wHiggs(double mh_, double gah_, int index){
   }
   else cerr << "newZZMatrixElement::set_mHiggs_wHiggs: Only resonances 0 (regular) and 1 (additional, possibly high-mass) are supported" << endl;
 }
+
 // reset_MCFM_EWKParameters resets the MCFM EW parameters to those specified. This function is a wrapper around the TEvtProb version.
+void newZZMatrixElement::reset_QuarkMass(double inmass, int iquark){ Xcal2.ResetQuarkMass(inmass, iquark); }
+void newZZMatrixElement::reset_QuarkMasses(){ Xcal2.ResetQuarkMasses(); }
 void newZZMatrixElement::reset_MCFM_EWKParameters(double ext_Gf, double ext_aemmz, double ext_mW, double ext_mZ, double ext_xW, int ext_ewscheme){
   Xcal2.ResetMCFM_EWKParameters(ext_Gf, ext_aemmz, ext_mW, ext_mZ, ext_xW, ext_ewscheme);
 }
@@ -204,28 +207,27 @@ int newZZMatrixElement::get_NCandidates(){ return Xcal2.GetNCandidates(); }
 vector<MELATopCandidate*>* newZZMatrixElement::get_TopCandidateCollection(){ return Xcal2.GetTopCandidates(); }
 
 
+// LEFT HERE
 void newZZMatrixElement::set_SpinZeroCouplings(
-  double selfDHvvcoupl_freenorm[SIZE_HVV_FREENORM],
   double selfDHqqcoupl[SIZE_HQQ][2],
   double selfDHggcoupl[SIZE_HGG][2],
   double selfDHzzcoupl[nSupportedHiggses][SIZE_HVV][2],
   double selfDHwwcoupl[nSupportedHiggses][SIZE_HVV][2],
-  double selfDHzzLambda_qsq[nSupportedHiggses][4][3],
-  double selfDHwwLambda_qsq[nSupportedHiggses][4][3],
-  int selfDHzzCLambda_qsq[nSupportedHiggses][3],
-  int selfDHwwCLambda_qsq[nSupportedHiggses][3],
+  double selfDHzzLambda_qsq[nSupportedHiggses][SIZE_HVV_LAMBDAQSQ][SIZE_HVV_CQSQ],
+  double selfDHwwLambda_qsq[nSupportedHiggses][SIZE_HVV_LAMBDAQSQ][SIZE_HVV_CQSQ],
+  int selfDHzzCLambda_qsq[nSupportedHiggses][SIZE_HVV_CQSQ],
+  int selfDHwwCLambda_qsq[nSupportedHiggses][SIZE_HVV_CQSQ],
   bool diffHWW
   ){
-  Xcal2.AllowSeparateWWCouplings(diffHWW);
-  for (int ic=0; ic<SIZE_HVV_FREENORM; ic++) selfD_SpinZeroCouplings->SetHVVFreeNormCouplings(ic, selfDHvvcoupl_freenorm[ic]);
   for (int ic=0; ic<SIZE_HQQ; ic++) selfD_SpinZeroCouplings->SetHQQCouplings(ic, selfDHqqcoupl[ic][0], selfDHqqcoupl[ic][1]);
   for (int ic=0; ic<SIZE_HGG; ic++) selfD_SpinZeroCouplings->SetHGGCouplings(ic, selfDHggcoupl[ic][0], selfDHggcoupl[ic][1]);
 
+  Xcal2.AllowSeparateWWCouplings(diffHWW);
   for (int jh=1; jh<=(int)nSupportedHiggses; jh++){
     for (int ic=0; ic<SIZE_HVV; ic++) selfD_SpinZeroCouplings->SetHVVCouplings(ic, selfDHzzcoupl[jh-1][ic][0], selfDHzzcoupl[jh-1][ic][1], false, jh);
     for (int ic=0; ic<SIZE_HVV; ic++) selfD_SpinZeroCouplings->SetHVVCouplings(ic, selfDHwwcoupl[jh-1][ic][0], selfDHwwcoupl[jh-1][ic][1], true, jh);
-    for (int ik=0; ik<3; ik++){
-      for (int ig=0; ig<4; ig++){
+    for (int ik=0; ik<SIZE_HVV_CQSQ; ik++){
+      for (int ig=0; ig<SIZE_HVV_LAMBDAQSQ; ig++){
         selfD_SpinZeroCouplings->SetHVVLambdaQ2(ig, ik, selfDHzzLambda_qsq[jh-1][ig][ik], false, jh);
         selfD_SpinZeroCouplings->SetHVVLambdaQ2(ig, ik, selfDHwwLambda_qsq[jh-1][ig][ik], true, jh);
       }
@@ -265,11 +267,7 @@ void newZZMatrixElement::computeXS(
 
   if (melaCand!=0){
     double zzmass = melaCand->m();
-    if (
-      processME==TVar::MCFM
-      ||
-      (processModel==TVar::bkgZZ_SMHiggs && processProduction == TVar::ZZGG && processME==TVar::JHUGen)
-      ){
+    if (processME==TVar::MCFM){
       for (int jh=0; jh<(int)nSupportedHiggses; jh++) Xcal2.SetHiggsMass(mHiggs[jh], wHiggs[jh], jh+1);
     }
     else Xcal2.SetHiggsMass(zzmass, wHiggs[0], -1);
@@ -296,11 +294,7 @@ void newZZMatrixElement::computeProdXS_VVHVV(
 
   if (melaCand!=0){
     double zzmass = melaCand->m();
-    if (
-      processME==TVar::MCFM
-      ||
-      (processModel==TVar::bkgZZ_SMHiggs && processProduction == TVar::ZZGG && processME==TVar::JHUGen)
-      ){
+    if (processME==TVar::MCFM){
       for (int jh=0; jh<(int)nSupportedHiggses; jh++) Xcal2.SetHiggsMass(mHiggs[jh], wHiggs[jh], jh+1);
     }
     else Xcal2.SetHiggsMass(zzmass, wHiggs[0], -1);
@@ -421,7 +415,10 @@ void newZZMatrixElement::get_XPropagator(TVar::ResonancePropagatorScheme scheme,
   prop=0.;
   melaCand = get_CurrentCandidate();
 
-  if (melaCand!=0) prop=Xcal2.GetXPropagator(scheme);
+  if (melaCand!=0){
+    Xcal2.SetHiggsMass(mHiggs[0], wHiggs[0], -1);
+    prop=Xcal2.GetXPropagator(scheme);
+  }
 
   resetPerEvent();
   return;

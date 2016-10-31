@@ -3,9 +3,6 @@
 
 #include "TMCFM.hh"
 #include "MELACandidate.h"
-#include <iostream>
-#include <vector>
-#include <cmath>
 
 
 class MelaIO{

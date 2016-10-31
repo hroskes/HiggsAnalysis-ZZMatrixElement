@@ -11,8 +11,12 @@ extern "C" {
   int __modparameters_MOD_convertlhe(int* part);
 #define convertLHE __modparameters_MOD_convertlhe
 
+  int __modparameters_MOD_coupledvertex(int id[2], int* hel, int* useahcoupl);
+#define CoupledVertex __modparameters_MOD_coupledvertex
+
   double __modparameters_MOD_ckm(int* id1in, int* id2in); // |VCKM|*ScaleFactor
   double __modparameters_MOD_scalefactor(int* id1in, int* id2in); // ScaleFactor
+
 }
 
 #endif

@@ -142,10 +142,8 @@ void SuperMELA::init(){
   if (verbose_)std::cout << "Begin SuperMELA::init..." << std::endl;
 
   // Calculate m4l ranges for the given mH, set range of rrv
-  //calc_mZZ_range(mHVal_, lowMH_, highMH_);
-  //if (verbose_)cout << "Range width=" << highMH_ - lowMH_ << endl;
-  lowMH_=0.;
-  highMH_=sqrts_*1000.;
+  calc_mZZ_range(mHVal_, lowMH_, highMH_);
+  if (verbose_)cout << "Range width=" << highMH_ - lowMH_ << endl;
   m4l_rrv_=new RooRealVar("CMS_zz4l_mass", "CMS_zz4l_mass", mHVal_, lowMH_, highMH_);
   m4l_rrv_->setBins(2000, "fft");
   m4l_rrv_->setRange("shape", lowMH_, highMH_);
@@ -490,6 +488,9 @@ void SuperMELA::readBkgParsFromFile(std::vector<double>& apars){
 
 // Disabled
 void SuperMELA::calc_mZZ_range(const double mHVal, double& low_M, double& high_M){
+  //low_M=0.;
+  //high_M=sqrts_*1000.;
+
   edm::FileInPath fip("ZZMatrixElement/MELA/data/HiggsTotalWidth_YR3.txt");
 
   string path = fip.fullPath();
@@ -501,8 +502,9 @@ void SuperMELA::calc_mZZ_range(const double mHVal, double& low_M, double& high_M
   double lowside = 100.;
   if (mHVal >= 275){ lowside = 180.; }
   else { lowside = 100.; }
-  low_M = max((mHVal - 20.*windowVal), lowside);
-  high_M = min((mHVal + 15.*windowVal), 1000.);
+  // Apply rounding
+  low_M = int(max((mHVal - 20.*windowVal), lowside)+0.5);
+  high_M = int(min((mHVal + 15.*windowVal), sqrts_*1000.)+0.5);
 
   delete myCSW;
 }

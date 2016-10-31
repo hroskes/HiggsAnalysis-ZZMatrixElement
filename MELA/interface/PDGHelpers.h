@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <cmath>
+// Mod_Parameters
+#include "TModParameters.hh"
 
 namespace PDGHelpers{
   const double Wmass = 80.399;
@@ -33,6 +35,7 @@ namespace PDGHelpers{
   bool isAWBoson(const int id);
   bool isAHiggs(const int id);
   void setHVVmass(double mymass);
+  int getCoupledVertex(const int idfirst, const int idsecond, int* hel=0, int* useAHcoupl=0);
 
   int convertPythiaStatus(int pSt);
 }

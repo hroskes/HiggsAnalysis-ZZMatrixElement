@@ -71,6 +71,8 @@ public:
   void appendTopCandidate(SimpleParticleCollection_t* TopDaughters); // Adds a top
 
   // Function to set EW parameters in MCFM/JHUGen
+  void resetQuarkMass(double inmass, int iquark);
+  void resetQuarkMasses();
   void resetMCFM_EWKParameters(double ext_Gf, double ext_aemmz, double ext_mW, double ext_mZ, double ext_xW, int ext_ewscheme=3);
 
 
@@ -121,11 +123,6 @@ public:
   void computeP_selfDspin2(
     double selfDGggcoupl_input[SIZE_GGG][2],
     double selfDGvvcoupl_input[SIZE_GVV][2],
-    float& prob,
-    bool useConstant=true
-    );
-  void computeP(
-    double selfDHvvcoupl_freenorm_input[SIZE_HVV_FREENORM],
     float& prob,
     bool useConstant=true
     );
@@ -232,16 +229,15 @@ public:
   // Self-define arrays are now members of MELA.
   // There are a lot of them!
   //****Spin-0****//
-  double selfDHvvcoupl_freenorm[SIZE_HVV_FREENORM];
   double selfDHqqcoupl[SIZE_HQQ][2];
   double selfDHggcoupl[SIZE_HGG][2];
   // The first dimension (of size [nSupportedHiggses=2]) supports a second resonance present in MCFM
   double selfDHzzcoupl[nSupportedHiggses][SIZE_HVV][2];
   double selfDHwwcoupl[nSupportedHiggses][SIZE_HVV][2];
-  double selfDHzzLambda_qsq[nSupportedHiggses][4][3];
-  double selfDHwwLambda_qsq[nSupportedHiggses][4][3];
-  int selfDHzzCLambda_qsq[nSupportedHiggses][3];
-  int selfDHwwCLambda_qsq[nSupportedHiggses][3];
+  double selfDHzzLambda_qsq[nSupportedHiggses][SIZE_HVV_LAMBDAQSQ][SIZE_HVV_CQSQ];
+  double selfDHwwLambda_qsq[nSupportedHiggses][SIZE_HVV_LAMBDAQSQ][SIZE_HVV_CQSQ];
+  int selfDHzzCLambda_qsq[nSupportedHiggses][SIZE_HVV_CQSQ];
+  int selfDHwwCLambda_qsq[nSupportedHiggses][SIZE_HVV_CQSQ];
   bool differentiate_HWW_HZZ;
   //****Spin-1****//
   double selfDZqqcoupl[SIZE_ZQQ][2];

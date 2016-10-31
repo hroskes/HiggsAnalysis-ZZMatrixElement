@@ -69,6 +69,8 @@ public:
   void SetCurrentCandidate(MELACandidate* cand);
 
   void AllowSeparateWWCouplings(bool doAllow=false);
+  void ResetQuarkMass(double inmass, int iquark);
+  void ResetQuarkMasses();
   void ResetMCFM_EWKParameters(double ext_Gf, double ext_aemmz, double ext_mW, double ext_mZ, double ext_xW, int ext_ewscheme=3);
   void ResetCouplings();
 
@@ -172,6 +174,13 @@ protected:
   // Check if at least one input candidate is present
   bool CheckInputPresent();
   void SetRcdCandPtr();
+
+  // Check if self-defined couplings are specified
+  bool CheckSelfDCouplings_Hgg();
+  bool CheckSelfDCouplings_Hqq();
+  bool CheckSelfDCouplings_Htt();
+  bool CheckSelfDCouplings_Hbb();
+  bool CheckSelfDCouplings_HVV();
 
 
   ClassDef(TEvtProb, 0);

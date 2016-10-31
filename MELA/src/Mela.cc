@@ -236,17 +236,14 @@ void Mela::appendTopCandidate(SimpleParticleCollection_t* TopDaughters){ ZZME->a
 
 // Notice that this only sets the members of MELA, not TEvtProb. TEvtProb resets itself.
 void Mela::reset_SelfDCouplings(){
-  // We have a lot of them.
+  // We have a lot of them, now even more!
 
   //****Spin-0****//
-  differentiate_HWW_HZZ=false;
-  for (int ic=0; ic<SIZE_HVV_FREENORM; ic++) selfDHvvcoupl_freenorm[ic]=0;
-
   for (int im=0; im<2; im++){
     for (int ic=0; ic<SIZE_HQQ; ic++) selfDHqqcoupl[ic][im]=0;
     for (int ic=0; ic<SIZE_HGG; ic++) selfDHggcoupl[ic][im]=0;
   }
-
+  differentiate_HWW_HZZ=false;
   // Loop over the number of supported resonances
   for (int jh=0; jh<(int)nSupportedHiggses; jh++){
     for (int im=0; im<2; im++){
@@ -255,10 +252,10 @@ void Mela::reset_SelfDCouplings(){
         selfDHwwcoupl[jh][ic][im] = 0;
       }
     }
-    for (int ik=0; ik<3; ik++){
+    for (int ik=0; ik<SIZE_HVV_CQSQ; ik++){
       selfDHzzCLambda_qsq[jh][ik]=0;
       selfDHwwCLambda_qsq[jh][ik]=0;
-      for (int ic=0; ic<4; ic++){ // These default values do not matter as long as the c's are 0.
+      for (int ic=0; ic<SIZE_HVV_LAMBDAQSQ; ic++){ // These default values do not matter as long as the c's are 0.
         selfDHzzLambda_qsq[jh][ic][ik] = 100.;
         selfDHwwLambda_qsq[jh][ic][ik] = 100.;
       }
@@ -280,6 +277,8 @@ void Mela::reset_SelfDCouplings(){
 
   // Did I tell you that we have a lot of them?
 }
+void Mela::resetQuarkMass(double inmass, int iquark){ ZZME->reset_QuarkMass(inmass, iquark); }
+void Mela::resetQuarkMasses(){ ZZME->reset_QuarkMasses(); }
 void Mela::resetMCFM_EWKParameters(double ext_Gf, double ext_aemmz, double ext_mW, double ext_mZ, double ext_xW, int ext_ewscheme){
   ZZME->reset_MCFM_EWKParameters(ext_Gf, ext_aemmz, ext_mW, ext_mZ, ext_xW, ext_ewscheme);
 }
@@ -448,18 +447,6 @@ void Mela::computeP_selfDspin2(
     );
 }
 void Mela::computeP(
-  double selfDHvvcoupl_freenorm_input[SIZE_HVV_FREENORM],
-  float& prob,
-  bool useConstant
-  ){
-  selfDHqqcoupl[0][0] = 1.0;
-  selfDHggcoupl[0][0] = 1.0;
-  selfDHzzcoupl[0][0][0] = 1.0;
-  selfDHwwcoupl[0][0][0] = 1.0;
-  for (int ig=0; ig<SIZE_HVV_FREENORM; ig++) selfDHvvcoupl_freenorm[ig] = selfDHvvcoupl_freenorm_input[ig];
-  computeP(prob, useConstant);
-}
-void Mela::computeP(
   float& prob,
   bool useConstant
   ){
@@ -503,7 +490,6 @@ void Mela::computeP(
     else if (myME_ == TVar::JHUGen || myME_ == TVar::MCFM){
       if (!(myME_ == TVar::MCFM  && myProduction_ == TVar::ZZINDEPENDENT &&  (myModel_ == TVar::bkgZZ || myModel_ == TVar::bkgWW || myModel_ == TVar::bkgZGamma))){
         if (myME_ == TVar::MCFM || myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-          selfDHvvcoupl_freenorm,
           selfDHqqcoupl,
           selfDHggcoupl,
           selfDHzzcoupl,
@@ -760,7 +746,6 @@ void Mela::computeProdDecP(
   if (hasFailed) prob=0;
   else{
     ZZME->set_SpinZeroCouplings(
-      selfDHvvcoupl_freenorm,
       selfDHqqcoupl,
       selfDHggcoupl,
       selfDHzzcoupl,
@@ -871,7 +856,6 @@ void Mela::computeProdP(
         setCurrentCandidate(candCopy);
 
         if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-          selfDHvvcoupl_freenorm,
           selfDHqqcoupl,
           selfDHggcoupl,
           selfDHzzcoupl,
@@ -912,7 +896,6 @@ void Mela::computeProdP(
           double sys = (pTotal.T()+fabs(pTotal.Z()))/2.;
           if (fabs(sys)<threshold){
             if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-              selfDHvvcoupl_freenorm,
               selfDHqqcoupl,
               selfDHggcoupl,
               selfDHzzcoupl,
@@ -983,7 +966,6 @@ void Mela::computeProdP(
             double sys = (pTotal.T()+fabs(pTotal.Z()))/2.;
             if (fabs(sys)<threshold){
               if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-                selfDHvvcoupl_freenorm,
                 selfDHqqcoupl,
                 selfDHggcoupl,
                 selfDHzzcoupl,
@@ -1051,7 +1033,6 @@ void Mela::computeProdP(
       else{
         if (myProduction_ == TVar::JJQCD || myProduction_ == TVar::JJVBF){
           if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-            selfDHvvcoupl_freenorm,
             selfDHqqcoupl,
             selfDHggcoupl,
             selfDHzzcoupl,
@@ -1121,7 +1102,6 @@ void Mela::computeProdP_VH(
   if (melaCand!=0){
     if (myProduction_ == TVar::Lep_ZH || myProduction_ == TVar::Lep_WH || myProduction_ == TVar::Had_ZH || myProduction_ == TVar::Had_WH || myProduction_ == TVar::GammaH){
       if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-        selfDHvvcoupl_freenorm,
         selfDHqqcoupl,
         selfDHggcoupl,
         selfDHzzcoupl,
@@ -1162,7 +1142,6 @@ void Mela::computeProdP_ttH(
   melaCand = getCurrentCandidate();
   if (melaCand!=0){
     if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-      selfDHvvcoupl_freenorm,
       selfDHqqcoupl,
       selfDHggcoupl,
       selfDHzzcoupl,
@@ -1447,7 +1426,7 @@ bool Mela::configureAnalyticalPDFs(){
         ((RooRealVar*)ggSpin0Model->couplings.g4List[6][im])->setVal(selfDHzzcoupl[0][37][im]);
         ((RooRealVar*)ggSpin0Model->couplings.g4List[7][im])->setVal(selfDHzzcoupl[0][38][im]);
       }
-      for (int qoqtqz=0; qoqtqz<3; qoqtqz++){ // 0==q1, 1==q2, 2==q12
+      for (int qoqtqz=0; qoqtqz<SIZE_HVV_CQSQ; qoqtqz++){ // 0==q1, 1==q2, 2==q12
         ((RooRealVar*)ggSpin0Model->couplings.Lambda_z1qsq[qoqtqz])->setVal(selfDHzzLambda_qsq[0][0][qoqtqz]);
         ((RooRealVar*)ggSpin0Model->couplings.Lambda_z2qsq[qoqtqz])->setVal(selfDHzzLambda_qsq[0][1][qoqtqz]);
         ((RooRealVar*)ggSpin0Model->couplings.Lambda_z3qsq[qoqtqz])->setVal(selfDHzzLambda_qsq[0][2][qoqtqz]);
