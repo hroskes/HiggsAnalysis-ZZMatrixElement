@@ -98,15 +98,21 @@ public:
   //
 
   // Reset-functions
-  void reset_QuarkMass(double inmass, int iquark);
+  void reset_Mass(double inmass, int ipart);
+  void reset_Width(double inmass, int ipart);
   void reset_QuarkMasses();
   void reset_MCFM_EWKParameters(double ext_Gf, double ext_aemmz, double ext_mW, double ext_mZ, double ext_xW, int ext_ewscheme=3);
   void resetPerEvent(); // Resets variables and owned objects that are per-event
   void reset_InputEvent(); // Resets all candidates in Xcal2, to be called at the end of each event after all computations are done
 
   void set_SpinZeroCouplings(
-    double selfDHqqcoupl[SIZE_HQQ][2],
-    double selfDHggcoupl[SIZE_HGG][2],
+    double selfDHggcoupl[nSupportedHiggses][SIZE_HGG][2],
+    double selfDHg4g4coupl[nSupportedHiggses][SIZE_HGG][2],
+    double selfDHqqcoupl[nSupportedHiggses][SIZE_HQQ][2],
+    double selfDHbbcoupl[nSupportedHiggses][SIZE_HQQ][2],
+    double selfDHttcoupl[nSupportedHiggses][SIZE_HQQ][2],
+    double selfDHb4b4coupl[nSupportedHiggses][SIZE_HQQ][2],
+    double selfDHt4t4coupl[nSupportedHiggses][SIZE_HQQ][2],
     double selfDHzzcoupl[nSupportedHiggses][SIZE_HVV][2],
     double selfDHwwcoupl[nSupportedHiggses][SIZE_HVV][2],
     double selfDHzzLambda_qsq[nSupportedHiggses][SIZE_HVV_LAMBDAQSQ][SIZE_HVV_CQSQ],

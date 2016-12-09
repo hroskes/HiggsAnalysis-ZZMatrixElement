@@ -44,11 +44,11 @@ TEvtProb::TEvtProb(
   /***** Initialize JHUGen *****/
   InitializeJHUGen(pathtoPDFSet, PDFMember);
 
-  /***** Initialize schemes *****/
-  ResetCouplings();
-  ResetRenFacScaleMode();
+  /***** Cross-initializations *****/
+  CrossInitialize();
+
+  /***** Initialize input event properties *****/
   ResetInputEvent();
-  SetPrimaryHiggsMass(125.); // Should come after InitializeMCFM and InitializeJHUGen
   SetCandidateDecayMode(TVar::CandidateDecay_ZZ);
 
   if (verbosity>=TVar::DEBUG) cout << "End TEvtProb constructor" << endl;
@@ -129,6 +129,40 @@ void TEvtProb::InitializeJHUGen(const char* pathtoPDFSet, int PDFMember){
   InitJHUGenMELA(pathtoPDFSet, PDFMember);
 
   if (verbosity>=TVar::DEBUG) cout << "End TEvtProb::InitializeJHUGen" << endl;
+}
+void TEvtProb::CrossInitialize(){
+  if (verbosity>=TVar::DEBUG) cout << "Begin TEvtProb::CrossInitialize" << endl;
+
+  /**** Initialize alphaS *****/
+  const double GeV=1./100.;
+  double init_Q;
+  int init_nl, init_nf;
+  __modjhugenmela_MOD_getpdfconstants(&init_Q, &init_nl, &init_nf);
+  init_Q /= GeV;
+  if (verbosity>=TVar::DEBUG) cout << "TEvtProb::TEvtProb: Initializing the PDF with initial Q=" << init_Q << ", nloops=" << init_nl << ", nf=" << init_nf << endl;
+  SetAlphaS(init_Q, init_Q, 1, 1, init_nl, init_nf, "cteq6_l"); // "cteq6_l" is just some dummy variable
+
+  /**** Initialize MCFM CKM initializers in cabib.f using JHUGen defaults *****/
+  int i, j;
+  i=2; j=1;
+  cabib_.Vud = __modparameters_MOD_ckmbare(&i, &j);
+  i=2; j=3;
+  cabib_.Vus = __modparameters_MOD_ckmbare(&i, &j);
+  i=2; j=5;
+  cabib_.Vub = __modparameters_MOD_ckmbare(&i, &j);
+  i=4; j=1;
+  cabib_.Vcd = __modparameters_MOD_ckmbare(&i, &j);
+  i=4; j=3;
+  cabib_.Vcs = __modparameters_MOD_ckmbare(&i, &j);
+  i=4; j=5;
+  cabib_.Vcb = __modparameters_MOD_ckmbare(&i, &j);
+
+  /***** Initialize schemes *****/
+  ResetCouplings();
+  ResetRenFacScaleMode();
+  SetPrimaryHiggsMass(125.); // Should come after InitializeMCFM and InitializeJHUGen
+
+  if (verbosity>=TVar::DEBUG) cout << "End TEvtProb::CrossInitialize" << endl;
 }
 
 // Set NNPDF driver path
@@ -252,16 +286,18 @@ void TEvtProb::SetCurrentCandidate(MELACandidate* cand){
 // Reset functions
 void TEvtProb::ResetIORecord(){ RcdME.reset(); }
 void TEvtProb::ResetRenFacScaleMode(){ SetRenFacScaleMode(TVar::DefaultScaleScheme, TVar::DefaultScaleScheme, 0.5, 0.5); }
-void TEvtProb::ResetQuarkMass(double inmass, int iquark){ SetQuarkMass(inmass, iquark); }
+void TEvtProb::ResetMass(double inmass, int ipart){ TUtil::SetMass(inmass, ipart); }
+void TEvtProb::ResetWidth(double inwidth, int ipart){ TUtil::SetDecayWidth(inwidth, ipart); }
 void TEvtProb::ResetQuarkMasses(){
-  ResetQuarkMass(1e-3, 1); // d
-  ResetQuarkMass(5e-3, 2); // u
-  ResetQuarkMass(1e-1, 3); // s
-  ResetQuarkMass(1.275, 4); // c
-  ResetQuarkMass(4.75, 5); // b
-  ResetQuarkMass(173.2, 6); // t
-  ResetQuarkMass(1e5, 7); // bprime
-  ResetQuarkMass(1e5, 8); // tprime
+  ResetMass(1e-3, 1); // d
+  ResetMass(5e-3, 2); // u
+  ResetMass(1e-1, 3); // s
+  ResetMass(1.275, 4); // c
+  ResetMass(4.75, 5); // b
+  ResetMass(173.2, 6); // t
+  ResetMass(1e5, 7); // bprime
+  ResetMass(1e5, 8); // tprime
+  //coupling_(); // Already called at b and t twice!
 }
 void TEvtProb::ResetMCFM_EWKParameters(double ext_Gf, double ext_aemmz, double ext_mW, double ext_mZ, double ext_xW, int ext_ewscheme){ SetEwkCouplingParameters(ext_Gf, ext_aemmz, ext_mW, ext_mZ, ext_xW, ext_ewscheme); }
 void TEvtProb::ResetCouplings(){

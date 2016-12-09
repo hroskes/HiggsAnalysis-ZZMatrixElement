@@ -69,7 +69,7 @@ protected:
   void addByHighestPt(MELAParticle* myParticle, std::vector<MELAParticle*>& particleArray);
   void addByHighestPt(MELATopCandidate* myParticle, std::vector<MELATopCandidate*>& particleArray);
 
-  bool checkTopCandidateExists(MELATopCandidate* myParticle, std::vector<MELATopCandidate*>& particleArray);
+  bool checkTopCandidateExists(MELATopCandidate* myParticle, std::vector<MELATopCandidate*>& particleArray)const;
 };
 
 

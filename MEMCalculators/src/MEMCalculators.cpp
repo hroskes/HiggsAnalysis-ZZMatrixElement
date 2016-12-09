@@ -1038,30 +1038,6 @@ int MEMs::cacheMELAcalculation(int process, MEMCalcs calculator, vector<TLorentz
           true
           );
       }
-      else if (process==kggZZ_SMHiggs)
-      {
-        m_MELA->setProcess(MELAprocMap[static_cast<Processes>(process)], MELAcalcMap[calculator], MELAprodMap[static_cast<Processes>(process)]);
-        double translation[SIZE_HVV_FREENORM];
-        if (DecayCouplings!=(vector<complex<double> >*) NULL)
-        {
-          translation[0] = (*DecayCouplings)[0].real();
-          translation[1] = (*DecayCouplings)[0].imag();
-
-          m_MELA->computeP(
-            translation,
-            me2process_float,
-            true
-            );
-        }
-        else
-        {
-          m_MELA->computeP(
-            me2process_float,
-            true
-            );
-        }
-      }
-
       else return ERR_PROCESS;	// not yet implemented
     }
     else if (process==kg1g4 || process==kg1g2 || process==kg1g4_pi_2 ||

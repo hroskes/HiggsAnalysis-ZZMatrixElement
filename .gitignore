@@ -25,7 +25,9 @@ MELA/test/ffwarn.dat
 MELA/test/input.DAT
 MELA/test/process.DAT
 MELA/test/*.root
+MELA/test/*.out
 MELA/test/*.o
 MELA/test/*_c.so
 MELA/test/*_c.d
+MELA/test/*.pcm
 

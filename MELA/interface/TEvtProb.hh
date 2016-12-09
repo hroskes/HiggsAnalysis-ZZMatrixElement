@@ -39,7 +39,7 @@
 #include "TCouplings.hh"
 #include "TVar.hh"
 #include "TUtil.hh"
-#include <ZZMatrixElement/MELA/interface/MELAHXSWidth.h>
+#include "MELAHXSWidth.h"
 
 
 //----------------------------------------
@@ -69,7 +69,8 @@ public:
   void SetCurrentCandidate(MELACandidate* cand);
 
   void AllowSeparateWWCouplings(bool doAllow=false);
-  void ResetQuarkMass(double inmass, int iquark);
+  void ResetMass(double inmass, int ipart);
+  void ResetWidth(double inwidth, int ipart);
   void ResetQuarkMasses();
   void ResetMCFM_EWKParameters(double ext_Gf, double ext_aemmz, double ext_mW, double ext_mZ, double ext_xW, int ext_ewscheme=3);
   void ResetCouplings();
@@ -170,6 +171,7 @@ protected:
   // Initialization functions
   void InitializeMCFM();
   void InitializeJHUGen(const char* pathtoPDFSet, int PDFMember);
+  void CrossInitialize();
 
   // Check if at least one input candidate is present
   bool CheckInputPresent();

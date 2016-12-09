@@ -239,14 +239,19 @@ void Mela::reset_SelfDCouplings(){
   // We have a lot of them, now even more!
 
   //****Spin-0****//
-  for (int im=0; im<2; im++){
-    for (int ic=0; ic<SIZE_HQQ; ic++) selfDHqqcoupl[ic][im]=0;
-    for (int ic=0; ic<SIZE_HGG; ic++) selfDHggcoupl[ic][im]=0;
-  }
   differentiate_HWW_HZZ=false;
   // Loop over the number of supported resonances
   for (int jh=0; jh<(int)nSupportedHiggses; jh++){
     for (int im=0; im<2; im++){
+      for (int ic=0; ic<SIZE_HGG; ic++) selfDHggcoupl[jh][ic][im]=0;
+      for (int ic=0; ic<SIZE_HGG; ic++) selfDHg4g4coupl[jh][ic][im]=0;
+
+      for (int ic=0; ic<SIZE_HQQ; ic++) selfDHqqcoupl[jh][ic][im]=0;
+      for (int ic=0; ic<SIZE_HQQ; ic++) selfDHbbcoupl[jh][ic][im]=0;
+      for (int ic=0; ic<SIZE_HQQ; ic++) selfDHttcoupl[jh][ic][im]=0;
+      for (int ic=0; ic<SIZE_HQQ; ic++) selfDHb4b4coupl[jh][ic][im]=0;
+      for (int ic=0; ic<SIZE_HQQ; ic++) selfDHt4t4coupl[jh][ic][im]=0;
+
       for (int ic=0; ic<SIZE_HVV; ic++){
         selfDHzzcoupl[jh][ic][im] = 0;
         selfDHwwcoupl[jh][ic][im] = 0;
@@ -277,7 +282,8 @@ void Mela::reset_SelfDCouplings(){
 
   // Did I tell you that we have a lot of them?
 }
-void Mela::resetQuarkMass(double inmass, int iquark){ ZZME->reset_QuarkMass(inmass, iquark); }
+void Mela::resetMass(double inmass, int ipart){ ZZME->reset_Mass(inmass, ipart); }
+void Mela::resetWidth(double inwidth, int ipart){ ZZME->reset_Width(inwidth, ipart); }
 void Mela::resetQuarkMasses(){ ZZME->reset_QuarkMasses(); }
 void Mela::resetMCFM_EWKParameters(double ext_Gf, double ext_aemmz, double ext_mW, double ext_mZ, double ext_xW, int ext_ewscheme){
   ZZME->reset_MCFM_EWKParameters(ext_Gf, ext_aemmz, ext_mW, ext_mZ, ext_xW, ext_ewscheme);
@@ -358,9 +364,21 @@ void Mela::computeP_selfDspin0(
   float& prob,
   bool useConstant
   ){
-  selfDHqqcoupl[0][0] = 1.0; // Don't set these, and you will get 0.
-  selfDHggcoupl[0][0] = 1.0;
-
+  // Don't set these, and you will get 0.
+  if (myME_==TVar::JHUGen){
+    for (int jh=0; jh<(int)nSupportedHiggses; jh++){
+      // JHUGen ME production side is Hqq=1, Hgg=1
+      selfDHqqcoupl[jh][0][0] = 1.0;
+      selfDHggcoupl[jh][0][0] = 1.0;
+    }
+  }
+  else if (myME_==TVar::MCFM){
+    for (int jh=0; jh<(int)nSupportedHiggses; jh++){
+      // MCFM ME production side is Htt=Hbb=1
+      selfDHttcoupl[jh][0][0] = 1.0;
+      selfDHbbcoupl[jh][0][0] = 1.0;
+    }
+  }
   for (int jh=0; jh<(int)nSupportedHiggses; jh++){
     for (int im=0; im<2; im++){
       for (int ic=0; ic<SIZE_HVV; ic++){
@@ -490,8 +508,13 @@ void Mela::computeP(
     else if (myME_ == TVar::JHUGen || myME_ == TVar::MCFM){
       if (!(myME_ == TVar::MCFM  && myProduction_ == TVar::ZZINDEPENDENT &&  (myModel_ == TVar::bkgZZ || myModel_ == TVar::bkgWW || myModel_ == TVar::bkgZGamma))){
         if (myME_ == TVar::MCFM || myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-          selfDHqqcoupl,
           selfDHggcoupl,
+          selfDHg4g4coupl,
+          selfDHqqcoupl,
+          selfDHbbcoupl,
+          selfDHttcoupl,
+          selfDHb4b4coupl,
+          selfDHt4t4coupl,
           selfDHzzcoupl,
           selfDHwwcoupl,
           selfDHzzLambda_qsq,
@@ -738,7 +761,19 @@ void Mela::computeProdDecP(
     cout << "Mela::computeProdDecP ME is not supported for ME " << myME_ << endl;
     hasFailed = true;
   }
-  if (myProduction_ != TVar::JJVBF){
+  if (
+    !(
+    myProduction_==TVar::Had_WH || myProduction_==TVar::Had_ZH
+    || myProduction_==TVar::Had_WH_S || myProduction_==TVar::Had_ZH_S
+    || myProduction_==TVar::Had_WH_TU || myProduction_==TVar::Had_ZH_TU
+    || myProduction_==TVar::Lep_ZH || myProduction_==TVar::Lep_WH
+    || myProduction_==TVar::Lep_ZH_S || myProduction_==TVar::Lep_WH_S
+    || myProduction_==TVar::Lep_ZH_TU || myProduction_==TVar::Lep_WH_TU
+    || myProduction_==TVar::JJVBF || myProduction_==TVar::JJEW || myProduction_==TVar::JJEWQCD || myProduction_==TVar::JJQCD
+    || myProduction_==TVar::JJVBF_S || myProduction_==TVar::JJEW_S || myProduction_==TVar::JJEWQCD_S || myProduction_==TVar::JJQCD_S
+    || myProduction_==TVar::JJVBF_TU || myProduction_==TVar::JJEW_TU || myProduction_==TVar::JJEWQCD_TU || myProduction_==TVar::JJQCD_TU
+    )
+    ){
     cout << "Mela::computeProdDecP production mode is not supported for production " << myProduction_ << endl;
     hasFailed = true;
   }
@@ -746,8 +781,13 @@ void Mela::computeProdDecP(
   if (hasFailed) prob=0;
   else{
     ZZME->set_SpinZeroCouplings(
-      selfDHqqcoupl,
       selfDHggcoupl,
+      selfDHg4g4coupl,
+      selfDHqqcoupl,
+      selfDHbbcoupl,
+      selfDHttcoupl,
+      selfDHb4b4coupl,
+      selfDHt4t4coupl,
       selfDHzzcoupl,
       selfDHwwcoupl,
       selfDHzzLambda_qsq,
@@ -776,7 +816,7 @@ void Mela::computeProdP(
   float& prob,
   bool useConstant
   ){
-  for (int im=0; im<2; im++){ for (int ic=0; ic<SIZE_HGG; ic++) selfDHggcoupl[ic][im] = selfDHggcoupl_input[ic][im]; }
+  for (int im=0; im<2; im++){ for (int ic=0; ic<SIZE_HGG; ic++) selfDHggcoupl[0][ic][im] = selfDHggcoupl_input[ic][im]; }
   for (int jh=0; jh<(int)nSupportedHiggses; jh++){
     for (int im=0; im<2; im++){
       for (int ic=0; ic<SIZE_HVV; ic++){
@@ -856,8 +896,13 @@ void Mela::computeProdP(
         setCurrentCandidate(candCopy);
 
         if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-          selfDHqqcoupl,
           selfDHggcoupl,
+          selfDHg4g4coupl,
+          selfDHqqcoupl,
+          selfDHbbcoupl,
+          selfDHttcoupl,
+          selfDHb4b4coupl,
+          selfDHt4t4coupl,
           selfDHzzcoupl,
           selfDHwwcoupl,
           selfDHzzLambda_qsq,
@@ -896,8 +941,13 @@ void Mela::computeProdP(
           double sys = (pTotal.T()+fabs(pTotal.Z()))/2.;
           if (fabs(sys)<threshold){
             if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-              selfDHqqcoupl,
               selfDHggcoupl,
+              selfDHg4g4coupl,
+              selfDHqqcoupl,
+              selfDHbbcoupl,
+              selfDHttcoupl,
+              selfDHb4b4coupl,
+              selfDHt4t4coupl,
               selfDHzzcoupl,
               selfDHwwcoupl,
               selfDHzzLambda_qsq,
@@ -966,8 +1016,13 @@ void Mela::computeProdP(
             double sys = (pTotal.T()+fabs(pTotal.Z()))/2.;
             if (fabs(sys)<threshold){
               if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-                selfDHqqcoupl,
                 selfDHggcoupl,
+                selfDHg4g4coupl,
+                selfDHqqcoupl,
+                selfDHbbcoupl,
+                selfDHttcoupl,
+                selfDHb4b4coupl,
+                selfDHt4t4coupl,
                 selfDHzzcoupl,
                 selfDHwwcoupl,
                 selfDHzzLambda_qsq,
@@ -1033,8 +1088,13 @@ void Mela::computeProdP(
       else{
         if (myProduction_ == TVar::JJQCD || myProduction_ == TVar::JJVBF){
           if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-            selfDHqqcoupl,
             selfDHggcoupl,
+            selfDHg4g4coupl,
+            selfDHqqcoupl,
+            selfDHbbcoupl,
+            selfDHttcoupl,
+            selfDHb4b4coupl,
+            selfDHt4t4coupl,
             selfDHzzcoupl,
             selfDHwwcoupl,
             selfDHzzLambda_qsq,
@@ -1074,7 +1134,7 @@ void Mela::computeProdP_VH(
   bool useConstant
   ){
   // Dedicated function for VH ME
-  selfDHggcoupl[0][0] = 1.0; // Don't set this, and you might get 0 in the future for ggVH.
+  selfDHggcoupl[0][0][0] = 1.0; // Don't set this, and you might get 0 in the future for ggVH.
   for (int jh=0; jh<(int)nSupportedHiggses; jh++){
     for (int im=0; im<2; im++){
       for (int ic=0; ic<SIZE_HVV; ic++){
@@ -1102,8 +1162,13 @@ void Mela::computeProdP_VH(
   if (melaCand!=0){
     if (myProduction_ == TVar::Lep_ZH || myProduction_ == TVar::Lep_WH || myProduction_ == TVar::Had_ZH || myProduction_ == TVar::Had_WH || myProduction_ == TVar::GammaH){
       if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-        selfDHqqcoupl,
         selfDHggcoupl,
+        selfDHg4g4coupl,
+        selfDHqqcoupl,
+        selfDHbbcoupl,
+        selfDHttcoupl,
+        selfDHb4b4coupl,
+        selfDHt4t4coupl,
         selfDHzzcoupl,
         selfDHwwcoupl,
         selfDHzzLambda_qsq,
@@ -1142,8 +1207,13 @@ void Mela::computeProdP_ttH(
   melaCand = getCurrentCandidate();
   if (melaCand!=0){
     if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-      selfDHqqcoupl,
       selfDHggcoupl,
+      selfDHg4g4coupl,
+      selfDHqqcoupl,
+      selfDHbbcoupl,
+      selfDHttcoupl,
+      selfDHb4b4coupl,
+      selfDHt4t4coupl,
       selfDHzzcoupl,
       selfDHwwcoupl,
       selfDHzzLambda_qsq,

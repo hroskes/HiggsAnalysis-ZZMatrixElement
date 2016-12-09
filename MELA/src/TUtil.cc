@@ -1037,6 +1037,14 @@ void TUtil::computeVHangles(
 /****************************************************/
 
 void TUtil::SetEwkCouplingParameters(double ext_Gf, double ext_aemmz, double ext_mW, double ext_mZ, double ext_xW, int ext_ewscheme){
+  // Set JHUGen couplings
+  const double GeV=1./100.;
+  double ext_mZ_jhu = ext_mZ*GeV;
+  double ext_mW_jhu = ext_mW*GeV;
+  double ext_Gf_jhu = ext_Gf/pow(GeV, 2);
+  __modjhugenmela_MOD_setewparameters(&ext_mZ_jhu, &ext_mW_jhu, &ext_Gf_jhu, &ext_aemmz, &ext_xW);
+
+  // Set MCFM couplings
   if (ext_ewscheme<-1 || ext_ewscheme>3) ext_ewscheme=3;
   ewinput_.Gf_inp = ext_Gf;
   ewinput_.aemmz_inp = ext_aemmz;
@@ -1087,18 +1095,82 @@ void TUtil::SetEwkCouplingParameters(double ext_Gf, double ext_aemmz, double ext
   ewinput_.xw_inp=0.22264585341299625;
   */
 }
-void TUtil::SetQuarkMass(double inmass, int iquark){
+void TUtil::SetMass(double inmass, int ipart){
+  bool runcoupling_mcfm=false;
+  bool runcoupling_jhugen=false;
+
+  // MCFM masses
   // Tprime and bprime masses are not defined in masses.f
-  if (abs(iquark)==8) spinzerohiggs_anomcoupl_.mt_4gen = inmass;
-  else if (abs(iquark)==7) spinzerohiggs_anomcoupl_.mb_4gen = inmass;
-  else if (abs(iquark)==6) masses_mcfm_.mt=inmass;
-  else if (abs(iquark)==5){ masses_mcfm_.mb=inmass; masses_mcfm_.mbsq = pow(masses_mcfm_.mb, 2); }
-  else if (abs(iquark)==4){ masses_mcfm_.mc=inmass; masses_mcfm_.mcsq = pow(masses_mcfm_.mc, 2); }
-  else if (abs(iquark)==3) masses_mcfm_.ms=inmass;
-  else if (abs(iquark)==2) masses_mcfm_.mu=inmass;
-  else if (abs(iquark)==1) masses_mcfm_.md=inmass;
-  else cerr << "Quark " << iquark << " is unknown. Allowed indices are 1-6." << endl;
-  coupling_();
+  if (abs(ipart)==8) spinzerohiggs_anomcoupl_.mt_4gen = inmass;
+  else if (abs(ipart)==7) spinzerohiggs_anomcoupl_.mb_4gen = inmass;
+  else if (abs(ipart)==6){ masses_mcfm_.mt=inmass; runcoupling_mcfm=true; }
+  else if (abs(ipart)==5){ masses_mcfm_.mb=inmass; masses_mcfm_.mbsq = pow(masses_mcfm_.mb, 2); runcoupling_mcfm=true; }
+  else if (abs(ipart)==4){ masses_mcfm_.mc=inmass; masses_mcfm_.mcsq = pow(masses_mcfm_.mc, 2); runcoupling_mcfm=true; }
+  else if (abs(ipart)==3) masses_mcfm_.ms=inmass;
+  else if (abs(ipart)==2) masses_mcfm_.mu=inmass;
+  else if (abs(ipart)==1) masses_mcfm_.md=inmass;
+  else if (abs(ipart)==11) masses_mcfm_.mel=inmass;
+  else if (abs(ipart)==13) masses_mcfm_.mmu=inmass;
+  else if (abs(ipart)==15){ masses_mcfm_.mtau=inmass; masses_mcfm_.mtausq = pow(masses_mcfm_.mtau, 2); }
+  else if (abs(ipart)==23){ masses_mcfm_.zmass=inmass; ewinput_.zmass_inp = inmass; runcoupling_mcfm=true; }
+  else if (abs(ipart)==24){ masses_mcfm_.wmass=inmass; ewinput_.wmass_inp = inmass; runcoupling_mcfm=true; }
+  else if (abs(ipart)==25) masses_mcfm_.hmass=inmass;
+
+  // JHUGen masses
+  if (
+    abs(ipart)<=6
+    ||
+    (abs(ipart)>=11 && abs(ipart)<=16)
+    ||
+    abs(ipart)==23 || abs(ipart)==24 || abs(ipart)==25
+    ){
+    runcoupling_jhugen=(
+      abs(ipart)==23
+      ||
+      abs(ipart)==24
+      );
+    const double GeV=1./100.;
+    double jinmass = inmass*GeV;
+    int jpart = convertLHEreverse(&ipart);
+    __modparameters_MOD_setmass(&jinmass, &jpart);
+  }
+
+  // Recalculate couplings
+  if (runcoupling_mcfm || runcoupling_jhugen) SetEwkCouplingParameters(ewcouple_.Gf, em_.aemmz, masses_mcfm_.wmass, masses_mcfm_.zmass, ewcouple_.xw, ewscheme_.ewscheme);
+}
+void TUtil::SetDecayWidth(double inwidth, int ipart){
+  // No need to recalculate couplings
+
+  // MCFM masses
+  if (abs(ipart)==6) masses_mcfm_.twidth=inwidth;
+  else if (abs(ipart)==15) masses_mcfm_.tauwidth=inwidth;
+  else if (abs(ipart)==23) masses_mcfm_.zwidth=inwidth;
+  else if (abs(ipart)==24) masses_mcfm_.wwidth=inwidth;
+  else if (abs(ipart)==25) masses_mcfm_.hwidth=inwidth;
+
+  // JHUGen masses
+  const double GeV=1./100.;
+  double jinwidth = inwidth*GeV;
+  int jpart = convertLHEreverse(&ipart);
+  __modparameters_MOD_setdecaywidth(&jinwidth, &jpart);
+}
+void TUtil::SetCKMElements(double* invckm_ud, double* invckm_us, double* invckm_cd, double* invckm_cs, double* invckm_ts, double* invckm_tb, double* invckm_ub, double* invckm_cb, double* invckm_td){
+  __modparameters_MOD_computeckmelements(invckm_ud, invckm_us, invckm_cd, invckm_cs, invckm_ts, invckm_tb, invckm_ub, invckm_cb, invckm_td);
+
+  int i, j;
+  i=2; j=1;
+  cabib_.Vud = __modparameters_MOD_ckmbare(&i, &j);
+  i=2; j=3;
+  cabib_.Vus = __modparameters_MOD_ckmbare(&i, &j);
+  i=2; j=5;
+  cabib_.Vub = __modparameters_MOD_ckmbare(&i, &j);
+  i=4; j=1;
+  cabib_.Vcd = __modparameters_MOD_ckmbare(&i, &j);
+  i=4; j=3;
+  cabib_.Vcs = __modparameters_MOD_ckmbare(&i, &j);
+  i=4; j=5;
+  cabib_.Vcb = __modparameters_MOD_ckmbare(&i, &j);
+  // Do not call ckmfill_(), it is called by MCFM_chooser!
 }
 
 double TUtil::InterpretScaleScheme(const TVar::Production& production, const TVar::MatrixElement& matrixElement, const TVar::EventScaleScheme& scheme, TLorentzVector p[mxpart]){
@@ -1230,9 +1302,6 @@ void TUtil::SetAlphaS(double& Q_ren, double& Q_fac, double multiplier_ren, doubl
     Q_fac *= multiplier_fac;
   }
 
-  /***** JHUGen Alpha_S *****/
-  // To be implemented
-
   /***** MCFM Alpha_S *****/
   bool nflav_is_same = (nflav_.nflav == mynflav);
   if (!nflav_is_same) cout << "TUtil::SetAlphaS: nflav=" << nflav_.nflav << " is the only one supported." << endl;
@@ -1245,6 +1314,7 @@ void TUtil::SetAlphaS(double& Q_ren, double& Q_fac, double multiplier_ren, doubl
   }
   nlooprun_.nlooprun = mynloop;
 
+  /***** JHUGen Alpha_S *****/
   /*
   ///// Disabling alpha_s computation from MCFM to replace with the JHUGen implementation, allows LHAPDF interface readily /////
   // For proper pdfwrapper_linux.f execution (alpha_s computation does not use pdf but examines the pdf name to initialize amz.)
@@ -1294,7 +1364,11 @@ void TUtil::GetAlphaS(double* alphas_, double* alphasmz_){
 }
 
 // chooser.f split into 2 different functions
-bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& production, const TVar::LeptonInterference& leptonInterf, const simple_event_record& mela_event){
+bool TUtil::MCFM_chooser(
+  const TVar::Process& process, const TVar::Production& production, const TVar::LeptonInterference& leptonInterf,
+  const TVar::VerbosityLevel& verbosity,
+  const simple_event_record& mela_event
+  ){
   bool result = true;
 
   unsigned int ndau = mela_event.pDaughters.size();
@@ -1309,6 +1383,7 @@ bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& p
   //if (ndau>=4) isZJJ = (PDGHelpers::isAZBoson(mela_event.intermediateVid.at(0)) && PDGHelpers::isAJet(pId[2]) && PDGHelpers::isAJet(pId[3])); // Notice both isZZ and isZJJ could be true
   //bool isZG = (ndau>=3 && PDGHelpers::isAZBoson(mela_event.intermediateVid.at(0)) && PDGHelpers::isAPhoton(mela_event.intermediateVid.at(1)));
   //bool isGG = (ndau>=2 && PDGHelpers::isAPhoton(mela_event.intermediateVid.at(0)) && PDGHelpers::isAPhoton(mela_event.intermediateVid.at(1)));
+  if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: isWW=" << (int)isWW << ", isZZ=" << (int)isZZ << ", hasZZ4fInterf=" << (int)hasZZ4fInterf << endl;
 
   npart_.npart=4; // Default number of particles is just 4, indicating no associated particles
   sprintf(runstring_.runstring, "test");
@@ -1345,6 +1420,8 @@ bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& p
       interference_.interference=true;
     }
 
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+
   }
   else if (
     ndau>=4
@@ -1363,6 +1440,8 @@ bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& p
     breit_.mass3=masses_mcfm_.wmass;
     breit_.width3=masses_mcfm_.wwidth;
     srdiags_.srdiags=true;
+
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
   else if (
@@ -1386,6 +1465,8 @@ bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& p
     breit_.mass3=masses_mcfm_.zmass;
     breit_.width3=masses_mcfm_.zwidth;
 
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+
   }
   else if (
     ndau==3
@@ -1404,6 +1485,8 @@ bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& p
     breit_.mass3=masses_mcfm_.zmass;
     breit_.width3=masses_mcfm_.zwidth;
     nwz_.nwz=0; ckmfill_(&(nwz_.nwz));
+
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
   else if (
@@ -1439,6 +1522,8 @@ bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& p
       interference_.interference=true;
     }
 
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+
   }
   else if (
     ndau>=4
@@ -1463,6 +1548,8 @@ bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& p
     breit_.n2=1;
     breit_.n3=1;
     nuflav_.nuflav=1; // Keep this at 1. Mela controls how many flavors in a more exact way.
+
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
   // JJ + ZZ->4f
@@ -1499,6 +1586,8 @@ bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& p
     breit_.mass3 =masses_mcfm_.zmass;
     breit_.width3=masses_mcfm_.zwidth;
 
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+
   }
   // JJ + WW->4f
   else if ( // Check for support in qq'H+2J
@@ -1533,6 +1622,8 @@ bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& p
     breit_.width2=masses_mcfm_.wwidth;
     breit_.mass3 =masses_mcfm_.wmass;
     breit_.width3=masses_mcfm_.wwidth;
+
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
   // JJ + VV->4f
@@ -1569,13 +1660,15 @@ bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& p
     breit_.mass3 =masses_mcfm_.wmass;
     breit_.width3=masses_mcfm_.wwidth;
 
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+
   }
   // JJ + ZZ->4f (QCD)
   else if (
     ndau>=4
     &&
     (
-    production == TVar::JJQCD || production == TVar::JJQCD_S || production == TVar::JJQCD_TU
+    production == TVar::JJQCD/* || production == TVar::JJQCD_S || production == TVar::JJQCD_TU*/
     || production == TVar::JJEWQCD || production == TVar::JJEWQCD_S || production == TVar::JJEWQCD_TU
     )
     &&
@@ -1598,6 +1691,7 @@ bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& p
     breit_.mass3 =masses_mcfm_.zmass;
     breit_.width3=masses_mcfm_.zwidth;
 
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
     // JJ + WW->4f (QCD)
@@ -1605,7 +1699,7 @@ bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& p
     ndau>=4
     &&
     (
-    production == TVar::JJQCD || production == TVar::JJQCD_S || production == TVar::JJQCD_TU
+    production == TVar::JJQCD/* || production == TVar::JJQCD_S || production == TVar::JJQCD_TU*/
     || production == TVar::JJEWQCD || production == TVar::JJEWQCD_S || production == TVar::JJEWQCD_TU
     )
     &&
@@ -1628,13 +1722,15 @@ bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& p
     breit_.mass3 =masses_mcfm_.wmass;
     breit_.width3=masses_mcfm_.wwidth;
 
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+
   }
     // JJ + VV->4f (QCD)
   else if (
     ndau>=4
     &&
     (
-    production == TVar::JJQCD || production == TVar::JJQCD_S || production == TVar::JJQCD_TU
+    production == TVar::JJQCD/* || production == TVar::JJQCD_S || production == TVar::JJQCD_TU*/
     || production == TVar::JJEWQCD || production == TVar::JJEWQCD_S || production == TVar::JJEWQCD_TU
     )
     &&
@@ -1657,12 +1753,53 @@ bool TUtil::MCFM_chooser(const TVar::Process& process, const TVar::Production& p
   delete[] pId;
   return result;
 }
-bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar::Production& production, const simple_event_record& mela_event, vector<int>* partOrder, vector<int>* apartOrder){
+bool TUtil::MCFM_SetupParticleCouplings(
+  const TVar::Process& process, const TVar::Production& production,
+  const TVar::VerbosityLevel& verbosity,
+  const simple_event_record& mela_event,
+  vector<int>* partOrder, vector<int>* apartOrder
+  ){
   bool result=true;
 
+  // Initialize Z couplings
+  zcouple_.q1=0;
+  zcouple_.l1=0;
+  zcouple_.r1=0;
+  zcouple_.q2=0;
+  zcouple_.l2=0;
+  zcouple_.r2=0;
+
+  // Initialize plabels
+  TString strplabel[mxpart];
+  for (int ip=0; ip<mxpart; ip++) strplabel[ip]="  ";
+
+  // Channel checks
   unsigned int ndau = mela_event.pDaughters.size();
-  unsigned int napart = mela_event.pAssociated.size();
   if (ndau<1) return false;
+  unsigned int napart = mela_event.pAssociated.size();
+  bool isWW = (ndau>=4 && PDGHelpers::isAWBoson(mela_event.intermediateVid.at(0)) && PDGHelpers::isAWBoson(mela_event.intermediateVid.at(1)));
+  bool isZZ = (ndau>=4 && PDGHelpers::isAZBoson(mela_event.intermediateVid.at(0)) && PDGHelpers::isAZBoson(mela_event.intermediateVid.at(1)));
+  //bool hasZZ4fInterf = isZZ && abs(pId[0])==abs(pId[2]) && abs(pId[1])==abs(pId[3]) && !PDGHelpers::isAnUnknownJet(pId[0]) && !PDGHelpers::isAnUnknownJet(pId[3]);
+  bool isZJJ = false;
+  if (ndau>=4) isZJJ = PDGHelpers::isAZBoson(mela_event.intermediateVid.at(0)); // No check on whether daughters 2 and 3 are jets. Notice both isZZ and isZJJ could be true
+  bool isZG = (ndau>=3 && PDGHelpers::isAZBoson(mela_event.intermediateVid.at(0)) && PDGHelpers::isAPhoton(mela_event.intermediateVid.at(1)));
+  bool isGG = (ndau>=2 && PDGHelpers::isAPhoton(mela_event.intermediateVid.at(0)) && PDGHelpers::isAPhoton(mela_event.intermediateVid.at(1)));
+  bool hasZ1 = (isZZ || isZG || isZJJ);
+  bool hasZ2 = isZZ;
+  bool hasW1 = isWW;
+  bool hasW2 = isWW;
+  if (verbosity>=TVar::DEBUG){
+    cout << "TUtil::MCFM_SetupParticleCouplings(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << "):\nInitial configuration ";
+    if (isGG) cout << "is GG.";
+    else if (isZG) cout << "is ZG.";
+    else if (isZZ) cout << "is ZZ.";
+    else if (isZJJ) cout << "is ZJJ.";
+    else if (isWW) cout << "is WW.";
+    else cout << "has no valid decay!";
+    cout << endl;
+  }
+
+  // Setup the ordering arrays
   int* pApartOrder = 0;
   int* pApartId = 0;
   if (napart>0){
@@ -1670,7 +1807,7 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
     pApartId = new int[napart];
     for (unsigned int ip=0; ip<napart; ip++){
       pApartOrder[ip]=ip; // This order USUALLY does not change!
-      pApartId[ip]=mela_event.pDaughters.at(ip).first; // This order does not change.
+      pApartId[ip]=mela_event.pAssociated.at(ip).first; // This order does not change.
     }
   }
   int* pOrder = new int[ndau];
@@ -1683,27 +1820,43 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
     pWOrder[ip]=ip;
     pId[ip]=mela_event.pDaughters.at(ip).first; // This order does not change.
   }
-  bool isWW = (ndau>=4 && PDGHelpers::isAWBoson(mela_event.intermediateVid.at(0)) && PDGHelpers::isAWBoson(mela_event.intermediateVid.at(1)));
-  bool isZZ = (ndau>=4 && PDGHelpers::isAZBoson(mela_event.intermediateVid.at(0)) && PDGHelpers::isAZBoson(mela_event.intermediateVid.at(1)));
-  //bool hasZZ4fInterf = isZZ && abs(pId[0])==abs(pId[2]) && abs(pId[1])==abs(pId[3]) && !PDGHelpers::isAnUnknownJet(pId[0]) && !PDGHelpers::isAnUnknownJet(pId[3]);
-  bool isZJJ = false;
-  if (ndau>=4) isZJJ = (PDGHelpers::isAZBoson(mela_event.intermediateVid.at(0)) && PDGHelpers::isAJet(pId[2]) && PDGHelpers::isAJet(pId[3])); // Notice both isZZ and isZJJ could be true
-  bool isZG = (ndau>=3 && PDGHelpers::isAZBoson(mela_event.intermediateVid.at(0)) && PDGHelpers::isAPhoton(mela_event.intermediateVid.at(1)));
-  bool isGG = (ndau>=2 && PDGHelpers::isAPhoton(mela_event.intermediateVid.at(0)) && PDGHelpers::isAPhoton(mela_event.intermediateVid.at(1)));
 
-  bool hasZ1 = (isZZ || isZG || isZJJ);
-  bool hasZ2 = isZZ;
-  bool hasW1 = isWW;
-  bool hasW2 = isWW;
+  // Special case checks
+  bool useQQBZGAM = (isZG && process == TVar::bkgZGamma && (production == TVar::ZZQQB || production == TVar::ZZINDEPENDENT));
+  bool useQQVVQQ =
+    (
+    ((isZZ && (process==TVar::bkgZZ || process==TVar::HSMHiggs || process == TVar::bkgZZ_SMHiggs))
+    || (isWW && (process==TVar::bkgWW || process==TVar::HSMHiggs || process == TVar::bkgWW_SMHiggs))
+    || ((isZZ || isWW) && (process==TVar::bkgWWZZ || process==TVar::HSMHiggs_WWZZ || process == TVar::bkgWWZZ_SMHiggs)))
+    &&
+    (production==TVar::Had_WH || production==TVar::Had_ZH
+    || production==TVar::Had_WH_S || production==TVar::Had_ZH_S
+    || production==TVar::Had_WH_TU || production==TVar::Had_ZH_TU
+    || production==TVar::Lep_WH || production==TVar::Lep_ZH
+    || production==TVar::Lep_WH_S || production==TVar::Lep_ZH_S
+    || production==TVar::Lep_WH_TU || production==TVar::Lep_ZH_TU
+    || production==TVar::JJVBF || production==TVar::JJEW
+    || production==TVar::JJVBF_S || production==TVar::JJEW_S
+    || production==TVar::JJVBF_TU || production==TVar::JJEW_TU)
+    );
+  bool useQQVVQQstrong =
+    (
+    ((isZZ && process==TVar::bkgZZ) || (isWW && process==TVar::bkgWW) || ((isZZ || isWW) && process==TVar::bkgWWZZ))
+    &&
+    (production == TVar::JJQCD || production == TVar::JJQCD_S || production == TVar::JJQCD_TU)
+    );
+  bool useQQVVQQboth =
+    (
+    ((isZZ && process==TVar::bkgZZ) || (isWW && process==TVar::bkgWW) || ((isZZ || isWW) && process==TVar::bkgWWZZ))
+    &&
+    (production == TVar::JJEWQCD || production == TVar::JJEWQCD_S || production == TVar::JJEWQCD_TU)
+    );
+  bool useQQVVQQany = useQQVVQQ || useQQVVQQstrong || useQQVVQQboth;
 
-  // Initialize Z couplings
-  zcouple_.q1=0;
-  zcouple_.l1=0;
-  zcouple_.r1=0;
-  zcouple_.q2=0;
-  zcouple_.l2=0;
-  zcouple_.r2=0;
-
+  /**************************/
+  /* Begin the setup checks */
+  /**************************/
+  // Check first if the decay mode is valid and the number of associated particles is consistent with the requested number
   if (
     !(isWW || isZZ || isZJJ || isZG || isGG) // Only ZZ, WW, ZG or GG supported in MCFM
     ||
@@ -1718,13 +1871,21 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
       swap(pZOrder[0], pZOrder[2]);
 
       int V1id, V2id;
-      if (!PDGHelpers::isAnUnknownJet(pId[0]) && !PDGHelpers::isAnUnknownJet(pId[3])) V1id = PDGHelpers::getCoupledVertex(pId[0], pId[3]);
+      if (!PDGHelpers::isAnUnknownJet(pId[pZOrder[0]]) && !PDGHelpers::isAnUnknownJet(pId[pZOrder[1]])) V1id = PDGHelpers::getCoupledVertex(pId[pZOrder[0]], pId[pZOrder[1]]);
       else V1id = 23;
-      if (!PDGHelpers::isAnUnknownJet(pId[2]) && !PDGHelpers::isAnUnknownJet(pId[1])) V2id = PDGHelpers::getCoupledVertex(pId[2], pId[1]);
+      if (!PDGHelpers::isAnUnknownJet(pId[pZOrder[2]]) && !PDGHelpers::isAnUnknownJet(pId[pZOrder[3]])) V2id = PDGHelpers::getCoupledVertex(pId[pZOrder[2]], pId[pZOrder[3]]);
       else V2id = 23;
-      if (PDGHelpers::isAZBoson(V1id) && PDGHelpers::isAZBoson(V2id)){
-        hasZ1=true;
-        hasZ2=true;
+      hasZ1=hasZ1 || PDGHelpers::isAZBoson(V1id);
+      hasZ2=hasZ2 || PDGHelpers::isAZBoson(V2id);
+      if (!hasZ1 && hasZ2){
+        swap(pZOrder[0], pZOrder[2]);
+        swap(pZOrder[1], pZOrder[3]);
+        swap(hasZ1, hasZ2);
+      }
+      if (verbosity>=TVar::DEBUG){
+        if (hasZ1) cout << "TUtil::MCFM_SetupParticleCouplings: Found a Z1";
+        if (hasZ2) cout << " and a Z2";
+        if (hasZ1 || hasZ2) cout << " in WW." << endl;
       }
     }
     if (isZZ && !hasW1 && !hasW2){
@@ -1743,18 +1904,39 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
         hasW1=true;
         hasW2=true;
       }
+      if (verbosity>=TVar::DEBUG){
+        if (hasW1) cout << "TUtil::MCFM_SetupParticleCouplings: Found a W1(" << V1id << ")";
+        if (hasW2) cout << " and a W2(" << V2id << ")";
+        if (hasW1 || hasW2) cout << " in ZZ." << endl;
+      }
     }
 
     /*******************/
     /* Particle labels */
     /*******************/
+    // Mother particles
+    // Default labels for most processes
+    strplabel[0]="pp";
+    strplabel[1]="pp";
+    if (useQQVVQQany){ // Special case if using qqZZ/VVqq*
+      if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_SetupParticleCouplings: Setting up mother labels for MCFM:";
+      for (int ip=0; ip<min(2, (int)mela_event.pMothers.size()); ip++){
+        const int* idmot = &(mela_event.pMothers.at(ip).first);
+        if (!PDGHelpers::isAnUnknownJet((*idmot))) strplabel[ip]=TUtil::GetMCFMParticleLabel(*idmot);
+        if (verbosity>=TVar::DEBUG) cout << " " << *idmot << "=" << strplabel[ip];
+        // No need to check unknown parton case, already "pp"
+      }
+      if (verbosity>=TVar::DEBUG) cout << endl;
+    }
+
+    // Decay and associated particles
     // 0-jet processes, set only decay labels (and plabel[5/6]=pp due to NLO stuff)
     if (isZJJ && production == TVar::JJQCD && process == TVar::bkgZJets){
-      sprintf((plabel_.plabel)[2], "el");
-      sprintf((plabel_.plabel)[3], "ea");
-      sprintf((plabel_.plabel)[4], "pp");
-      sprintf((plabel_.plabel)[5], "pp");
-      sprintf((plabel_.plabel)[6], "pp");
+      strplabel[2]="el";
+      strplabel[3]="ea";
+      strplabel[4]="pp";
+      strplabel[5]="pp";
+      strplabel[6]="pp";
     }
     else if (production == TVar::ZZGG && (
       (isWW && (process==TVar::bkgWW || process==TVar::HSMHiggs || process == TVar::bkgWW_SMHiggs))
@@ -1762,43 +1944,45 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
       ((isWW || isZZ) && (process==TVar::bkgWWZZ || process==TVar::HSMHiggs_WWZZ || process == TVar::bkgWWZZ_SMHiggs))
       )
       ){
-      sprintf((plabel_.plabel)[2], "el");
-      sprintf((plabel_.plabel)[3], "ea");
-      sprintf((plabel_.plabel)[4], "nl");
-      sprintf((plabel_.plabel)[5], "na");
-      sprintf((plabel_.plabel)[6], "pp");
+      strplabel[2]="el";
+      strplabel[3]="ea";
+      strplabel[4]="nl";
+      strplabel[5]="na";
+      strplabel[6]="pp";
 
-      if (isWW && ((!hasZ1 && !hasZ2) || (process==TVar::bkgWW || process==TVar::HSMHiggs || process == TVar::bkgWW_SMHiggs))) sprintf(runstring_.runstring, "test_ww");
-      else if (isZZ && (!hasW1 && !hasW2)) sprintf(runstring_.runstring, "test_zz");
+      string strrun = runstring_.runstring;
+      if (isWW && ((!hasZ1 || !hasZ2) || (process==TVar::bkgWW || process==TVar::HSMHiggs || process == TVar::bkgWW_SMHiggs))) strrun += "_ww";
+      else if (isZZ && (!hasW1 || !hasW2)) strrun += "_zz";
+      sprintf(runstring_.runstring, strrun.c_str());
     }
     else if (isZG && (production == TVar::ZZQQB || production == TVar::ZZINDEPENDENT) && process == TVar::bkgZGamma){
       lastphot_.lastphot=5;
-      sprintf((plabel_.plabel)[4], "ga");
-      sprintf((plabel_.plabel)[5], "pp");
+      strplabel[4]="ga";
+      strplabel[5]="pp";
     }
     else if (isWW && (production == TVar::ZZINDEPENDENT || production == TVar::ZZQQB) && process == TVar::bkgWW){
-      sprintf((plabel_.plabel)[6], "pp");
+      strplabel[6]="pp";
       zcouple_.l1=1.;
 
       if (PDGHelpers::isANeutrino(pId[pWOrder[0]])){
-        sprintf((plabel_.plabel)[2], "nl");
-        sprintf((plabel_.plabel)[3], "ea");
+        strplabel[2]="nl";
+        strplabel[3]="ea";
       }
       else if (PDGHelpers::isAJet(pId[pWOrder[1]])){
-        sprintf((plabel_.plabel)[2], "qj");
-        sprintf((plabel_.plabel)[3], "qj");
+        strplabel[2]="qj";
+        strplabel[3]="qj";
         zcouple_.l1 *= sqrt(6.);
         nqcdjets_.nqcdjets += 2;
       }
       else result = false;
 
       if (PDGHelpers::isANeutrino(pId[pWOrder[3]])){
-        sprintf((plabel_.plabel)[4], "el");
-        sprintf((plabel_.plabel)[5], "na");
+        strplabel[4]="el";
+        strplabel[5]="na";
       }
       else if (PDGHelpers::isAJet(pId[pWOrder[3]])){
-        sprintf((plabel_.plabel)[4], "qj");
-        sprintf((plabel_.plabel)[5], "qj");
+        strplabel[4]="qj";
+        strplabel[5]="qj";
         zcouple_.l1 *= sqrt(6.);
         nqcdjets_.nqcdjets += 2;
       }
@@ -1807,6 +1991,7 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
     }
     // 2-jet processes
     // Most of the associated particle labels are set below
+    // VH productions loop over all possible associated particles to assign V daughters as the first two particles in particle-antiparticle order
     else if ((isWW || isZZ) && napart>=2 && (production==TVar::Lep_ZH || production==TVar::Lep_ZH_S || production==TVar::Lep_ZH_TU)){
       spinzerohiggs_anomcoupl_.channeltoggle_stu = int(production==TVar::Lep_ZH)*2 + int(production==TVar::Lep_ZH_TU)*1 + int(production==TVar::Lep_ZH_S)*0;
       spinzerohiggs_anomcoupl_.vvhvvtoggle_vbfvh = 1;
@@ -1814,36 +1999,56 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
       bool hasZnn=false;
       for (unsigned int ix=0; ix<napart; ix++){
         if (PDGHelpers::isAJet(pApartId[ix])) continue;
-        bool found=false;
         for (unsigned int iy=ix+1; iy<napart; iy++){
           if (PDGHelpers::isAJet(pApartId[iy])) continue;
           int Vid = PDGHelpers::getCoupledVertex(pApartId[ix], pApartId[iy]);
           if (PDGHelpers::isAZBoson(Vid) && PDGHelpers::isALepton(pApartId[ix])){
             int i1=ix; int i2=iy;
             if (pApartId[ix]<0){ swap(i1, i2); }
-            swap(pApartOrder[0], pApartOrder[i1]); swap(pApartOrder[1], pApartOrder[i2]);
+            int* tmpOrder = new int[napart];
+            tmpOrder[0] = i1; tmpOrder[1] = i2;
+            unsigned int ctr=2;
+            for (unsigned int ipart=0; ipart<napart; ipart++){ if (ctr<napart && pApartOrder[ipart]!=i1 && pApartOrder[ipart]!=i2){ tmpOrder[ctr] = pApartOrder[ipart]; ctr++; } }
+            delete[] pApartOrder; pApartOrder = tmpOrder;
             hasZll=true;
-            found=true;
             break;
           }
           else if (PDGHelpers::isAZBoson(Vid) && PDGHelpers::isANeutrino(pApartId[ix])){
             int i1=ix; int i2=iy;
             if (pApartId[ix]<0){ swap(i1, i2); }
-            swap(pApartOrder[0], pApartOrder[i1]); swap(pApartOrder[1], pApartOrder[i2]);
+            int* tmpOrder = new int[napart];
+            tmpOrder[0] = i1; tmpOrder[1] = i2;
+            unsigned int ctr=2;
+            for (unsigned int ipart=0; ipart<napart; ipart++){ if (ctr<napart && pApartOrder[ipart]!=i1 && pApartOrder[ipart]!=i2){ tmpOrder[ctr] = pApartOrder[ipart]; ctr++; } }
+            delete[] pApartOrder; pApartOrder = tmpOrder;
             hasZnn=true;
-            found=true;
             break;
           }
-          if (found) break;
+          if (hasZll || hasZnn) break;
+        }
+      }
+      unsigned int iout=6;
+      unsigned int jout=7;
+      if (useQQVVQQany){
+        int qqvvqq_apartordering[2];
+        TMCFMUtils::AssociatedParticleOrdering_QQVVQQAny(
+          mela_event.pMothers.at(0).first, mela_event.pMothers.at(1).first,
+          pApartId[pApartOrder[0]], pApartId[pApartOrder[1]],
+          qqvvqq_apartordering
+          );
+        if (qqvvqq_apartordering[0]==-1 || qqvvqq_apartordering[1]==-1) result=false;
+        else if (qqvvqq_apartordering[0]>qqvvqq_apartordering[1]){
+          swap(iout, jout);
+          swap(pApartOrder[0], pApartOrder[1]);
         }
       }
       if (hasZll){
-        sprintf((plabel_.plabel)[6], "el");
-        sprintf((plabel_.plabel)[7], "ea");
+        strplabel[iout]="el";
+        strplabel[jout]="ea";
       }
       else if (hasZnn){
-        sprintf((plabel_.plabel)[6], "nl");
-        sprintf((plabel_.plabel)[7], "na");
+        strplabel[iout]="nl";
+        strplabel[jout]="na";
       }
       else result = false;
     }
@@ -1854,7 +2059,6 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
       bool hasWminus=false;
       for (unsigned int ix=0; ix<napart; ix++){
         if (PDGHelpers::isAJet(pApartId[ix])) continue;
-        bool found=false;
         for (unsigned int iy=ix; iy<napart; iy++){
           if (PDGHelpers::isAJet(pApartId[iy])) continue;
           int Vid = PDGHelpers::getCoupledVertex(pApartId[ix], pApartId[iy]);
@@ -1869,9 +2073,12 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
             ){
             int i1=ix; int i2=iy;
             if (pApartId[ix]<0){ swap(i1, i2); }
-            swap(pApartOrder[0], pApartOrder[i1]); swap(pApartOrder[1], pApartOrder[i2]);
+            int* tmpOrder = new int[napart];
+            tmpOrder[0] = i1; tmpOrder[1] = i2;
+            unsigned int ctr=2;
+            for (unsigned int ipart=0; ipart<napart; ipart++){ if (ctr<napart && pApartOrder[ipart]!=i1 && pApartOrder[ipart]!=i2){ tmpOrder[ctr] = pApartOrder[ipart]; ctr++; } }
+            delete[] pApartOrder; pApartOrder = tmpOrder;
             hasWplus=true;
-            found=true;
             break;
           }
           else if (
@@ -1885,21 +2092,39 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
             ){
             int i1=ix; int i2=iy;
             if (pApartId[ix]<0){ swap(i1, i2); }
-            swap(pApartOrder[0], pApartOrder[i1]); swap(pApartOrder[1], pApartOrder[i2]);
+            int* tmpOrder = new int[napart];
+            tmpOrder[0] = i1; tmpOrder[1] = i2;
+            unsigned int ctr=2;
+            for (unsigned int ipart=0; ipart<napart; ipart++){ if (ctr<napart && pApartOrder[ipart]!=i1 && pApartOrder[ipart]!=i2){ tmpOrder[ctr] = pApartOrder[ipart]; ctr++; } }
+            delete[] pApartOrder; pApartOrder = tmpOrder;
             hasWminus=true;
-            found=true;
             break;
           }
         }
-        if (found) break;
+        if (hasWplus || hasWminus) break;
+      }
+      unsigned int iout=6;
+      unsigned int jout=7;
+      if (useQQVVQQany){
+        int qqvvqq_apartordering[2];
+        TMCFMUtils::AssociatedParticleOrdering_QQVVQQAny(
+          mela_event.pMothers.at(0).first, mela_event.pMothers.at(1).first,
+          pApartId[pApartOrder[0]], pApartId[pApartOrder[1]],
+          qqvvqq_apartordering
+          );
+        if (qqvvqq_apartordering[0]==-1 || qqvvqq_apartordering[1]==-1) result=false;
+        else if (qqvvqq_apartordering[0]>qqvvqq_apartordering[1]){
+          swap(iout, jout);
+          swap(pApartOrder[0], pApartOrder[1]);
+        }
       }
       if (hasWplus){ // W+
-        sprintf((plabel_.plabel)[6], "nl");
-        sprintf((plabel_.plabel)[7], "ea");
+        strplabel[iout]="nl";
+        strplabel[jout]="ea";
       }
       else if (hasWminus){ // W-
-        sprintf((plabel_.plabel)[6], "el");
-        sprintf((plabel_.plabel)[7], "na");
+        strplabel[iout]="el";
+        strplabel[jout]="na";
       }
       else result = false;
     }
@@ -1911,7 +2136,6 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
       bool hasZjj=false;
       for (unsigned int ix=0; ix<napart; ix++){
         if (!PDGHelpers::isAJet(pApartId[ix])) continue;
-        bool found=false;
         for (unsigned int iy=ix+1; iy<napart; iy++){
           if (!PDGHelpers::isAJet(pApartId[iy])) continue;
           int Vid;
@@ -1920,39 +2144,55 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
           if (PDGHelpers::isAZBoson(Vid) && (PDGHelpers::isUpTypeQuark(pApartId[ix]) || PDGHelpers::isUpTypeQuark(pApartId[iy]))){
             int i1=ix; int i2=iy;
             if (pApartId[ix]<0 || pApartId[iy]>0){ swap(i1, i2); }
-            swap(pApartOrder[0], pApartOrder[i1]); swap(pApartOrder[1], pApartOrder[i2]);
+            int* tmpOrder = new int[napart];
+            tmpOrder[0] = i1; tmpOrder[1] = i2;
+            unsigned int ctr=2;
+            for (unsigned int ipart=0; ipart<napart; ipart++){ if (ctr<napart && pApartOrder[ipart]!=i1 && pApartOrder[ipart]!=i2){ tmpOrder[ctr] = pApartOrder[ipart]; ctr++; } }
+            delete[] pApartOrder; pApartOrder = tmpOrder;
             hasZuu=true;
-            found=true;
             break;
           }
           else if (PDGHelpers::isAZBoson(Vid) && (PDGHelpers::isDownTypeQuark(pApartId[ix]) || PDGHelpers::isDownTypeQuark(pApartId[iy]))){
             int i1=ix; int i2=iy;
             if (pApartId[ix]<0 || pApartId[iy]>0){ swap(i1, i2); }
-            swap(pApartOrder[0], pApartOrder[i1]); swap(pApartOrder[1], pApartOrder[i2]);
+            int* tmpOrder = new int[napart];
+            tmpOrder[0] = i1; tmpOrder[1] = i2;
+            unsigned int ctr=2;
+            for (unsigned int ipart=0; ipart<napart; ipart++){ if (ctr<napart && pApartOrder[ipart]!=i1 && pApartOrder[ipart]!=i2){ tmpOrder[ctr] = pApartOrder[ipart]; ctr++; } }
+            delete[] pApartOrder; pApartOrder = tmpOrder;
             hasZdd=true;
-            found=true;
             break;
           }
           else if (PDGHelpers::isAZBoson(Vid)){
-            pApartOrder[0]=ix; pApartOrder[1]=iy;
+            int i1=ix; int i2=iy;
+            int* tmpOrder = new int[napart];
+            tmpOrder[0] = i1; tmpOrder[1] = i2;
+            unsigned int ctr=2;
+            for (unsigned int ipart=0; ipart<napart; ipart++){ if (ctr<napart && pApartOrder[ipart]!=i1 && pApartOrder[ipart]!=i2){ tmpOrder[ctr] = pApartOrder[ipart]; ctr++; } }
+            delete[] pApartOrder; pApartOrder = tmpOrder;
             hasZjj=true;
-            found=true;
             break;
           }
-          if (found) break;
+          if (hasZuu || hasZdd || hasZjj) break;
         }
       }
-      if (hasZuu){
-        sprintf((plabel_.plabel)[6], "uj");
-        sprintf((plabel_.plabel)[7], "ua");
+      if (useQQVVQQany){
+        int qqvvqq_apartordering[2];
+        TMCFMUtils::AssociatedParticleOrdering_QQVVQQAny(
+          mela_event.pMothers.at(0).first, mela_event.pMothers.at(1).first,
+          pApartId[pApartOrder[0]], pApartId[pApartOrder[1]],
+          qqvvqq_apartordering
+          );
+        if (qqvvqq_apartordering[0]==-1 || qqvvqq_apartordering[1]==-1) result=false;
+        else if (qqvvqq_apartordering[0]>qqvvqq_apartordering[1]) swap(pApartOrder[0], pApartOrder[1]);
       }
-      else if (hasZdd){
-        sprintf((plabel_.plabel)[6], "dj");
-        sprintf((plabel_.plabel)[7], "da");
+      if (hasZuu || hasZdd){
+        strplabel[6]=TUtil::GetMCFMParticleLabel(pApartId[pApartOrder[0]], true);
+        strplabel[7]=TUtil::GetMCFMParticleLabel(pApartId[pApartOrder[1]], true);
       }
       else if (hasZjj){
-        sprintf((plabel_.plabel)[6], "qj");
-        sprintf((plabel_.plabel)[7], "qj");
+        strplabel[6]="qj";
+        strplabel[7]="qj";
       }
       else result = false;
     }
@@ -1964,11 +2204,14 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
       bool hasWjj=false;
       for (unsigned int ix=0; ix<napart; ix++){
         if (!PDGHelpers::isAJet(pApartId[ix])) continue;
-        bool found=false;
         for (unsigned int iy=ix; iy<napart; iy++){
           if (!PDGHelpers::isAJet(pApartId[iy])) continue;
           int Vid;
           if (!PDGHelpers::isAnUnknownJet(pApartId[ix]) && !PDGHelpers::isAnUnknownJet(pApartId[iy])) Vid = PDGHelpers::getCoupledVertex(pApartId[ix], pApartId[iy]);
+          else if (
+            (PDGHelpers::isUpTypeQuark(pApartId[ix]) && pApartId[ix]<0) || (PDGHelpers::isUpTypeQuark(pApartId[iy]) && pApartId[iy]<0) ||
+            (PDGHelpers::isDownTypeQuark(pApartId[ix]) && pApartId[ix]>0) || (PDGHelpers::isDownTypeQuark(pApartId[iy]) && pApartId[iy]>0)
+            ) Vid=-24;
           else Vid = 24;
           if (
             PDGHelpers::isAWBoson(Vid)
@@ -1981,9 +2224,12 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
             ){
             int i1=ix; int i2=iy;
             if (pApartId[ix]<0 || pApartId[iy]>0){ swap(i1, i2); }
-            swap(pApartOrder[0], pApartOrder[i1]); swap(pApartOrder[1], pApartOrder[i2]);
+            int* tmpOrder = new int[napart];
+            tmpOrder[0] = i1; tmpOrder[1] = i2;
+            unsigned int ctr=2;
+            for (unsigned int ipart=0; ipart<napart; ipart++){ if (ctr<napart && pApartOrder[ipart]!=i1 && pApartOrder[ipart]!=i2){ tmpOrder[ctr] = pApartOrder[ipart]; ctr++; } }
+            delete[] pApartOrder; pApartOrder = tmpOrder;
             hasWplus=true;
-            found=true;
             break;
           }
           else if (
@@ -1997,51 +2243,100 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
             ){
             int i1=ix; int i2=iy;
             if (pApartId[ix]<0 || pApartId[iy]>0){ swap(i1, i2); }
-            swap(pApartOrder[0], pApartOrder[i1]); swap(pApartOrder[1], pApartOrder[i2]);
+            int* tmpOrder = new int[napart];
+            tmpOrder[0] = i1; tmpOrder[1] = i2;
+            unsigned int ctr=2;
+            for (unsigned int ipart=0; ipart<napart; ipart++){ if (ctr<napart && pApartOrder[ipart]!=i1 && pApartOrder[ipart]!=i2){ tmpOrder[ctr] = pApartOrder[ipart]; ctr++; } }
+            delete[] pApartOrder; pApartOrder = tmpOrder;
             hasWminus=true;
-            found=true;
             break;
           }
           else if (PDGHelpers::isAWBoson(Vid)){
-            pApartOrder[0]=ix; pApartOrder[1]=iy;
+            int i1=ix; int i2=iy;
+            int* tmpOrder = new int[napart];
+            tmpOrder[0] = i1; tmpOrder[1] = i2;
+            unsigned int ctr=2;
+            for (unsigned int ipart=0; ipart<napart; ipart++){ if (ctr<napart && pApartOrder[ipart]!=i1 && pApartOrder[ipart]!=i2){ tmpOrder[ctr] = pApartOrder[ipart]; ctr++; } }
+            delete[] pApartOrder; pApartOrder = tmpOrder;
             hasWjj=true;
-            found=true;
             break;
           }
         }
-        if (found) break;
+        if (hasWplus || hasWminus || hasWjj) break;
       }
-      if (hasWplus){ // W+
-        sprintf((plabel_.plabel)[6], "uj");
-        sprintf((plabel_.plabel)[7], "da");
+      if (useQQVVQQany){
+        int qqvvqq_apartordering[2];
+        TMCFMUtils::AssociatedParticleOrdering_QQVVQQAny(
+          mela_event.pMothers.at(0).first, mela_event.pMothers.at(1).first,
+          pApartId[pApartOrder[0]], pApartId[pApartOrder[1]],
+          qqvvqq_apartordering
+          );
+        if (qqvvqq_apartordering[0]==-1 || qqvvqq_apartordering[1]==-1) result=false;
+        else if (qqvvqq_apartordering[0]>qqvvqq_apartordering[1]) swap(pApartOrder[0], pApartOrder[1]);
       }
-      else if (hasWminus){ // W-
-        sprintf((plabel_.plabel)[6], "dj");
-        sprintf((plabel_.plabel)[7], "ua");
+      if (hasWplus || hasWminus){ // W+ or W-
+        strplabel[6]=TUtil::GetMCFMParticleLabel(pApartId[pApartOrder[0]], true);
+        strplabel[7]=TUtil::GetMCFMParticleLabel(pApartId[pApartOrder[1]], true);
       }
       else if (hasWjj){ // W+/-
-        sprintf((plabel_.plabel)[6], "qj");
-        sprintf((plabel_.plabel)[7], "qj");
+        strplabel[6]="qj";
+        strplabel[7]="qj";
       }
       else result = false;
     }
     else if ((isWW || isZZ) && napart>=2 && (production==TVar::JJQCD || production==TVar::JJQCD_S || production==TVar::JJQCD_TU)){
       spinzerohiggs_anomcoupl_.channeltoggle_stu = int(production==TVar::JJQCD)*2 + int(production==TVar::JJQCD_TU)*1 + int(production==TVar::JJQCD_S)*0;;
-      spinzerohiggs_anomcoupl_.vvhvvtoggle_vbfvh = 0; // Doesn't matter, already JJQCD
-      sprintf((plabel_.plabel)[6], "qj");
-      sprintf((plabel_.plabel)[7], "qj");
+      spinzerohiggs_anomcoupl_.vvhvvtoggle_vbfvh = 2; // Doesn't matter, already JJQCD
+      if (useQQVVQQany){
+        int qqvvqq_apartordering[2];
+        TMCFMUtils::AssociatedParticleOrdering_QQVVQQAny(
+          mela_event.pMothers.at(0).first, mela_event.pMothers.at(1).first,
+          pApartId[pApartOrder[0]], pApartId[pApartOrder[1]],
+          qqvvqq_apartordering
+          );
+        if (qqvvqq_apartordering[0]==-1 || qqvvqq_apartordering[1]==-1) result=false;
+        else if (qqvvqq_apartordering[0]>qqvvqq_apartordering[1]) swap(pApartOrder[0], pApartOrder[1]);
+      }
+      strplabel[6]=TUtil::GetMCFMParticleLabel(pApartId[pApartOrder[0]]);
+      strplabel[7]=TUtil::GetMCFMParticleLabel(pApartId[pApartOrder[1]]);
     }
     else if ((isWW || isZZ) && napart>=2 && (production==TVar::JJVBF || production==TVar::JJVBF_S || production==TVar::JJVBF_TU)){
       spinzerohiggs_anomcoupl_.channeltoggle_stu = int(production==TVar::JJVBF)*2 + int(production==TVar::JJVBF_TU)*1 + int(production==TVar::JJVBF_S)*0;;
       spinzerohiggs_anomcoupl_.vvhvvtoggle_vbfvh = 0; // VBF-only process
-      sprintf((plabel_.plabel)[6], "qj");
-      sprintf((plabel_.plabel)[7], "qj");
+      if (useQQVVQQany){
+        int qqvvqq_apartordering[2];
+        TMCFMUtils::AssociatedParticleOrdering_QQVVQQAny(
+          mela_event.pMothers.at(0).first, mela_event.pMothers.at(1).first,
+          pApartId[pApartOrder[0]], pApartId[pApartOrder[1]],
+          qqvvqq_apartordering
+          );
+        if (qqvvqq_apartordering[0]==-1 || qqvvqq_apartordering[1]==-1) result=false;
+        else if (qqvvqq_apartordering[0]>qqvvqq_apartordering[1]) swap(pApartOrder[0], pApartOrder[1]);
+        /*
+        if (verbosity>=TVar::DEBUG){
+          cout << "AID[0]=" << pApartId[pApartOrder[0]] << "(@" << pApartOrder[0] << ")" << endl;
+          cout << "AID[1]=" << pApartId[pApartOrder[1]] << "(@" << pApartOrder[1] << ")" << endl;
+        }
+        */
+      }
+      strplabel[6]=TUtil::GetMCFMParticleLabel(pApartId[pApartOrder[0]], true);
+      strplabel[7]=TUtil::GetMCFMParticleLabel(pApartId[pApartOrder[1]], true);
     }
     else if ((isWW || isZZ) && napart>=2 && (production==TVar::JJEW || production==TVar::JJEWQCD || production==TVar::JJEW_S || production==TVar::JJEWQCD_S || production==TVar::JJEW_TU || production==TVar::JJEWQCD_TU)){
       spinzerohiggs_anomcoupl_.channeltoggle_stu = int(production==TVar::JJEWQCD || production==TVar::JJEW)*2 + int(production==TVar::JJEWQCD_TU || production==TVar::JJEW_TU)*1 + int(production==TVar::JJEWQCD_S || production==TVar::JJEW_S)*0;;
       spinzerohiggs_anomcoupl_.vvhvvtoggle_vbfvh = 2; // VBF+VH process
-      sprintf((plabel_.plabel)[6], "qj");
-      sprintf((plabel_.plabel)[7], "qj");
+      if (useQQVVQQany){
+        int qqvvqq_apartordering[2];
+        TMCFMUtils::AssociatedParticleOrdering_QQVVQQAny(
+          mela_event.pMothers.at(0).first, mela_event.pMothers.at(1).first,
+          pApartId[pApartOrder[0]], pApartId[pApartOrder[1]],
+          qqvvqq_apartordering
+          );
+        if (qqvvqq_apartordering[0]==-1 || qqvvqq_apartordering[1]==-1) result=false;
+        else if (qqvvqq_apartordering[0]>qqvvqq_apartordering[1]) swap(pApartOrder[0], pApartOrder[1]);
+      }
+      strplabel[6]=TUtil::GetMCFMParticleLabel(pApartId[pApartOrder[0]]);
+      strplabel[7]=TUtil::GetMCFMParticleLabel(pApartId[pApartOrder[1]]);
     }
 
     // Couplings for Z1
@@ -2053,36 +2348,9 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
         zcouple_.r1=zcouple_.re;
 
         // Special Z1->ll cases
-        if (
-          (
-          isZG && process == TVar::bkgZGamma && (production == TVar::ZZQQB || production == TVar::ZZINDEPENDENT)
-          )
-          ||
-          (
-          ((isZZ && (process==TVar::bkgZZ || process==TVar::HSMHiggs || process == TVar::bkgZZ_SMHiggs))
-          || (isWW && (process==TVar::bkgWW || process==TVar::HSMHiggs || process == TVar::bkgWW_SMHiggs))
-          || ((isZZ || isWW) && (process==TVar::bkgWWZZ || process==TVar::HSMHiggs_WWZZ || process == TVar::bkgWWZZ_SMHiggs)))
-          &&
-          (production==TVar::Had_WH || production==TVar::Had_ZH
-          || production==TVar::Had_WH_S || production==TVar::Had_ZH_S
-          || production==TVar::Had_WH_TU || production==TVar::Had_ZH_TU
-          || production==TVar::Lep_WH || production==TVar::Lep_ZH
-          || production==TVar::Lep_WH_S || production==TVar::Lep_ZH_S
-          || production==TVar::Lep_WH_TU || production==TVar::Lep_ZH_TU
-          || production==TVar::JJVBF || production==TVar::JJEW
-          || production==TVar::JJVBF_S || production==TVar::JJEW_S
-          || production==TVar::JJVBF_TU || production==TVar::JJEW_TU)
-          )
-          ||
-          (
-          ((isZZ && process==TVar::bkgZZ) || (isWW && process==TVar::bkgWW) || ((isZZ || isWW) && process==TVar::bkgWWZZ))
-          &&
-          (production == TVar::JJQCD || production == TVar::JJQCD_S || production == TVar::JJQCD_TU
-          || production == TVar::JJEWQCD || production == TVar::JJEWQCD_S || production == TVar::JJEWQCD_TU)
-          )
-          ){
-          sprintf((plabel_.plabel)[2], "el");
-          sprintf((plabel_.plabel)[3], "ea");
+        if (useQQBZGAM || useQQVVQQany){
+          strplabel[2]="el";
+          strplabel[3]="ea";
         }
         // End special Z1->ll cases
       }
@@ -2092,36 +2360,9 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
         zcouple_.r1=zcouple_.rn;
 
         // Special Z1->nn cases
-        if (
-          (
-          isZG && process == TVar::bkgZGamma && (production == TVar::ZZQQB || production == TVar::ZZINDEPENDENT)
-          )
-          ||
-          (
-          ((isZZ && (process==TVar::bkgZZ || process==TVar::HSMHiggs || process == TVar::bkgZZ_SMHiggs))
-          || (isWW && (process==TVar::bkgWW || process==TVar::HSMHiggs || process == TVar::bkgWW_SMHiggs))
-          || ((isZZ || isWW) && (process==TVar::bkgWWZZ || process==TVar::HSMHiggs_WWZZ || process == TVar::bkgWWZZ_SMHiggs)))
-          &&
-          (production==TVar::Had_WH || production==TVar::Had_ZH
-          || production==TVar::Had_WH_S || production==TVar::Had_ZH_S
-          || production==TVar::Had_WH_TU || production==TVar::Had_ZH_TU
-          || production==TVar::Lep_WH || production==TVar::Lep_ZH
-          || production==TVar::Lep_WH_S || production==TVar::Lep_ZH_S
-          || production==TVar::Lep_WH_TU || production==TVar::Lep_ZH_TU
-          || production==TVar::JJVBF || production==TVar::JJEW
-          || production==TVar::JJVBF_S || production==TVar::JJEW_S
-          || production==TVar::JJVBF_TU || production==TVar::JJEW_TU)
-          )
-          ||
-          (
-          ((isZZ && process==TVar::bkgZZ) || (isWW && process==TVar::bkgWW) || ((isZZ || isWW) && process==TVar::bkgWWZZ))
-          &&
-          (production == TVar::JJQCD || production == TVar::JJQCD_S || production == TVar::JJQCD_TU
-          || production == TVar::JJEWQCD || production == TVar::JJEWQCD_S || production == TVar::JJEWQCD_TU)
-          )
-          ){
-          sprintf((plabel_.plabel)[2], "nl");
-          sprintf((plabel_.plabel)[3], "na");
+        if (useQQBZGAM || useQQVVQQany){
+          strplabel[2]="nl";
+          strplabel[3]="na";
         }
         // End special Z1->nn cases
       }
@@ -2130,9 +2371,19 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
         int jetid=(PDGHelpers::isAnUnknownJet(pId[pZOrder[0]]) ? abs(pId[pZOrder[1]]) : abs(pId[pZOrder[0]]));
         if (!PDGHelpers::isAnUnknownJet(jetid)){
           if (jetid==6) jetid = 2;
-          zcouple_.q1=ewcharge_.Q[5+jetid]*sqrt(3.);
-          zcouple_.l1=zcouple_.l[-1+jetid]*sqrt(3.);
-          zcouple_.r1=zcouple_.r[jetid]*sqrt(3.);
+          zcouple_.q1=ewcharge_.Q[5+jetid];
+          zcouple_.l1=zcouple_.l[-1+jetid];
+          zcouple_.r1=zcouple_.r[jetid];
+
+          // Special Z1->qq cases
+          if (useQQBZGAM){
+            strplabel[2]="el";// Trick MCFM, not implemented properly
+            strplabel[3]="ea";
+          }
+          else if (useQQVVQQany){
+            strplabel[2]=TUtil::GetMCFMParticleLabel(pId[pZOrder[0]]);
+            strplabel[3]=TUtil::GetMCFMParticleLabel(pId[pZOrder[1]]);
+          }
         }
         else{
           double gV_up = (zcouple_.l[-1+2]+zcouple_.r[-1+2])/2.;
@@ -2150,44 +2401,25 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
           double gAsq = pow(xx, 2)/gVsq;
           double gV=-sqrt(gVsq);
           double gA=-sqrt(gAsq);
-          zcouple_.l1 = gV+gA;
-          zcouple_.r1 = gV-gA;
-          zcouple_.q1=sqrt((pow(ewcharge_.Q[5+1], 2)*3.+pow(ewcharge_.Q[5+2], 2)*2.)*3.);
-        }
+          zcouple_.l1 = (gV+gA);
+          zcouple_.r1 = (gV-gA);
+          zcouple_.q1=sqrt(pow(ewcharge_.Q[5+1], 2)*3.+pow(ewcharge_.Q[5+2], 2)*2.);
 
-        // Special Z1->jj cases
-        if (isZG && process == TVar::bkgZGamma && (production == TVar::ZZQQB || production == TVar::ZZINDEPENDENT)){
-          sprintf((plabel_.plabel)[2], "el");// Trick MCFM, not implemented properly
-          sprintf((plabel_.plabel)[3], "ea");
+          // Special Z1->qq cases
+          if (useQQBZGAM){
+            strplabel[2]="el";// Trick MCFM, not implemented properly
+            strplabel[3]="ea";
+          }
+          else if (useQQVVQQany){
+            strplabel[2]="qj";
+            strplabel[3]="qj";
+          }
         }
-        else if (
-          (
-          ((isZZ && (process==TVar::bkgZZ || process==TVar::HSMHiggs || process == TVar::bkgZZ_SMHiggs))
-          || (isWW && (process==TVar::bkgWW || process==TVar::HSMHiggs || process == TVar::bkgWW_SMHiggs))
-          || ((isZZ || isWW) && (process==TVar::bkgWWZZ || process==TVar::HSMHiggs_WWZZ || process == TVar::bkgWWZZ_SMHiggs)))
-          &&
-          (production==TVar::Had_WH || production==TVar::Had_ZH
-          || production==TVar::Had_WH_S || production==TVar::Had_ZH_S
-          || production==TVar::Had_WH_TU || production==TVar::Had_ZH_TU
-          || production==TVar::Lep_WH || production==TVar::Lep_ZH
-          || production==TVar::Lep_WH_S || production==TVar::Lep_ZH_S
-          || production==TVar::Lep_WH_TU || production==TVar::Lep_ZH_TU
-          || production==TVar::JJVBF || production==TVar::JJEW
-          || production==TVar::JJVBF_S || production==TVar::JJEW_S
-          || production==TVar::JJVBF_TU || production==TVar::JJEW_TU)
-          )
-          ||
-          (
-          ((isZZ && process==TVar::bkgZZ) || (isWW && process==TVar::bkgWW) || ((isZZ || isWW) && process==TVar::bkgWWZZ))
-          &&
-          (production == TVar::JJQCD || production == TVar::JJQCD_S || production == TVar::JJQCD_TU
-          || production == TVar::JJEWQCD || production == TVar::JJEWQCD_S || production == TVar::JJEWQCD_TU)
-          )
-          ){
-          sprintf((plabel_.plabel)[2], "qj");
-          sprintf((plabel_.plabel)[3], "qj");
+        if (!useQQVVQQany){ // colfac34_56 handles all couplings instead of this simple scaling (Reason: WW Final states)
+          zcouple_.l1 *= sqrt(3.);
+          zcouple_.r1 *= sqrt(3.);
+          zcouple_.q1 *= sqrt(3.);
         }
-        // End special Z1->jj cases
       } // End Z1 daughter id tests
     } // End ZZ/ZG/ZJJ Z1 couplings
 
@@ -2200,32 +2432,9 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
         zcouple_.r2=zcouple_.re;
 
         // Special Z2->ll cases
-        if (
-          (
-          ((isZZ && (process==TVar::bkgZZ || process==TVar::HSMHiggs || process == TVar::bkgZZ_SMHiggs))
-          || (isWW && (process==TVar::bkgWW || process==TVar::HSMHiggs || process == TVar::bkgWW_SMHiggs))
-          || ((isZZ || isWW) && (process==TVar::bkgWWZZ || process==TVar::HSMHiggs_WWZZ || process == TVar::bkgWWZZ_SMHiggs)))
-          &&
-          (production==TVar::Had_WH || production==TVar::Had_ZH
-          || production==TVar::Had_WH_S || production==TVar::Had_ZH_S
-          || production==TVar::Had_WH_TU || production==TVar::Had_ZH_TU
-          || production==TVar::Lep_WH || production==TVar::Lep_ZH
-          || production==TVar::Lep_WH_S || production==TVar::Lep_ZH_S
-          || production==TVar::Lep_WH_TU || production==TVar::Lep_ZH_TU
-          || production==TVar::JJVBF || production==TVar::JJEW
-          || production==TVar::JJVBF_S || production==TVar::JJEW_S
-          || production==TVar::JJVBF_TU || production==TVar::JJEW_TU)
-          )
-          ||
-          (
-          ((isZZ && process==TVar::bkgZZ) || (isWW && process==TVar::bkgWW) || ((isZZ || isWW) && process==TVar::bkgWWZZ))
-          &&
-          (production == TVar::JJQCD || production == TVar::JJQCD_S || production == TVar::JJQCD_TU
-          || production == TVar::JJEWQCD || production == TVar::JJEWQCD_S || production == TVar::JJEWQCD_TU)
-          )
-          ){
-          sprintf((plabel_.plabel)[4], "el");
-          sprintf((plabel_.plabel)[5], "ea");
+        if (useQQVVQQany){
+          strplabel[4]="el";
+          strplabel[5]="ea";
         }
         // End special Z2->ll cases
       }
@@ -2235,32 +2444,9 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
         zcouple_.r2=zcouple_.rn;
 
         // Special Z2->nn cases
-        if (
-          (
-          ((isZZ && (process==TVar::bkgZZ || process==TVar::HSMHiggs || process == TVar::bkgZZ_SMHiggs))
-          || (isWW && (process==TVar::bkgWW || process==TVar::HSMHiggs || process == TVar::bkgWW_SMHiggs))
-          || ((isZZ || isWW) && (process==TVar::bkgWWZZ || process==TVar::HSMHiggs_WWZZ || process == TVar::bkgWWZZ_SMHiggs)))
-          &&
-          (production==TVar::Had_WH || production==TVar::Had_ZH
-          || production==TVar::Had_WH_S || production==TVar::Had_ZH_S
-          || production==TVar::Had_WH_TU || production==TVar::Had_ZH_TU
-          || production==TVar::Lep_WH || production==TVar::Lep_ZH
-          || production==TVar::Lep_WH_S || production==TVar::Lep_ZH_S
-          || production==TVar::Lep_WH_TU || production==TVar::Lep_ZH_TU
-          || production==TVar::JJVBF || production==TVar::JJEW
-          || production==TVar::JJVBF_S || production==TVar::JJEW_S
-          || production==TVar::JJVBF_TU || production==TVar::JJEW_TU)
-          )
-          ||
-          (
-          ((isZZ && process==TVar::bkgZZ) || (isWW && process==TVar::bkgWW) || ((isZZ || isWW) && process==TVar::bkgWWZZ))
-          &&
-          (production == TVar::JJQCD || production == TVar::JJQCD_S || production == TVar::JJQCD_TU
-          || production == TVar::JJEWQCD || production == TVar::JJEWQCD_S || production == TVar::JJEWQCD_TU)
-          )
-          ){
-          sprintf((plabel_.plabel)[4], "nl");
-          sprintf((plabel_.plabel)[5], "na");
+        if (useQQVVQQany){
+          strplabel[4]="nl";
+          strplabel[5]="na";
         }
         // End special Z2->nn cases
       }
@@ -2269,9 +2455,15 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
         int jetid=(PDGHelpers::isAnUnknownJet(pId[pZOrder[2]]) ? abs(pId[pZOrder[3]]) : abs(pId[pZOrder[2]]));
         if (!PDGHelpers::isAnUnknownJet(jetid)){
           if (jetid==6) jetid = 2;
-          zcouple_.q2=ewcharge_.Q[5+jetid]*sqrt(3.);
-          zcouple_.l2=zcouple_.l[-1+jetid]*sqrt(3.);
-          zcouple_.r2=zcouple_.r[jetid]*sqrt(3.);
+          zcouple_.q2=ewcharge_.Q[5+jetid];
+          zcouple_.l2=zcouple_.l[-1+jetid];
+          zcouple_.r2=zcouple_.r[jetid];
+
+          // Special Z2->qq cases
+          if (useQQVVQQany){
+            strplabel[4]=TUtil::GetMCFMParticleLabel(pId[pZOrder[2]]);
+            strplabel[5]=TUtil::GetMCFMParticleLabel(pId[pZOrder[3]]);
+          }
         }
         else{
           double gV_up = (zcouple_.l[-1+2]+zcouple_.r[-1+2])/2.;
@@ -2289,40 +2481,21 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
           double gAsq = pow(xx, 2)/gVsq;
           double gV=-sqrt(gVsq);
           double gA=-sqrt(gAsq);
-          zcouple_.l2 = gV+gA;
-          zcouple_.r2 = gV-gA;
-          zcouple_.q2=sqrt((pow(ewcharge_.Q[5+1], 2)*3.+pow(ewcharge_.Q[5+2], 2)*2.)*3.);
-        }
+          zcouple_.l2 = (gV+gA);
+          zcouple_.r2 = (gV-gA);
+          zcouple_.q2=sqrt(pow(ewcharge_.Q[5+1], 2)*3.+pow(ewcharge_.Q[5+2], 2)*2.);
 
-        // Special Z2->jj cases
-        if (
-          (
-          ((isZZ && (process==TVar::bkgZZ || process==TVar::HSMHiggs || process == TVar::bkgZZ_SMHiggs))
-          || (isWW && (process==TVar::bkgWW || process==TVar::HSMHiggs || process == TVar::bkgWW_SMHiggs))
-          || ((isZZ || isWW) && (process==TVar::bkgWWZZ || process==TVar::HSMHiggs_WWZZ || process == TVar::bkgWWZZ_SMHiggs)))
-          &&
-          (production==TVar::Had_WH || production==TVar::Had_ZH
-          || production==TVar::Had_WH_S || production==TVar::Had_ZH_S
-          || production==TVar::Had_WH_TU || production==TVar::Had_ZH_TU
-          || production==TVar::Lep_WH || production==TVar::Lep_ZH
-          || production==TVar::Lep_WH_S || production==TVar::Lep_ZH_S
-          || production==TVar::Lep_WH_TU || production==TVar::Lep_ZH_TU
-          || production==TVar::JJVBF || production==TVar::JJEW
-          || production==TVar::JJVBF_S || production==TVar::JJEW_S
-          || production==TVar::JJVBF_TU || production==TVar::JJEW_TU)
-          )
-          ||
-          (
-          ((isZZ && process==TVar::bkgZZ) || (isWW && process==TVar::bkgWW) || ((isZZ || isWW) && process==TVar::bkgWWZZ))
-          &&
-          (production == TVar::JJQCD || production == TVar::JJQCD_S || production == TVar::JJQCD_TU
-          || production == TVar::JJEWQCD || production == TVar::JJEWQCD_S || production == TVar::JJEWQCD_TU)
-          )
-          ){
-          sprintf((plabel_.plabel)[4], "qj");
-          sprintf((plabel_.plabel)[5], "qj");
+          // Special Z2->qq cases
+          if (useQQVVQQany){
+            strplabel[4]="qj";
+            strplabel[5]="qj";
+          }
         }
-        // End special Z2->jj cases
+        if (!useQQVVQQany){ // colfac34_56 handles all couplings instead of this simple scaling (Reason: WW Final states)
+          zcouple_.l2 *= sqrt(3.);
+          zcouple_.r2 *= sqrt(3.);
+          zcouple_.q2 *= sqrt(3.);
+        }
       } // End Z2 daughter id tests
     } // End ZZ Z2 couplings
 
@@ -2331,7 +2504,7 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
   int* ordering;
   if (ndau<=3){
     if (production == TVar::ZZINDEPENDENT || production == TVar::ZZQQB){
-      if (process == TVar::bkgZGamma){ ordering = pOrder; if (!isZG) result = false; }
+      if (process == TVar::bkgZGamma){ ordering = pZOrder; if (!hasZ1 || !isZG) result = false; }
     }
   }
   else{
@@ -2343,7 +2516,7 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
       ){
       // Just get the default ordering
       if (production == TVar::ZZINDEPENDENT || production == TVar::ZZQQB){
-        if (process == TVar::bkgZGamma){ ordering = pOrder; }
+        if (process == TVar::bkgZGamma){ ordering = pZOrder; if (!hasZ1) result = false; }
         else if (process == TVar::bkgZZ){ ordering = pZOrder; if (!hasZ1 || !hasZ2) result = false; }
         else if (process == TVar::bkgWW){ ordering = pWOrder; if (!hasW1 || !hasW2) result = false; }
       }
@@ -2380,7 +2553,7 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
       ){
       // Z+2 jets
       // Just get the default ordering
-      if (process == TVar::bkgZJets){ ordering = pOrder; if (!isZJJ) result = false; }
+      if (process == TVar::bkgZJets){ ordering = pZOrder; if (!hasZ1 || !isZJJ) result = false; }
       // VBF or QCD MCFM SBI, S or B
       // All of these require ZZ ordering since they use either ZZ ME or VV ME
       else if (process==TVar::HSMHiggs || process==TVar::bkgZZ_SMHiggs || process==TVar::bkgZZ){
@@ -2401,6 +2574,32 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
 
   if (partOrder!=0) { for (unsigned int ip=0; ip<ndau; ip++) partOrder->push_back(ordering[ip]); }
   if (apartOrder!=0 && pApartOrder!=0) { for (unsigned int ip=0; ip<napart; ip++) apartOrder->push_back(pApartOrder[ip]); }
+  for (int ip=0; ip<mxpart; ip++) sprintf((plabel_.plabel)[ip], strplabel[ip].Data());
+
+  if (verbosity>=TVar::DEBUG){
+    cout << "TUtil::MCFM_SetupParticleCouplings: Summary (result=" << (int)result << "):\n";
+
+    cout << "\trunstring=" << runstring_.runstring << endl;
+
+    if (hasZ1) cout << "\tProcess found a Z1." << endl;
+    if (hasZ2) cout << "\tProcess found a Z2." << endl;
+    if (hasW1) cout << "\tProcess found a W1." << endl;
+    if (hasW2) cout << "\tProcess found a W2." << endl;
+    cout << "\t(l1, l2) = (" << zcouple_.l1 << ", " << zcouple_.l2 << ")" << endl;
+    cout << "\t(r1, r2) = (" << zcouple_.r1 << ", " << zcouple_.r2 << ")" << endl;
+    cout << "\t(q1, q2) = (" << zcouple_.q1 << ", " << zcouple_.q2 << ")" << endl;
+
+    cout << "\tplabels:\n";
+    for (int ip=0; ip<mxpart; ip++) cout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
+    if (partOrder!=0){
+      if (partOrder->size()>0) cout << "\tpartOrder[" << partOrder->size() << "]:\n";
+      for (unsigned int ip=0; ip<partOrder->size(); ip++) cout << "\t[" << ip << "] -> " << partOrder->at(ip) << endl;
+    }
+    if (apartOrder!=0){
+      if (apartOrder->size()>0) cout << "\tapartOrder[" << apartOrder->size() << "]:\n";
+      for (unsigned int ip=0; ip<apartOrder->size(); ip++) cout << "\t[" << ip << "] -> " << apartOrder->at(ip) << endl;
+    }
+  }
 
   delete[] pId;
   delete[] pWOrder;
@@ -2409,6 +2608,37 @@ bool TUtil::MCFM_SetupParticleCouplings(const TVar::Process& process, const TVar
   if (pApartOrder!=0) delete[] pApartOrder;
   if (pApartId!=0) delete[] pApartId;
   return result;
+}
+TString TUtil::GetMCFMParticleLabel(const int& pid, bool useQJ){
+  if (PDGHelpers::isAnUnknownJet(pid)){
+    if (useQJ) return TString("qj");
+    else return TString("pp");
+  }
+  else if (PDGHelpers::isAGluon(pid)) return TString("ig");
+  else if (pid==1) return TString("dq");
+  else if (pid==2) return TString("uq");
+  else if (pid==3) return TString("sq");
+  else if (pid==4) return TString("cq");
+  else if (pid==5) return TString("bq");
+  else if (pid==-1) return TString("da");
+  else if (pid==-2) return TString("ua");
+  else if (pid==-3) return TString("sa");
+  else if (pid==-4) return TString("ca");
+  else if (pid==-5) return TString("ba");
+  else if (abs(pid)==6) return TString("qj"); // No tops!
+  else if (pid==11) return TString("el");
+  else if (pid==13) return TString("ml");
+  else if (pid==15) return TString("tl");
+  else if (pid==12) return TString("nl");
+  else if (pid==14) return TString("nl");
+  else if (pid==16) return TString("nl");
+  else if (pid==-11) return TString("ea");
+  else if (pid==-13) return TString("ma");
+  else if (pid==-15) return TString("ta");
+  else if (pid==-12) return TString("na");
+  else if (pid==-14) return TString("na");
+  else if (pid==-16) return TString("na");
+  else return TString("  ");
 }
 
 bool TUtil::MCFM_masscuts(double s[][mxpart], const TVar::Process& process){
@@ -3188,14 +3418,14 @@ double TUtil::SumMatrixElementPDF(
   bool doProceed =
     CheckPartonMomFraction(mela_event.pMothers.at(0).second, mela_event.pMothers.at(1).second, xx, EBEAM, verbosity) // Check momentum transfers
     &&
-    TUtil::MCFM_chooser(process, production, leptonInterf, mela_event); // Set some of the specifics of the process through this function
-  if (doProceed) doProceed = TUtil::MCFM_SetupParticleCouplings(process, production, mela_event, &partOrder, &apartOrder); // Set the specifics of the daughter or associated particle couplings through this function
+    TUtil::MCFM_chooser(process, production, leptonInterf, verbosity, mela_event); // Set some of the specifics of the process through this function
+  if (doProceed) doProceed = TUtil::MCFM_SetupParticleCouplings(process, production, verbosity, mela_event, &partOrder, &apartOrder); // Set the specifics of the daughter or associated particle couplings through this function
   if (partOrder.size()!=mela_event.pDaughters.size()){
-    if (verbosity >= TVar::ERROR) cerr << "Ordering size and number of daughter particles is not the same!" << endl;
+    if (verbosity >= TVar::ERROR) cerr << "Ordering size and number of daughter particles are not the same!" << endl;
     doProceed=false;
   }
   if (apartOrder.size()!=mela_event.pAssociated.size()){
-    if (verbosity >= TVar::ERROR) cerr << "Ordering size and number of associated particles is not the same!" << endl;
+    if (verbosity >= TVar::ERROR) cerr << "Ordering size and number of associated particles are not the same!" << endl;
     doProceed=false;
   }
   if (doProceed){
@@ -3568,7 +3798,15 @@ double TUtil::JHUGenMatEl(
     || process == TVar::H2_g10
     || process == TVar::SelfDefine_spin2
     );
-  if (!(isSpinZero || isSpinOne || isSpinTwo)){ if (verbosity>=TVar::ERROR) cerr << "TUtil::JHUGenMatEl: Process " << process << " not supported." << endl; return MatElSq; }
+  if (!(isSpinZero || isSpinOne || isSpinTwo)){ if (verbosity>=TVar::ERROR) cerr << "TUtil::JHUGenMatEl: Process " << TVar::ProcessName(process) << " (" << process << ")" << " not supported." << endl; return MatElSq; }
+  if (verbosity>=TVar::DEBUG){
+    cout << "TUtil::JHUGenMatEl: Process " << TVar::ProcessName(process) << " is computing a spin-";
+    if (isSpinZero) cout << "0";
+    else if (isSpinOne) cout << "1";
+    else if (isSpinTwo) cout << "2";
+    else cout << "?";
+    cout << " ME with production " << TVar::ProductionName(production) << "." << endl;
+  }
 
   double msq[nmsq][nmsq]={ { 0 } }; // ME**2[parton2][parton1] for each incoming parton 1 and 2, used in RcdME
   int MYIDUP_tmp[4]={ 0 }; // Initial assignment array, unconverted. 0==Unassigned
@@ -3821,8 +4059,8 @@ double TUtil::JHUGenMatEl(
         else if (isSpinTwo) __modgraviton_MOD_evalamp_g_vv(p4, MYIDUP, &MatElTmp);
       }
       // Add CKM elements since they are not included
-      if (PDGHelpers::isAWBoson(mela_event.intermediateVid.at(0))) MatElTmp *= pow(__modparameters_MOD_ckm(&(idarray[0].at(v1).first), &(idarray[0].at(v1).second))/__modparameters_MOD_scalefactor(&(idarray[0].at(v1).first), &(idarray[0].at(v1).second)), 2);
-      if (PDGHelpers::isAWBoson(mela_event.intermediateVid.at(1))) MatElTmp *= pow(__modparameters_MOD_ckm(&(idarray[1].at(v2).first), &(idarray[1].at(v2).second))/__modparameters_MOD_scalefactor(&(idarray[1].at(v2).first), &(idarray[1].at(v2).second)), 2);
+      if (PDGHelpers::isAWBoson(mela_event.intermediateVid.at(0))) MatElTmp *= pow(__modparameters_MOD_ckmbare(&(idarray[0].at(v1).first), &(idarray[0].at(v1).second)), 2);
+      if (PDGHelpers::isAWBoson(mela_event.intermediateVid.at(1))) MatElTmp *= pow(__modparameters_MOD_ckmbare(&(idarray[1].at(v2).first), &(idarray[1].at(v2).second)), 2);
 
       if (verbosity >= TVar::DEBUG) cout << "=====\nTUtil::JHUGenMatEl: Instance MatElTmp = " << MatElTmp << "\n=====" << endl;
       MatElSq += MatElTmp;
@@ -3877,9 +4115,10 @@ double TUtil::JHUGenMatEl(
   }
   SetAlphaS(defaultRenScale, defaultFacScale, 1., 1., defaultNloop, defaultNflav, defaultPdflabel);
   if (verbosity>=TVar::DEBUG){
+    GetAlphaS(&alphasVal, &alphasmzVal);
     cout
       << "TUtil::JHUGenMatEl: Reset AlphaS result:\n"
-      << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << endl;
+      << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << ", alphas(Qren): " << alphasVal << ", alphas(MZ): " << alphasmzVal << endl;
   }
   return MatElSq;
 }
@@ -4361,6 +4600,10 @@ double TUtil::HJJMatEl(
       (partonIsUnknown[0] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0))
       &&
       (partonIsUnknown[1] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0))
+      &&
+      (partonIsUnknown[2] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]>0))
+      &&
+      (partonIsUnknown[3] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]>0))
       ){
       isel=2; jsel=4; // uu'->(ZZ)->uu'
       rsel=isel; ssel=jsel;
@@ -4383,6 +4626,10 @@ double TUtil::HJJMatEl(
       (partonIsUnknown[0] || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0))
       &&
       (partonIsUnknown[1] || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0))
+      &&
+      (partonIsUnknown[2] || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]>0))
+      &&
+      (partonIsUnknown[3] || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]>0))
       ){
       isel=1; jsel=3; // dd'->(ZZ)->dd'
       rsel=isel; ssel=jsel;
@@ -4405,6 +4652,10 @@ double TUtil::HJJMatEl(
       (partonIsUnknown[0] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0))
       &&
       (partonIsUnknown[1] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0))
+      &&
+      (partonIsUnknown[2] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]<0))
+      &&
+      (partonIsUnknown[3] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]<0))
       ){
       isel=-2; jsel=-4; // ubarubar'->(ZZ)->ubarubar'
       rsel=isel; ssel=jsel;
@@ -4427,6 +4678,10 @@ double TUtil::HJJMatEl(
       (partonIsUnknown[0] || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0))
       &&
       (partonIsUnknown[1] || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0))
+      &&
+      (partonIsUnknown[2] || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]<0))
+      &&
+      (partonIsUnknown[3] || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]<0))
       ){
       isel=-1; jsel=-3; // dbardbar'->(ZZ)->dbardbar'
       rsel=isel; ssel=jsel;
@@ -4446,9 +4701,7 @@ double TUtil::HJJMatEl(
     }
 
     if (
-      //      (partonIsUnknown[0] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0))
-      //      &&
-      //      (partonIsUnknown[1] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0))
+      (
       (partonIsUnknown[0] && partonIsUnknown[1])
       ||
       (
@@ -4460,6 +4713,21 @@ double TUtil::HJJMatEl(
       (partonIsUnknown[0] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0)))
       ||
       (partonIsUnknown[1] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0)))
+      )
+      &&
+      (
+      (partonIsUnknown[2] && partonIsUnknown[3])
+      ||
+      (
+      (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]>0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]<0)
+      ||
+      (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]>0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]<0)
+      )
+      ||
+      (partonIsUnknown[2] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]>0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]<0)))
+      ||
+      (partonIsUnknown[3] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]>0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]<0)))
+      )
       ){
       isel=2; jsel=-1; // udbar->(ZZ)->udbar
       rsel=isel; ssel=jsel;
@@ -4470,9 +4738,7 @@ double TUtil::HJJMatEl(
     }
 
     if (
-      //      (partonIsUnknown[0] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0))
-      //      &&
-      //      (partonIsUnknown[1] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0))
+      (
       (partonIsUnknown[0] && partonIsUnknown[1])
       ||
       (
@@ -4484,6 +4750,21 @@ double TUtil::HJJMatEl(
       (partonIsUnknown[0] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0)))
       ||
       (partonIsUnknown[1] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0)))
+      )
+      &&
+      (
+      (partonIsUnknown[2] && partonIsUnknown[3])
+      ||
+      (
+      (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]<0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]>0)
+      ||
+      (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]>0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]<0)
+      )
+      ||
+      (partonIsUnknown[2] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]<0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]>0)))
+      ||
+      (partonIsUnknown[3] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]>0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]<0)))
+      )
       ){
       isel=1; jsel=-2; // dubar->(ZZ)->dubar
       rsel=isel; ssel=jsel;
@@ -4494,80 +4775,133 @@ double TUtil::HJJMatEl(
     }
 
     if (
-      //      (partonIsUnknown[0] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0 && PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0))
-      //      &&
-      //      (partonIsUnknown[1] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0 && PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0))
       (partonIsUnknown[0] && partonIsUnknown[1])
       ||
-      (
-      (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0 && PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0)
+      (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[0]*MYIDUP_tmp[1]<0)
       ||
-      (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0 && PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0)
-      )
+      (partonIsUnknown[0] && PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]))
       ||
-      (partonIsUnknown[0] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0) || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0)))
-      ||
-      (partonIsUnknown[1] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0) || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0)))
+      (partonIsUnknown[1] && PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]))
       ){
       isel=2; jsel=-2; // uubar->(ZZ)->uubar
-      rsel=isel; ssel=jsel;
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &(msq_uubar_zz_ijrs1234[0]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &(msq_uubar_zz_ijrs1243[0]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &ssel, &rsel, &(msq_uubar_zz_ijrs1234[1]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &rsel, &ssel, &(msq_uubar_zz_ijrs1243[1]));
-
-      rsel=1; ssel=-1; // uubar->(WW)->ddbar
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &(msq_uubar_ww_ijrs1234[0]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &(msq_uubar_ww_ijrs1243[0]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &ssel, &rsel, &(msq_uubar_ww_ijrs1234[1]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &rsel, &ssel, &(msq_uubar_ww_ijrs1243[1]));
-      ckm_takeout = pow(__modparameters_MOD_ckm(&isel, &rsel)/__modparameters_MOD_scalefactor(&isel, &rsel) * __modparameters_MOD_ckm(&jsel, &ssel)/__modparameters_MOD_scalefactor(&jsel, &ssel), 2);
-      for (unsigned int iswap=0; iswap<2; iswap++){
-        msq_uubar_ww_ijrs1234[iswap] /= ckm_takeout;
-        msq_uubar_ww_ijrs1243[iswap] /= ckm_takeout;
+      if (
+        (partonIsUnknown[2] && partonIsUnknown[3])
+        ||
+        (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[2]) && PDGHelpers::isUpTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[2]*MYIDUP_tmp[3]<0)
+        ||
+        (partonIsUnknown[2] && PDGHelpers::isUpTypeQuark(MYIDUP_tmp[3]))
+        ||
+        (partonIsUnknown[3] && PDGHelpers::isUpTypeQuark(MYIDUP_tmp[2]))
+        ){
+        rsel=isel; ssel=jsel; // uubar->(ZZ)->uubar
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &(msq_uubar_zz_ijrs1234[0]));
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &(msq_uubar_zz_ijrs1243[0]));
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &ssel, &rsel, &(msq_uubar_zz_ijrs1234[1]));
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &rsel, &ssel, &(msq_uubar_zz_ijrs1243[1]));
+      }
+      if (
+        (partonIsUnknown[2] && partonIsUnknown[3])
+        ||
+        (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[2]) && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[2]*MYIDUP_tmp[3]<0)
+        ||
+        (partonIsUnknown[2] && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[3]))
+        ||
+        (partonIsUnknown[3] && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[2]))
+        ){
+        rsel=-1; ssel=1; // uubar->(WW)->ddbar
+        double ckm_ir = 0.;
+        double ckm_js = 0.;
+        while (ckm_ir==0.){
+          rsel += 2;
+          ssel -= 2;
+          if (abs(rsel)>=6){
+            rsel=-1; ssel=1;
+            isel+=2; jsel-=2;
+            continue;
+          }
+          if (abs(isel)>=6) break;
+          ckm_ir = __modparameters_MOD_ckmbare(&isel, &rsel);
+          ckm_js = __modparameters_MOD_ckmbare(&jsel, &ssel);
+        }
+        if (ckm_ir!=0.){
+          __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &(msq_uubar_ww_ijrs1234[0]));
+          __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &(msq_uubar_ww_ijrs1243[0]));
+          __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &ssel, &rsel, &(msq_uubar_ww_ijrs1234[1]));
+          __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &rsel, &ssel, &(msq_uubar_ww_ijrs1243[1]));
+          ckm_takeout = pow(ckm_ir*ckm_js, 2);
+          for (unsigned int iswap=0; iswap<2; iswap++){
+            msq_uubar_ww_ijrs1234[iswap] /= ckm_takeout;
+            msq_uubar_ww_ijrs1243[iswap] /= ckm_takeout;
+          }
+        }
       }
     }
 
     if (
-      //      (partonIsUnknown[0] || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0))
-      //      &&
-      //      (partonIsUnknown[1] || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0))
       (partonIsUnknown[0] && partonIsUnknown[1])
       ||
-      (
-      (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0)
+      (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[0]*MYIDUP_tmp[1]<0)
       ||
-      (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0)
-      )
+      (partonIsUnknown[0] && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]))
       ||
-      (partonIsUnknown[0] && ((PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0)))
-      ||
-      (partonIsUnknown[1] && ((PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0)))
+      (partonIsUnknown[1] && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]))
       ){
-      isel=1; jsel=-1; // ddbar->(ZZ)->ddbar
-      rsel=isel; ssel=jsel;
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &(msq_ddbar_zz_ijrs1234[0]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &(msq_ddbar_zz_ijrs1243[0]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &ssel, &rsel, &(msq_ddbar_zz_ijrs1234[1]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &rsel, &ssel, &(msq_ddbar_zz_ijrs1243[1]));
-
-      isel=1; jsel=-1; // ddbar->(WW)->uubar
-      rsel=2; ssel=-2;
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &(msq_ddbar_ww_ijrs1234[0]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &(msq_ddbar_ww_ijrs1243[0]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &ssel, &rsel, &(msq_ddbar_ww_ijrs1234[1]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &rsel, &ssel, &(msq_ddbar_ww_ijrs1243[1]));
-      ckm_takeout = pow(__modparameters_MOD_ckm(&isel, &rsel)/__modparameters_MOD_scalefactor(&isel, &rsel) * __modparameters_MOD_ckm(&jsel, &ssel)/__modparameters_MOD_scalefactor(&jsel, &ssel), 2);
-      for (unsigned int iswap=0; iswap<2; iswap++){
-        msq_ddbar_ww_ijrs1234[iswap] /= ckm_takeout;
-        msq_ddbar_ww_ijrs1243[iswap] /= ckm_takeout;
+      isel=1; jsel=-1;
+      if (
+        (partonIsUnknown[2] && partonIsUnknown[3])
+        ||
+        (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[2]) && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[2]*MYIDUP_tmp[3]<0)
+        ||
+        (partonIsUnknown[2] && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[3]))
+        ||
+        (partonIsUnknown[3] && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[2]))
+        ){
+        rsel=isel; ssel=jsel; // ddbar->(ZZ)->ddbar
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &(msq_ddbar_zz_ijrs1234[0]));
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &(msq_ddbar_zz_ijrs1243[0]));
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &ssel, &rsel, &(msq_ddbar_zz_ijrs1234[1]));
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &rsel, &ssel, &(msq_ddbar_zz_ijrs1243[1]));
+      }
+      if (
+        (partonIsUnknown[2] && partonIsUnknown[3])
+        ||
+        (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[2]) && PDGHelpers::isUpTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[2]*MYIDUP_tmp[3]<0)
+        ||
+        (partonIsUnknown[2] && PDGHelpers::isUpTypeQuark(MYIDUP_tmp[3]))
+        ||
+        (partonIsUnknown[3] && PDGHelpers::isUpTypeQuark(MYIDUP_tmp[2]))
+        ){
+        rsel=0; ssel=0; // ddbar->(WW)->uubar
+        double ckm_ir = 0.;
+        double ckm_js = 0.;
+        while (ckm_ir==0.){
+          rsel += 2;
+          ssel -= 2;
+          if (abs(rsel)>=6){
+            rsel=0; ssel=0;
+            isel+=2; jsel-=2;
+            continue;
+          }
+          if (abs(isel)>=6) break;
+          ckm_ir = __modparameters_MOD_ckmbare(&isel, &rsel);
+          ckm_js = __modparameters_MOD_ckmbare(&jsel, &ssel);
+        }
+        if (ckm_ir!=0.){
+          __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &(msq_ddbar_ww_ijrs1234[0]));
+          __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &(msq_ddbar_ww_ijrs1243[0]));
+          __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &ssel, &rsel, &(msq_ddbar_ww_ijrs1234[1]));
+          __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &rsel, &ssel, &(msq_ddbar_ww_ijrs1243[1]));
+          ckm_takeout = pow(ckm_ir*ckm_js, 2);
+          for (unsigned int iswap=0; iswap<2; iswap++){
+            msq_ddbar_ww_ijrs1234[iswap] /= ckm_takeout;
+            msq_ddbar_ww_ijrs1243[iswap] /= ckm_takeout;
+          }
+        }
       }
     }
 
     if (
-      //      (partonIsUnknown[0] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0))
-      //      &&
-      //      (partonIsUnknown[1] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0))
+      (
       (partonIsUnknown[0] && partonIsUnknown[1])
       ||
       (
@@ -4579,24 +4913,58 @@ double TUtil::HJJMatEl(
       (partonIsUnknown[0] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]>0)))
       ||
       (partonIsUnknown[1] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]>0)))
+      )
+      &&
+      (
+      (partonIsUnknown[2] && partonIsUnknown[3])
+      ||
+      (
+      (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]>0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]>0)
+      ||
+      (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]>0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]>0)
+      )
+      ||
+      (partonIsUnknown[2] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]>0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]>0)))
+      ||
+      (partonIsUnknown[3] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]>0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]>0)))
+      )
       ){
-      isel=2; jsel=1; // ud->(WW)->d'u'
-      rsel=3; ssel=4;
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &(msq_ud_wwonly_ijrs1234[0]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &(msq_ud_wwonly_ijrs1243[0]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &ssel, &rsel, &(msq_ud_wwonly_ijrs1234[1]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &rsel, &ssel, &(msq_ud_wwonly_ijrs1243[1]));
-      ckm_takeout = pow(__modparameters_MOD_ckm(&isel, &rsel)/__modparameters_MOD_scalefactor(&isel, &rsel) * __modparameters_MOD_ckm(&jsel, &ssel)/__modparameters_MOD_scalefactor(&jsel, &ssel), 2);
-      for (unsigned int iswap=0; iswap<2; iswap++){
-        msq_ud_wwonly_ijrs1234[iswap] /= ckm_takeout;
-        msq_ud_wwonly_ijrs1243[iswap] /= ckm_takeout;
+      // ud->(WW)->d'u'
+      double ckm_ir = 0.;
+      double ckm_js = 0.;
+      const unsigned int nCombinations = 6;
+      int ijrs_arr[nCombinations][4] ={
+        { 2, 3, 1, 4 },
+        { 2, 3, 5, 4 },
+        { 2, 5, 1, 4 },
+        { 2, 5, 3, 4 },
+        { 2, 1, 3, 4 },
+        { 2, 1, 5, 4 }
+      };
+      for (unsigned int ijrs=0; ijrs<nCombinations; ijrs++){
+        isel = ijrs_arr[ijrs][0];
+        jsel = ijrs_arr[ijrs][1];
+        rsel = ijrs_arr[ijrs][2];
+        ssel = ijrs_arr[ijrs][3];
+        ckm_ir = __modparameters_MOD_ckmbare(&isel, &rsel);
+        ckm_js = __modparameters_MOD_ckmbare(&jsel, &ssel);
+        if (ckm_ir!=0. && ckm_js!=0.) break;
+      }
+      if (ckm_ir!=0. && ckm_js!=0.){
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &(msq_ud_wwonly_ijrs1234[0]));
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &(msq_ud_wwonly_ijrs1243[0]));
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &ssel, &rsel, &(msq_ud_wwonly_ijrs1234[1]));
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &rsel, &ssel, &(msq_ud_wwonly_ijrs1243[1]));
+        ckm_takeout = pow(ckm_ir*ckm_js, 2);
+        for (unsigned int iswap=0; iswap<2; iswap++){
+          msq_ud_wwonly_ijrs1234[iswap] /= ckm_takeout;
+          msq_ud_wwonly_ijrs1243[iswap] /= ckm_takeout;
+        }
       }
     }
 
     if (
-//      (partonIsUnknown[0] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0))
-//      &&
-//      (partonIsUnknown[1] || (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0))
+      (
       (partonIsUnknown[0] && partonIsUnknown[1])
       ||
       (
@@ -4608,17 +4976,93 @@ double TUtil::HJJMatEl(
       (partonIsUnknown[0] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[1]) && MYIDUP_tmp[1]<0)))
       ||
       (partonIsUnknown[1] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[0]) && MYIDUP_tmp[0]<0)))
+      )
+      &&
+      (
+      (partonIsUnknown[2] && partonIsUnknown[3])
+      ||
+      (
+      (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]<0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]<0)
+      ||
+      (PDGHelpers::isUpTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]<0 && PDGHelpers::isDownTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]<0)
+      )
+      ||
+      (partonIsUnknown[2] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]<0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[3]) && MYIDUP_tmp[3]<0)))
+      ||
+      (partonIsUnknown[3] && ((PDGHelpers::isUpTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]<0) || (PDGHelpers::isDownTypeQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]<0)))
+      )
       ){
-      isel=-2; jsel=-1; // ubardbar->(WW)->dbar'ubar'
-      rsel=-3; ssel=-4;
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &(msq_ubardbar_wwonly_ijrs1234[0]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &(msq_ubardbar_wwonly_ijrs1243[0]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &ssel, &rsel, &(msq_ubardbar_wwonly_ijrs1234[1]));
-      __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &rsel, &ssel, &(msq_ubardbar_wwonly_ijrs1243[1]));
-      ckm_takeout = pow(__modparameters_MOD_ckm(&isel, &rsel)/__modparameters_MOD_scalefactor(&isel, &rsel) * __modparameters_MOD_ckm(&jsel, &ssel)/__modparameters_MOD_scalefactor(&jsel, &ssel), 2);
+      // ubardbar->(WW)->dbar'ubar'
+      double ckm_ir = 0.;
+      double ckm_js = 0.;
+      const unsigned int nCombinations = 6;
+      int ijrs_arr[nCombinations][4] ={
+        { -2, -3, -1, -4 },
+        { -2, -3, -5, -4 },
+        { -2, -5, -1, -4 },
+        { -2, -5, -3, -4 },
+        { -2, -1, -3, -4 },
+        { -2, -1, -5, -4 }
+      };
+      for (unsigned int ijrs=0; ijrs<nCombinations; ijrs++){
+        isel = ijrs_arr[ijrs][0];
+        jsel = ijrs_arr[ijrs][1];
+        rsel = ijrs_arr[ijrs][2];
+        ssel = ijrs_arr[ijrs][3];
+        ckm_ir = __modparameters_MOD_ckmbare(&isel, &rsel);
+        ckm_js = __modparameters_MOD_ckmbare(&jsel, &ssel);
+        if (ckm_ir!=0. && ckm_js!=0.) break;
+      }
+      if (ckm_ir!=0. && ckm_js!=0.){
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &(msq_ubardbar_wwonly_ijrs1234[0]));
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &(msq_ubardbar_wwonly_ijrs1243[0]));
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &ssel, &rsel, &(msq_ubardbar_wwonly_ijrs1234[1]));
+        __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &jsel, &isel, &rsel, &ssel, &(msq_ubardbar_wwonly_ijrs1243[1]));
+        ckm_takeout = pow(ckm_ir*ckm_js, 2);
+        for (unsigned int iswap=0; iswap<2; iswap++){
+          msq_ubardbar_wwonly_ijrs1234[iswap] /= ckm_takeout;
+          msq_ubardbar_wwonly_ijrs1243[iswap] /= ckm_takeout;
+        }
+      }
+    }
+
+    if (verbosity>=TVar::DEBUG_VERBOSE){
+      cout << "TUtil::HJJMatEl: The pre-computed MEs:" << endl;
       for (unsigned int iswap=0; iswap<2; iswap++){
-        msq_ubardbar_wwonly_ijrs1234[iswap] /= ckm_takeout;
-        msq_ubardbar_wwonly_ijrs1243[iswap] /= ckm_takeout;
+        cout
+          << "\tmsq_uu_zz_ijrs1234[" << iswap << "] = " << msq_uu_zz_ijrs1234[iswap] << '\n'
+          << "\tmsq_uu_zz_ijrs1243[" << iswap << "] = " << msq_uu_zz_ijrs1243[iswap] << '\n'
+          << "\tmsq_dd_zz_ijrs1234[" << iswap << "] = " << msq_dd_zz_ijrs1234[iswap] << '\n'
+          << "\tmsq_dd_zz_ijrs1243[" << iswap << "] = " << msq_dd_zz_ijrs1243[iswap] << '\n'
+          << "\tmsq_ubarubar_zz_ijrs1234[" << iswap << "] = " << msq_ubarubar_zz_ijrs1234[iswap] << '\n'
+          << "\tmsq_ubarubar_zz_ijrs1243[" << iswap << "] = " << msq_ubarubar_zz_ijrs1243[iswap] << '\n'
+          << "\tmsq_dbardbar_zz_ijrs1234[" << iswap << "] = " << msq_dbardbar_zz_ijrs1234[iswap] << '\n'
+          << "\tmsq_dbardbar_zz_ijrs1243[" << iswap << "] = " << msq_dbardbar_zz_ijrs1243[iswap] << '\n'
+          << "\tmsq_uu_zzid_ijrs1234[" << iswap << "] = " << msq_uu_zzid_ijrs1234[iswap] << '\n'
+          << "\tmsq_uu_zzid_ijrs1243[" << iswap << "] = " << msq_uu_zzid_ijrs1243[iswap] << '\n'
+          << "\tmsq_dd_zzid_ijrs1234[" << iswap << "] = " << msq_dd_zzid_ijrs1234[iswap] << '\n'
+          << "\tmsq_dd_zzid_ijrs1243[" << iswap << "] = " << msq_dd_zzid_ijrs1243[iswap] << '\n'
+          << "\tmsq_ubarubar_zzid_ijrs1234[" << iswap << "] = " << msq_ubarubar_zzid_ijrs1234[iswap] << '\n'
+          << "\tmsq_ubarubar_zzid_ijrs1243[" << iswap << "] = " << msq_ubarubar_zzid_ijrs1243[iswap] << '\n'
+          << "\tmsq_dbardbar_zzid_ijrs1234[" << iswap << "] = " << msq_dbardbar_zzid_ijrs1234[iswap] << '\n'
+          << "\tmsq_dbardbar_zzid_ijrs1243[" << iswap << "] = " << msq_dbardbar_zzid_ijrs1243[iswap] << '\n'
+          << "\tmsq_udbar_zz_ijrs1234[" << iswap << "] = " << msq_udbar_zz_ijrs1234[iswap] << '\n'
+          << "\tmsq_udbar_zz_ijrs1243[" << iswap << "] = " << msq_udbar_zz_ijrs1243[iswap] << '\n'
+          << "\tmsq_dubar_zz_ijrs1234[" << iswap << "] = " << msq_dubar_zz_ijrs1234[iswap] << '\n'
+          << "\tmsq_dubar_zz_ijrs1243[" << iswap << "] = " << msq_dubar_zz_ijrs1243[iswap] << '\n'
+          << "\tmsq_uubar_zz_ijrs1234[" << iswap << "] = " << msq_uubar_zz_ijrs1234[iswap] << '\n'
+          << "\tmsq_uubar_zz_ijrs1243[" << iswap << "] = " << msq_uubar_zz_ijrs1243[iswap] << '\n'
+          << "\tmsq_ddbar_zz_ijrs1234[" << iswap << "] = " << msq_ddbar_zz_ijrs1234[iswap] << '\n'
+          << "\tmsq_ddbar_zz_ijrs1243[" << iswap << "] = " << msq_ddbar_zz_ijrs1243[iswap] << '\n'
+          << "\tmsq_uubar_ww_ijrs1234[" << iswap << "] = " << msq_uubar_ww_ijrs1234[iswap] << '\n'
+          << "\tmsq_uubar_ww_ijrs1243[" << iswap << "] = " << msq_uubar_ww_ijrs1243[iswap] << '\n'
+          << "\tmsq_ddbar_ww_ijrs1234[" << iswap << "] = " << msq_ddbar_ww_ijrs1234[iswap] << '\n'
+          << "\tmsq_ddbar_ww_ijrs1243[" << iswap << "] = " << msq_ddbar_ww_ijrs1243[iswap] << '\n'
+          << "\tmsq_ud_wwonly_ijrs1234[" << iswap << "] = " << msq_ud_wwonly_ijrs1234[iswap] << '\n'
+          << "\tmsq_ud_wwonly_ijrs1243[" << iswap << "] = " << msq_ud_wwonly_ijrs1243[iswap] << '\n'
+          << "\tmsq_ubardbar_wwonly_ijrs1234[" << iswap << "] = " << msq_ubardbar_wwonly_ijrs1234[iswap] << '\n'
+          << "\tmsq_ubardbar_wwonly_ijrs1243[" << iswap << "] = " << msq_ubardbar_wwonly_ijrs1243[iswap]
+          << endl;
       }
     }
 
@@ -4737,14 +5181,14 @@ double TUtil::HJJMatEl(
           else if (ijselIsDownType[0]){ possible_rsel.push_back(2); possible_rsel.push_back(4); }
           for (unsigned int ix=0; ix<possible_rsel.size(); ix++){
             rsel=possible_rsel.at(ix);
-            double ckmval = pow(__modparameters_MOD_ckm(&isel, &rsel)/__modparameters_MOD_scalefactor(&isel, &rsel), 2);
+            double ckmval = pow(__modparameters_MOD_ckmbare(&isel, &rsel), 2);
             possible_Vsqir.push_back(ckmval);
           }
           if (ijselIsUpType[1]){ possible_ssel.push_back(1); possible_ssel.push_back(3); possible_ssel.push_back(5); }
           else if (ijselIsDownType[1]){ possible_ssel.push_back(2); possible_ssel.push_back(4); }
           for (unsigned int iy=0; iy<possible_ssel.size(); iy++){
             ssel=possible_ssel.at(iy);
-            double ckmval = pow(__modparameters_MOD_ckm(&jsel, &ssel)/__modparameters_MOD_scalefactor(&jsel, &ssel), 2);
+            double ckmval = pow(__modparameters_MOD_ckmbare(&jsel, &ssel), 2);
             possible_Vsqjs.push_back(ckmval);
           }
 
@@ -4792,14 +5236,14 @@ double TUtil::HJJMatEl(
           else if (ijselIsDownType[0]){ possible_rsel.push_back(2); possible_rsel.push_back(4); }
           for (unsigned int ix=0; ix<possible_rsel.size(); ix++){
             rsel=possible_rsel.at(ix);
-            double ckmval = pow(__modparameters_MOD_ckm(&isel, &rsel)/__modparameters_MOD_scalefactor(&isel, &rsel), 2);
+            double ckmval = pow(__modparameters_MOD_ckmbare(&isel, &rsel), 2);
             possible_Vsqir.push_back(ckmval);
           }
           if (ijselIsUpType[1]){ possible_ssel.push_back(1); possible_ssel.push_back(3); possible_ssel.push_back(5); }
           else if (ijselIsDownType[1]){ possible_ssel.push_back(2); possible_ssel.push_back(4); }
           for (unsigned int iy=0; iy<possible_ssel.size(); iy++){
             ssel=possible_ssel.at(iy);
-            double ckmval = pow(__modparameters_MOD_ckm(&jsel, &ssel)/__modparameters_MOD_scalefactor(&jsel, &ssel), 2);
+            double ckmval = pow(__modparameters_MOD_ckmbare(&jsel, &ssel), 2);
             possible_Vsqjs.push_back(ckmval);
           }
 
@@ -4961,14 +5405,14 @@ double TUtil::HJJMatEl(
           else if (ijselIsDownType[0]){ possible_rsel.push_back(2); possible_rsel.push_back(4); }
           for (unsigned int ix=0; ix<possible_rsel.size(); ix++){
             rsel=possible_rsel.at(ix);
-            double ckmval = pow(__modparameters_MOD_ckm(&isel, &rsel)/__modparameters_MOD_scalefactor(&isel, &rsel), 2);
+            double ckmval = pow(__modparameters_MOD_ckmbare(&isel, &rsel), 2);
             possible_Vsqir.push_back(ckmval);
           }
           if (ijselIsUpType[1]){ possible_ssel.push_back(1); possible_ssel.push_back(3); possible_ssel.push_back(5); }
           else if (ijselIsDownType[1]){ possible_ssel.push_back(2); possible_ssel.push_back(4); }
           for (unsigned int iy=0; iy<possible_ssel.size(); iy++){
             ssel=possible_ssel.at(iy);
-            double ckmval = pow(__modparameters_MOD_ckm(&jsel, &ssel)/__modparameters_MOD_scalefactor(&jsel, &ssel), 2);
+            double ckmval = pow(__modparameters_MOD_ckmbare(&jsel, &ssel), 2);
             possible_Vsqjs.push_back(ckmval);
           }
 
@@ -5016,14 +5460,14 @@ double TUtil::HJJMatEl(
           else if (ijselIsDownType[0]){ possible_rsel.push_back(2); possible_rsel.push_back(4); }
           for (unsigned int ix=0; ix<possible_rsel.size(); ix++){
             rsel=possible_rsel.at(ix);
-            double ckmval = pow(__modparameters_MOD_ckm(&isel, &rsel)/__modparameters_MOD_scalefactor(&isel, &rsel), 2);
+            double ckmval = pow(__modparameters_MOD_ckmbare(&isel, &rsel), 2);
             possible_Vsqir.push_back(ckmval);
           }
           if (ijselIsUpType[1]){ possible_ssel.push_back(1); possible_ssel.push_back(3); possible_ssel.push_back(5); }
           else if (ijselIsDownType[1]){ possible_ssel.push_back(2); possible_ssel.push_back(4); }
           for (unsigned int iy=0; iy<possible_ssel.size(); iy++){
             ssel=possible_ssel.at(iy);
-            double ckmval = pow(__modparameters_MOD_ckm(&jsel, &ssel)/__modparameters_MOD_scalefactor(&jsel, &ssel), 2);
+            double ckmval = pow(__modparameters_MOD_ckmbare(&jsel, &ssel), 2);
             possible_Vsqjs.push_back(ckmval);
           }
 
@@ -5117,9 +5561,10 @@ double TUtil::HJJMatEl(
   }
   SetAlphaS(defaultRenScale, defaultFacScale, 1., 1., defaultNloop, defaultNflav, defaultPdflabel);
   if (verbosity>=TVar::DEBUG){
+    GetAlphaS(&alphasVal, &alphasmzVal);
     cout
       << "TUtil::HJJMatEl: Reset AlphaS result:\n"
-      << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << endl;
+      << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << ", alphas(Qren): " << alphasVal << ", alphas(MZ): " << alphasmzVal << endl;
   }
   return sum_msqjk;
 }
@@ -5177,7 +5622,12 @@ double TUtil::VHiggsMatEl(
     verbosity
     );
   if ((mela_event.pAssociated.size()<(unsigned int)(nRequested_AssociatedJets+nRequested_AssociatedLeptons) && production!=TVar::GammaH) || (mela_event.pAssociated.size()<(unsigned int)nRequested_AssociatedPhotons && production==TVar::GammaH)){
-    if (verbosity>=TVar::ERROR) cerr << "TUtil::VHiggsMatEl: Number of associated particles is not supported!" << endl;
+    if (verbosity>=TVar::ERROR){
+      cerr << "TUtil::VHiggsMatEl: Number of associated particles (" << mela_event.pAssociated.size() << ") is less than ";
+      if (production!=TVar::GammaH) cerr << (nRequested_AssociatedJets+nRequested_AssociatedLeptons);
+      else cerr << nRequested_AssociatedPhotons;
+      cerr << endl;
+    }
     return sum_msqjk;
   }
 
@@ -5232,15 +5682,15 @@ double TUtil::VHiggsMatEl(
 
   if (PDGHelpers::isAGluon(MYIDUP_prod[0]) || PDGHelpers::isAGluon(MYIDUP_prod[1])){ if (verbosity>=TVar::INFO) cerr << "TUtil::VHiggsMatEl: Initial state gluons are not permitted!" << endl; return sum_msqjk; }
   if (PDGHelpers::isAGluon(MYIDUP_prod[2]) || PDGHelpers::isAGluon(MYIDUP_prod[3])){ if (verbosity>=TVar::INFO) cerr << "TUtil::VHiggsMatEl: Final state gluons are not permitted!" << endl; return sum_msqjk; }
+  if (production==TVar::GammaH && !PDGHelpers::isAPhoton(MYIDUP_prod[2])){ if (verbosity>=TVar::ERROR) cerr << "TUtil::VHiggsMatEl: GammaH associated photon (id=" << MYIDUP_prod[2] << ") is not a photon! Please fix its id." << endl; return sum_msqjk; }
 
   // Decay V/f ids
-  /*
+  // MYIDUP_dec as size=2 because JHUGen supports b-bbar decay
   for (int iv=0; iv<2; iv++){
     int idtmp = mela_event.intermediateVid.at(iv);
     if (!PDGHelpers::isAnUnknownJet(idtmp)) MYIDUP_dec[iv] = idtmp;
     else MYIDUP_dec[iv] = 0;
   }
-  */
   // Decay daughters
   for (unsigned int ipar=0; ipar<mela_event.pDaughters.size(); ipar++){
     TLorentzVector* momTmp = &(mela_event.pDaughters.at(ipar).second);
@@ -5313,9 +5763,10 @@ double TUtil::VHiggsMatEl(
   vh_ids[7] = 5; helicities[7] = 1;
   vh_ids[8] = -5; helicities[8] = 1;
   int HDKon = 0;
-  if (includeHiggsDecay && MYIDUP_dec[0]!=-9000 && MYIDUP_dec[1]!=-9000 && MYIDUP_dec[0]==-MYIDUP_dec[1]){
+  if (includeHiggsDecay && MYIDUP_dec[0]!=-9000 && MYIDUP_dec[1]!=-9000 && MYIDUP_dec[0]==-MYIDUP_dec[1]){ // H->ffb
     HDKon=1;
     __modjhugenmela_MOD_sethdk(&HDKon);
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::VHiggsMatEl: HDKon" << endl;
   }
   else if (verbosity>=TVar::INFO && includeHiggsDecay) cerr << "TUtil::VHiggsMatEl: includeHiggsDecay=true is not supported for the present decay mode." << endl;
 
@@ -5350,259 +5801,296 @@ double TUtil::VHiggsMatEl(
   // Since we have a lot of these checks, do them here.
   bool partonIsKnown[4];
   for (unsigned int ip=0; ip<4; ip++) partonIsKnown[ip] = (MYIDUP_prod[ip]!=0);
+  if ((production==TVar::Lep_WH || production==TVar::Lep_ZH || production==TVar::GammaH) && !(partonIsKnown[2] && partonIsKnown[3])){ if (verbosity>=TVar::INFO) cerr << "TUtil::VHiggsMatEl: Final state particles in leptonic/photonic VH have to have a definite id!" << endl; return sum_msqjk; }
 
-  const double allowed_helicities[2] = { -1, 1 }; // L,R
-  for (int h01 = 0; h01 < 2; h01++){
-    helicities[0] = allowed_helicities[h01];
-    helicities[1] = -helicities[0];
-    for (int h56 = 0; h56 < 2; h56++){
-      helicities[5] = allowed_helicities[h56];
-      helicities[6] = -helicities[5];
-      for (int incoming1 = -nf; incoming1 <= nf; incoming1++){
-        if (incoming1==0) continue;
+  const double allowed_helicities[2] ={ -1, 1 }; // L,R
+  // Setup outgoing H decay products (H->f fbar), templated with H->b bar if both fermions are unknown.
+  vector<pair<int, int>> Hffparticles;
+  double Hffscale=1;
+  if (HDKon!=0){
+    if (!PDGHelpers::isAnUnknownJet(MYIDUP_dec[0]) || !PDGHelpers::isAnUnknownJet(MYIDUP_dec[1])){ // If one particle is known, pick that line
+      if (!PDGHelpers::isAnUnknownJet(MYIDUP_dec[0])) Hffparticles.push_back(pair<int, int>(MYIDUP_dec[0], -MYIDUP_dec[0]));
+      else Hffparticles.push_back(pair<int, int>(-MYIDUP_dec[1], MYIDUP_dec[1]));
+    }
+    else{ // Else loop over possible quark lines
+      double Hffscalesum=0;
+      for (int hquark=1; hquark<=5; hquark++){
+        double Hffmass = __modparameters_MOD_getmass(&hquark);
+        Hffscalesum += Hffmass;
+        if (hquark==5){
+          Hffparticles.push_back(pair<int, int>(hquark, -hquark));
+          Hffparticles.push_back(pair<int, int>(-hquark, hquark));
+          Hffscale /= Hffmass;
+        }
+      }
+      Hffscale *= Hffscalesum;
+    }
+  }
+  if (verbosity>=TVar::DEBUG){
+    cout << "TUtil::VHiggsMatEl: Outgoing H-> f fbar particles to compute for the ME template:" << endl;
+    for (unsigned int ihf=0; ihf<Hffparticles.size(); ihf++) cout << "\t - (id8, id9) = (" << Hffparticles.at(ihf).first << ", " << Hffparticles.at(ihf).second << ")" << endl;
+    cout << "TUtil::VHiggsMatEl: ME scale for the H-> f fbar particles: " << Hffscale << endl;
+  }
 
-        if (production==TVar::Lep_ZH || production==TVar::Had_ZH || production==TVar::GammaH){
-          vh_ids[0] = incoming1;
-          vh_ids[1] = -incoming1;
-          if (
-            (partonIsKnown[0] && MYIDUP_prod[0]!=vh_ids[0])
-            ||
-            (partonIsKnown[1] && MYIDUP_prod[1]!=vh_ids[1])
-            ) continue;
+  if (production==TVar::Lep_WH || production==TVar::Had_WH){
+    // Setup incoming partons
+    vector<pair<int, int>> incomingPartons;
+    if (partonIsKnown[0] && partonIsKnown[1]) incomingPartons.push_back(pair<int, int>(MYIDUP_prod[0], MYIDUP_prod[1])); // Parton 0 and 1 are both known
+    else if (!partonIsKnown[0] && !partonIsKnown[1]){ // Parton 0 and 1 are unknown
+      // Consider all 4 incoming cases: d au, au d, u ad, ad u
+      incomingPartons.push_back(pair<int, int>(1, -2)); // du~ -> W-
+      incomingPartons.push_back(pair<int, int>(-2, 1)); // u~d -> W-
+      incomingPartons.push_back(pair<int, int>(2, -1)); // ud~ -> W+
+      incomingPartons.push_back(pair<int, int>(-1, 2)); // d~u -> W+
+    }
+    else if (!partonIsKnown[1] && partonIsKnown[0]){ // Parton 0 is known
+      // Consider the only possible general cases
+      if (PDGHelpers::isUpTypeQuark(MYIDUP_prod[0])) incomingPartons.push_back(pair<int, int>(MYIDUP_prod[0], -TMath::Sign(1, MYIDUP_prod[0]))); // ud~ or u~d
+      else if (PDGHelpers::isDownTypeQuark(MYIDUP_prod[0])) incomingPartons.push_back(pair<int, int>(MYIDUP_prod[0], -TMath::Sign(2, MYIDUP_prod[0]))); // du~ or d~u
+    }
+    else/* if (!partonIsKnown[0] && partonIsKnown[1])*/{ // Parton 1 is known
+      // Consider the only possible general cases
+      if (PDGHelpers::isUpTypeQuark(MYIDUP_prod[1])) incomingPartons.push_back(pair<int, int>(-TMath::Sign(1, MYIDUP_prod[1]), MYIDUP_prod[1])); // ud~ or u~d
+      else if (PDGHelpers::isDownTypeQuark(MYIDUP_prod[1])) incomingPartons.push_back(pair<int, int>(-TMath::Sign(2, MYIDUP_prod[1]), MYIDUP_prod[1])); // du~ or d~u
+    }
+    if (verbosity>=TVar::DEBUG){
+      cout << "TUtil::VHiggsMatEl: Incoming partons to compute for the ME template:" << endl;
+      for (unsigned int ip=0; ip<incomingPartons.size(); ip++) cout << "\t - (id1, id2) = (" << incomingPartons.at(ip).first << ", " << incomingPartons.at(ip).second << ")" << endl;
+    }
 
-          if (production==TVar::Had_ZH){
-            for (int outgoing1=-nf; outgoing1<=nf; outgoing1++){
-              if (outgoing1==0) continue;
-              vh_ids[5] = outgoing1;
-              vh_ids[6] = -outgoing1;
-              if (
-                (partonIsKnown[2] && MYIDUP_prod[2]!=vh_ids[5])
-                ||
-                (partonIsKnown[3] && MYIDUP_prod[3]!=vh_ids[6])
-                ) continue;
+    // Setup outgoing partons
+    vector<pair<int, int>> outgoingPartons;
+    // FIXME: The following 2/1 assignments assume the CKM element for this pair is non-zero (there are divisions by Vckmsq_in/out later on).
+    if (partonIsKnown[2] && partonIsKnown[3]) outgoingPartons.push_back(pair<int, int>(MYIDUP_prod[2], MYIDUP_prod[3])); // Parton 0 and 1 are both known or Lep_WH
+    else if (!partonIsKnown[2] && !partonIsKnown[3]){ // Parton 0 and 1 are unknown
+      // Consider all 4 outgoing cases: d au, au d, u ad, ad u
+      outgoingPartons.push_back(pair<int, int>(1, -2)); // W- -> du~
+      outgoingPartons.push_back(pair<int, int>(-2, 1)); // W- -> u~d
+      outgoingPartons.push_back(pair<int, int>(2, -1)); // W+ -> ud~
+      outgoingPartons.push_back(pair<int, int>(-1, 2)); // W+ -> d~u
+    }
+    else if (!partonIsKnown[3] && partonIsKnown[2]){ // Parton 0 is known
+      // Consider the only possible general cases
+      if (PDGHelpers::isUpTypeQuark(MYIDUP_prod[2])) outgoingPartons.push_back(pair<int, int>(MYIDUP_prod[2], -TMath::Sign(1, MYIDUP_prod[2]))); // ud~ or u~d
+      else if (PDGHelpers::isDownTypeQuark(MYIDUP_prod[2])) outgoingPartons.push_back(pair<int, int>(MYIDUP_prod[2], -TMath::Sign(2, MYIDUP_prod[2]))); // du~ or d~u
+    }
+    else/* if (!partonIsKnown[2] && partonIsKnown[3])*/{ // Parton 1 is known
+      // Consider the only possible general cases
+      if (PDGHelpers::isUpTypeQuark(MYIDUP_prod[3])) outgoingPartons.push_back(pair<int, int>(-TMath::Sign(1, MYIDUP_prod[3]), MYIDUP_prod[3])); // ud~ or u~d
+      else if (PDGHelpers::isDownTypeQuark(MYIDUP_prod[3])) outgoingPartons.push_back(pair<int, int>(-TMath::Sign(2, MYIDUP_prod[3]), MYIDUP_prod[3])); // du~ or d~u
+    }
+    if (verbosity>=TVar::DEBUG){
+      cout << "TUtil::VHiggsMatEl: Outgoing particles to compute for the ME template:" << endl;
+      for (unsigned int op=0; op<outgoingPartons.size(); op++) cout << "\t - (id6, id7) = (" << outgoingPartons.at(op).first << ", " << outgoingPartons.at(op).second << ")" << endl;
+    }
 
-              if (HDKon==0){
-                double msq=0;
-                __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq);
-                MatElsq[vh_ids[1]+5][vh_ids[0]+5] += msq * 0.25; // Average over initial states with helicities +-1 only
-                if (verbosity>=TVar::DEBUG){ for (int ip=0; ip<9; ip++){ cout << "Particle " << ip << " vh_ids = " << vh_ids[ip] << ", hel=" << helicities[ip] << endl; } }
-              }
-              else{
-                for (int h78=0; h78<2; h78++){
-                  helicities[7]=allowed_helicities[h78];
-                  helicities[8]=allowed_helicities[h78];
-                  if (!PDGHelpers::isAnUnknownJet(MYIDUP_dec[0]) || !PDGHelpers::isAnUnknownJet(MYIDUP_dec[1])){
-                    if (!PDGHelpers::isAnUnknownJet(MYIDUP_dec[0])){
-                      vh_ids[7]=MYIDUP_dec[0];
-                      vh_ids[8]=-MYIDUP_dec[0];
-                    }
-                    else{
-                      vh_ids[7]=-MYIDUP_dec[1];
-                      vh_ids[8]=MYIDUP_dec[1];
-                    }
-                    double msq=0;
-                    __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq);
-                    MatElsq[vh_ids[1]+5][vh_ids[0]+5] += msq * 0.25; // Average over initial states with helicities +-1 only
-                    if (verbosity>=TVar::DEBUG){ for (int ip=0; ip<9; ip++){ cout << "Particle " << ip << " vh_ids = " << vh_ids[ip] << ", hel=" << helicities[ip] << endl; } }
-                  }
-                  else{
-                    for (int hquark=-5; hquark<=5; hquark++){
-                      if (hquark==0) continue;
-                      vh_ids[7]=-hquark;
-                      vh_ids[8]=hquark;
-                      double msq=0;
-                      __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq);
-                      MatElsq[vh_ids[1]+5][vh_ids[0]+5] += msq * 0.25; // Average over initial states with helicities +-1 only
-                      if (verbosity>=TVar::DEBUG){ for (int ip=0; ip<9; ip++){ cout << "Particle " << ip << " vh_ids = " << vh_ids[ip] << ", hel=" << helicities[ip] << endl; } }
-                    }
-                  }
-                }
-              }
+    for (unsigned int ip=0; ip<incomingPartons.size(); ip++){
+      vh_ids[0] = incomingPartons.at(ip).first;
+      vh_ids[1] = incomingPartons.at(ip).second;
+      vh_ids[2] = PDGHelpers::getCoupledVertex(vh_ids[0], vh_ids[1]);
+      if (!PDGHelpers::isAWBoson(vh_ids[2])) continue;
+      if (verbosity>=TVar::DEBUG) cout << "\tIncoming " << vh_ids[0] << "," << vh_ids[1] << " -> " << vh_ids[2] << endl;
 
-            } // End loop over outgoing1=-outgoing2
-          }
-          else{
-            vh_ids[5] = MYIDUP_prod[2];
-            vh_ids[6] = MYIDUP_prod[3];
+      double Vckmsq_in = pow(__modparameters_MOD_ckmbare(&(vh_ids[0]), &(vh_ids[1])), 2);
+      if (verbosity>=TVar::DEBUG) cout << "\tNeed to divide the ME by |VCKM_incoming|**2 = " << Vckmsq_in << endl;
 
-            if (HDKon==0){
-              double msq=0;
-              __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq);
-              MatElsq[vh_ids[1]+5][vh_ids[0]+5] += msq * 0.25; // Average over initial states with helicities +-1 only
-              if (verbosity>=TVar::DEBUG){ for (int ip=0; ip<9; ip++){ cout << "Particle " << ip << " vh_ids = " << vh_ids[ip] << ", hel=" << helicities[ip] << endl; } }
-            }
+      for (unsigned int op=0; op<outgoingPartons.size(); op++){
+        vh_ids[5] = outgoingPartons.at(op).first;
+        vh_ids[6] = outgoingPartons.at(op).second;
+        vh_ids[3] = PDGHelpers::getCoupledVertex(vh_ids[5], vh_ids[6]);
+        if (vh_ids[2]!=vh_ids[3]) continue;
+        if (verbosity>=TVar::DEBUG) cout << "\t\tOutgoing " << vh_ids[3] << " -> " << vh_ids[5] << "," << vh_ids[6] << endl;
+
+        // Compute a raw ME
+        double msq=0;
+        for (int h01 = 0; h01 < 2; h01++){
+          helicities[0] = allowed_helicities[h01];
+          helicities[1] = -helicities[0];
+          for (int h56 = 0; h56 < 2; h56++){
+            helicities[5] = allowed_helicities[h56];
+            helicities[6] = -helicities[5];
+
+            double msq_inst=0;
+            if (HDKon==0) __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq_inst);
             else{
               for (int h78=0; h78<2; h78++){
                 helicities[7]=allowed_helicities[h78];
                 helicities[8]=allowed_helicities[h78];
-                if (!PDGHelpers::isAnUnknownJet(MYIDUP_dec[0]) || !PDGHelpers::isAnUnknownJet(MYIDUP_dec[1])){
-                  if (!PDGHelpers::isAnUnknownJet(MYIDUP_dec[0])){
-                    vh_ids[7]=MYIDUP_dec[0];
-                    vh_ids[8]=-MYIDUP_dec[0];
-                  }
-                  else{
-                    vh_ids[7]=-MYIDUP_dec[1];
-                    vh_ids[8]=MYIDUP_dec[1];
-                  }
-                  double msq=0;
-                  __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq);
-                  MatElsq[vh_ids[1]+5][vh_ids[0]+5] += msq * 0.25; // Average over initial states with helicities +-1 only
-                  if (verbosity>=TVar::DEBUG){ for (int ip=0; ip<9; ip++){ cout << "Particle " << ip << " vh_ids = " << vh_ids[ip] << ", hel=" << helicities[ip] << endl; } }
-                }
-                else{
-                  for (int hquark=-5; hquark<=5; hquark++){
-                    if (hquark==0) continue;
-                    vh_ids[7]=-hquark;
-                    vh_ids[8]=hquark;
-                    double msq=0;
-                    __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq);
-                    MatElsq[vh_ids[1]+5][vh_ids[0]+5] += msq * 0.25; // Average over initial states with helicities +-1 only
-                    if (verbosity>=TVar::DEBUG){ for (int ip=0; ip<9; ip++){ cout << "Particle " << ip << " vh_ids = " << vh_ids[ip] << ", hel=" << helicities[ip] << endl; } }
-                  }
-                }
-              }
+                for (unsigned int ihf=0; ihf<Hffparticles.size(); ihf++){
+                  vh_ids[7]=Hffparticles.at(ihf).first;
+                  vh_ids[8]=Hffparticles.at(ihf).second;
+                  double msq_inst_LR=0;
+                  __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq_inst_LR);
+                  msq_inst += msq_inst_LR;
+                } // End loop over template H->f fbar products
+              } // End loop over the spin of H->f fbar line
+              msq_inst *= Hffscale;
+            } // End HDKon!=0
+            msq += msq_inst;
+          } // End loop over h56
+        } // End loop over h01
+
+        // Determine the outgoing scale
+        double scalesum_out=0;
+        if (!(partonIsKnown[2] && partonIsKnown[3])){
+          double Vckmsq_out = pow(__modparameters_MOD_ckm(&(vh_ids[5]), &(vh_ids[6])), 2);
+          if (verbosity>=TVar::DEBUG) cout << "\t\tDividing ME by |VCKM_outgoing|**2 = " << Vckmsq_out << endl;
+          msq /= Vckmsq_out;
+          for (int outgoing1=1; outgoing1<=nf; outgoing1++){
+            if (partonIsKnown[2] && outgoing1!=abs(vh_ids[5])) continue;
+            if (outgoing1%2!=abs(vh_ids[5])%2 || outgoing1==6) continue;
+            int iout = outgoing1 * TMath::Sign(1, vh_ids[5]);
+            for (int outgoing2=1; outgoing2<=nf; outgoing2++){
+              if (partonIsKnown[3] && outgoing2!=abs(vh_ids[6])) continue;
+              if (outgoing2%2!=abs(vh_ids[6])%2 || outgoing2==6) continue;
+              int jout = outgoing2 * TMath::Sign(1, vh_ids[6]);
+              scalesum_out += pow(__modparameters_MOD_ckm(&(iout), &(jout)), 2);
             }
+          }
+        }
+        else scalesum_out = 1;
+        if (verbosity>=TVar::DEBUG) cout << "\t\tScale for outgoing particles: " << scalesum_out << endl;
 
-          } // End check on Had vs Lep
-        } // End ZH case
-        else if (production==TVar::Lep_WH || production==TVar::Had_WH){
-          vh_ids[0] = incoming1;
-          if (partonIsKnown[0] && MYIDUP_prod[0]!=vh_ids[0]) continue;
+        // Divide ME by the incoming scale factor (will be multiplied again inside the loop)
+        if (!partonIsKnown[0] || !partonIsKnown[1]){
+          if (verbosity>=TVar::DEBUG) cout << "\t\tDividing ME by |VCKM_incoming|**2 = " << Vckmsq_in << endl;
+          msq /= Vckmsq_in;
+        }
 
-          for (int incoming2 = -nf; incoming2 <= nf; incoming2++){
-            if (abs(incoming2)==abs(incoming1) || TMath::Sign(1, incoming1)==TMath::Sign(1, incoming2) || abs(incoming1)%2==abs(incoming2)%2 || incoming2==0) continue;
-            if (
-              (PDGHelpers::isUpTypeQuark(incoming1) && incoming1>0)
-              ||
-              (PDGHelpers::isUpTypeQuark(incoming2) && incoming2>0)
-              ) vh_ids[2]=24;
-            else vh_ids[2]=-24;
-
-            vh_ids[1] = incoming2;
-            if (partonIsKnown[1] && MYIDUP_prod[1]!=vh_ids[1]) continue;
-
-            if (production==TVar::Had_WH){
-              for (int outgoing1=-nf; outgoing1<=nf; outgoing1++){
-                for (int outgoing2=-nf; outgoing2<=nf; outgoing2++){
-                  if (abs(outgoing2)==abs(outgoing1) || TMath::Sign(1, outgoing1)==TMath::Sign(1, outgoing2) || abs(outgoing1)%2==abs(outgoing2)%2 || outgoing1==0 || outgoing2==0) continue;
-
-                  // Determine whether the decay is from a W+ or a W-
-                  if (
-                    (PDGHelpers::isUpTypeQuark(outgoing1) && outgoing1>0)
-                    ||
-                    (PDGHelpers::isUpTypeQuark(outgoing2) && outgoing2>0)
-                    ) vh_ids[3]=24;
-                  else vh_ids[3]=-24;
-                  if (vh_ids[3]!=vh_ids[2]) continue;
-
-                  vh_ids[5] = outgoing1;
-                  vh_ids[6] = outgoing2;
-                  if (
-                    (partonIsKnown[2] && MYIDUP_prod[2]!=vh_ids[5])
-                    ||
-                    (partonIsKnown[3] && MYIDUP_prod[3]!=vh_ids[6])
-                    ) continue;
-
-                  if (HDKon==0){
-                    double msq=0;
-                    __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq);
-                    MatElsq[vh_ids[1]+5][vh_ids[0]+5] += msq * 0.25; // Average over initial states with helicities +-1 only
-                    if (verbosity>=TVar::DEBUG){ for (int ip=0; ip<9; ip++){ cout << "Particle " << ip << " vh_ids = " << vh_ids[ip] << ", hel=" << helicities[ip] << endl; } }
-                  }
-                  else{
-                    for (int h78=0; h78<2; h78++){
-                      helicities[7]=allowed_helicities[h78];
-                      helicities[8]=allowed_helicities[h78];
-                      if (!PDGHelpers::isAnUnknownJet(MYIDUP_dec[0]) || !PDGHelpers::isAnUnknownJet(MYIDUP_dec[1])){
-                        if (!PDGHelpers::isAnUnknownJet(MYIDUP_dec[0])){
-                          vh_ids[7]=MYIDUP_dec[0];
-                          vh_ids[8]=-MYIDUP_dec[0];
-                        }
-                        else{
-                          vh_ids[7]=-MYIDUP_dec[1];
-                          vh_ids[8]=MYIDUP_dec[1];
-                        }
-                        double msq=0;
-                        __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq);
-                        MatElsq[vh_ids[1]+5][vh_ids[0]+5] += msq * 0.25; // Average over initial states with helicities +-1 only
-                        if (verbosity>=TVar::DEBUG){ for (int ip=0; ip<9; ip++){ cout << "Particle " << ip << " vh_ids = " << vh_ids[ip] << ", hel=" << helicities[ip] << endl; } }
-                      }
-                      else{
-                        for (int hquark=-5; hquark<=5; hquark++){
-                          if (hquark==0) continue;
-                          vh_ids[7]=-hquark;
-                          vh_ids[8]=hquark;
-                          double msq=0;
-                          __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq);
-                          MatElsq[vh_ids[1]+5][vh_ids[0]+5] += msq * 0.25; // Average over initial states with helicities +-1 only
-                          if (verbosity>=TVar::DEBUG){ for (int ip=0; ip<9; ip++){ cout << "Particle " << ip << " vh_ids = " << vh_ids[ip] << ", hel=" << helicities[ip] << endl; } }
-                        }
-                      }
-                    }
-                  }
-
-                } // End loop over outgoing2
-              } // End loop over outgoing1
+        // Sum all possible combinations
+        for (int incoming1=1; incoming1<=nf; incoming1++){
+          if (partonIsKnown[0] && incoming1!=abs(vh_ids[0])) continue;
+          if (incoming1%2!=abs(vh_ids[0])%2 || incoming1==6) continue;
+          int iin = incoming1 * TMath::Sign(1, vh_ids[0]);
+          for (int incoming2=1; incoming2<=nf; incoming2++){
+            if (partonIsKnown[1] && incoming2!=abs(vh_ids[1])) continue;
+            if (incoming2%2!=abs(vh_ids[1])%2 || incoming2==6) continue;
+            int jin = incoming2 * TMath::Sign(1, vh_ids[1]);
+            if (verbosity>=TVar::DEBUG) cout << "\t\t\tiin,jin = " << iin << "," << jin << endl;
+            double scale_in=1;
+            if (!partonIsKnown[0] || !partonIsKnown[1]){
+              scale_in = pow(__modparameters_MOD_ckmbare(&(iin), &(jin)), 2);
+              if (verbosity>=TVar::DEBUG) cout << "\t\tScale for incoming particles: " << scale_in << endl;
             }
+            MatElsq[jin+5][iin+5] += msq * 0.25 * scale_in *scalesum_out;
+          }
+        }
+        // msq is now added to MatElSq.
+      } // End loop over outgoing particle templates
+    } // End loop over incoming parton templates
+  } // End WH
+  else{ // ZH, GammaH
+    // Setup incoming partons
+    vector<pair<int, int>> incomingPartons;
+    if (partonIsKnown[0] && partonIsKnown[1]) incomingPartons.push_back(pair<int, int>(MYIDUP_prod[0], MYIDUP_prod[1])); // Parton 0 and 1 are both known
+    else if (!partonIsKnown[0] && !partonIsKnown[1]){ // Parton 0 and 1 are unknown
+      // Consider all 4 incoming cases: d ad, ad d, u au, au u
+      incomingPartons.push_back(pair<int, int>(1, -1)); // dd~ -> Z
+      incomingPartons.push_back(pair<int, int>(-1, 1)); // d~d -> Z
+      incomingPartons.push_back(pair<int, int>(2, -2)); // uu~ -> Z
+      incomingPartons.push_back(pair<int, int>(-2, 2)); // u~u -> Z
+    }
+    else if (!partonIsKnown[1] && partonIsKnown[0]) // Parton 0 is known
+      incomingPartons.push_back(pair<int, int>(MYIDUP_prod[0], -MYIDUP_prod[0])); // id1, -id1
+    else/* if (!partonIsKnown[0] && partonIsKnown[1])*/ // Parton 1 is known
+      incomingPartons.push_back(pair<int, int>(-MYIDUP_prod[1], MYIDUP_prod[1])); // -id2, id2
+    if (verbosity>=TVar::DEBUG){
+      cout << "TUtil::VHiggsMatEl: Incoming partons to compute for the ME template:" << endl;
+      for (unsigned int ip=0; ip<incomingPartons.size(); ip++) cout << "\t - (id1, id2) = (" << incomingPartons.at(ip).first << ", " << incomingPartons.at(ip).second << ")" << endl;
+    }
+
+    // Setup outgoing partons
+    vector<pair<int, int>> outgoingPartons;
+    if ((partonIsKnown[2] && partonIsKnown[3]) || production==TVar::GammaH) outgoingPartons.push_back(pair<int, int>(MYIDUP_prod[2], MYIDUP_prod[3])); // Parton 0 and 1 are both known or Lep_WH
+    else if (!partonIsKnown[2] && !partonIsKnown[3]){ // Parton 0 and 1 are unknown
+      // Consider all 4 outgoing cases: d au, au d, u ad, ad u
+      outgoingPartons.push_back(pair<int, int>(1, -1)); // Z -> dd~
+      outgoingPartons.push_back(pair<int, int>(-1, 1)); // Z -> d~d
+      outgoingPartons.push_back(pair<int, int>(2, -2)); // Z -> uu~
+      outgoingPartons.push_back(pair<int, int>(-2, 2)); // Z -> u~u
+    }
+    else if (!partonIsKnown[3] && partonIsKnown[2]) // Parton 0 is known
+      outgoingPartons.push_back(pair<int, int>(MYIDUP_prod[2], -MYIDUP_prod[2])); // id1, -id1
+    else/* if (!partonIsKnown[2] && partonIsKnown[3])*/ // Parton 1 is known
+      outgoingPartons.push_back(pair<int, int>(-MYIDUP_prod[3], MYIDUP_prod[3])); // -id2, id2
+    if (verbosity>=TVar::DEBUG){
+      cout << "TUtil::VHiggsMatEl: Outgoing particles to compute for the ME template:" << endl;
+      for (unsigned int op=0; op<outgoingPartons.size(); op++) cout << "\t - (id6, id7) = (" << outgoingPartons.at(op).first << ", " << outgoingPartons.at(op).second << ")" << endl;
+    }
+
+    for (unsigned int ip=0; ip<incomingPartons.size(); ip++){
+      vh_ids[0] = incomingPartons.at(ip).first;
+      vh_ids[1] = incomingPartons.at(ip).second;
+      vh_ids[2] = PDGHelpers::getCoupledVertex(vh_ids[0], vh_ids[1]);
+      if (!PDGHelpers::isAZBoson(vh_ids[2])) continue; // Notice, Z-> Gamma + H should also have the id of the Z!
+      if (verbosity>=TVar::DEBUG) cout << "\tIncoming " << vh_ids[0] << "," << vh_ids[1] << " -> " << vh_ids[2] << endl;
+
+      // Scale for the incoming state is 1
+
+      for (unsigned int op=0; op<outgoingPartons.size(); op++){
+        vh_ids[5] = outgoingPartons.at(op).first;
+        vh_ids[6] = outgoingPartons.at(op).second;
+        if (production==TVar::GammaH) vh_ids[3] = 22;
+        else{
+          vh_ids[3] = PDGHelpers::getCoupledVertex(vh_ids[5], vh_ids[6]);
+          if (vh_ids[2]!=vh_ids[3]) continue;
+        }
+        if (verbosity>=TVar::DEBUG) cout << "\t\tOutgoing " << vh_ids[3] << " -> " << vh_ids[5] << "," << vh_ids[6] << endl;
+
+        // Compute a raw ME
+        double msq=0;
+        for (int h01 = 0; h01 < 2; h01++){
+          helicities[0] = allowed_helicities[h01];
+          helicities[1] = -helicities[0];
+          for (int h56 = 0; h56 < 2; h56++){
+            helicities[5] = allowed_helicities[h56];
+            helicities[6] = -helicities[5];
+
+            double msq_inst=0;
+            if (HDKon==0) __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq_inst);
             else{
-              // Determine whether the decay is from a W+ or a W-
-              if (
-                (PDGHelpers::isANeutrino(MYIDUP_prod[2]) && MYIDUP_prod[2]>0)
-                ||
-                (PDGHelpers::isANeutrino(MYIDUP_prod[3]) && MYIDUP_prod[3]>0)
-                ) vh_ids[3]=24;
-              else vh_ids[3]=-24;
-              if (vh_ids[3]!=vh_ids[2]) continue;
+              for (int h78=0; h78<2; h78++){
+                helicities[7]=allowed_helicities[h78];
+                helicities[8]=allowed_helicities[h78];
+                for (unsigned int ihf=0; ihf<Hffparticles.size(); ihf++){
+                  vh_ids[7]=Hffparticles.at(ihf).first;
+                  vh_ids[8]=Hffparticles.at(ihf).second;
+                  double msq_inst_LR=0;
+                  __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq_inst_LR);
+                  msq_inst += msq_inst_LR;
+                } // End loop over template H->f fbar products
+              } // End loop over the spin of H->f fbar line
+              msq_inst *= Hffscale;
+            } // End HDKon!=0
+            msq += msq_inst;
+          } // End loop over h56
+        } // End loop over h01
 
-              vh_ids[5] = MYIDUP_prod[2];
-              vh_ids[6] = MYIDUP_prod[3];
+        // Determine the outgoing scale
+        double scale_out=1;
+        if (!partonIsKnown[2] && !partonIsKnown[3] && production!=TVar::GammaH){
+          if (PDGHelpers::isDownTypeQuark(vh_ids[5])) scale_out=3;
+          else if (PDGHelpers::isUpTypeQuark(vh_ids[5])) scale_out=2;
+        }
+        if (verbosity>=TVar::DEBUG) cout << "\t\tScale for outgoing particles: " << scale_out << endl;
 
-              if (HDKon==0){
-                double msq=0;
-                __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq);
-                MatElsq[vh_ids[1]+5][vh_ids[0]+5] += msq * 0.25; // Average over initial states with helicities +-1 only
-                if (verbosity>=TVar::DEBUG){ for (int ip=0; ip<9; ip++){ cout << "Particle " << ip << " vh_ids = " << vh_ids[ip] << ", hel=" << helicities[ip] << endl; } }
-              }
-              else{
-                for (int h78=0; h78<2; h78++){
-                  helicities[7]=allowed_helicities[h78];
-                  helicities[8]=allowed_helicities[h78];
-                  if (!PDGHelpers::isAnUnknownJet(MYIDUP_dec[0]) || !PDGHelpers::isAnUnknownJet(MYIDUP_dec[1])){
-                    if (!PDGHelpers::isAnUnknownJet(MYIDUP_dec[0])){
-                      vh_ids[7]=MYIDUP_dec[0];
-                      vh_ids[8]=-MYIDUP_dec[0];
-                    }
-                    else{
-                      vh_ids[7]=-MYIDUP_dec[1];
-                      vh_ids[8]=MYIDUP_dec[1];
-                    }
-                    double msq=0;
-                    __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq);
-                    MatElsq[vh_ids[1]+5][vh_ids[0]+5] += msq * 0.25; // Average over initial states with helicities +-1 only
-                    if (verbosity>=TVar::DEBUG){ for (int ip=0; ip<9; ip++){ cout << "Particle " << ip << " vh_ids = " << vh_ids[ip] << ", hel=" << helicities[ip] << endl; } }
-                  }
-                  else{
-                    for (int hquark=-5; hquark<=5; hquark++){
-                      if (hquark==0) continue;
-                      vh_ids[7]=-hquark;
-                      vh_ids[8]=hquark;
-                      double msq=0;
-                      __modvhiggs_MOD_evalamp_vhiggs(vh_ids, helicities, p4, &msq);
-                      MatElsq[vh_ids[1]+5][vh_ids[0]+5] += msq * 0.25; // Average over initial states with helicities +-1 only
-                      if (verbosity>=TVar::DEBUG){ for (int ip=0; ip<9; ip++){ cout << "Particle " << ip << " vh_ids = " << vh_ids[ip] << ", hel=" << helicities[ip] << endl; } }
-                    }
-                  }
-                }
-              }
+        // Sum all possible combinations
+        for (int incoming1=1; incoming1<=nf; incoming1++){
+          if (partonIsKnown[0] && incoming1!=abs(vh_ids[0])) continue;
+          if (incoming1%2!=abs(vh_ids[0])%2 || incoming1==6) continue;
+          int iin = incoming1 * TMath::Sign(1, vh_ids[0]);
+          int jin=-iin;
+          if (verbosity>=TVar::DEBUG) cout << "\t\t\tiin,jin = " << iin << "," << jin << endl;
+          MatElsq[jin+5][iin+5] += msq * 0.25 * scale_out; // No incoming state scale
+        }
+        // msq is now added to MatElSq.
+      } // End loop over outgoing particle templates
+    } // End loop over incoming parton templates
+  } // End ZH, GammaH
 
-            } // End check on Had vs Lep
-          } // End loop over incoming2
-        } // End WH case
-      } // End loop over incoming1
-    } // End loop over h56
-  } // End loop over h01
-
-  int GeVexponent_MEsq = 4-(1+nRequested_AssociatedJets+nRequested_AssociatedLeptons+nRequested_AssociatedPhotons)*2;
+  int GeVexponent_MEsq;
+  if (HDKon==0) GeVexponent_MEsq = 4-(1+nRequested_AssociatedJets+nRequested_AssociatedLeptons+nRequested_AssociatedPhotons)*2-4; // Amplitude has additional 1/m**2 from propagator == MEsq has additional 1/m**4
+  else GeVexponent_MEsq = 4-(2+nRequested_AssociatedJets+nRequested_AssociatedLeptons+nRequested_AssociatedPhotons)*2;
   double constant = pow(GeV, -GeVexponent_MEsq);
   for (int ii=0; ii<nmsq; ii++){ for (int jj=0; jj<nmsq; jj++) MatElsq[jj][ii] *= constant; }
   if (verbosity >= TVar::DEBUG){
@@ -5624,9 +6112,10 @@ double TUtil::VHiggsMatEl(
   }
   SetAlphaS(defaultRenScale, defaultFacScale, 1., 1., defaultNloop, defaultNflav, defaultPdflabel);
   if (verbosity>=TVar::DEBUG){
+    GetAlphaS(&alphasVal, &alphasmzVal);
     cout
       << "TUtil::VHiggsMatEl: Reset AlphaS result:\n"
-      << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << endl;
+      << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << ", alphas(Qren): " << alphasVal << ", alphas(MZ): " << alphasmzVal << endl;
   }
   return sum_msqjk;
 }
@@ -5999,9 +6488,10 @@ double TUtil::TTHiggsMatEl(
   }
   SetAlphaS(defaultRenScale, defaultFacScale, 1., 1., defaultNloop, defaultNflav, defaultPdflabel);
   if (verbosity>=TVar::DEBUG){
+    GetAlphaS(&alphasVal, &alphasmzVal);
     cout
       << "TUtil::TTHiggsMatEl: Reset AlphaS result:\n"
-      << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << endl;
+      << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << ", alphas(Qren): " << alphasVal << ", alphas(MZ): " << alphasmzVal << endl;
   }
   return sum_msqjk;
 }
@@ -6165,9 +6655,10 @@ double TUtil::BBHiggsMatEl(
   }
   SetAlphaS(defaultRenScale, defaultFacScale, 1., 1., defaultNloop, defaultNflav, defaultPdflabel);
   if (verbosity>=TVar::DEBUG){
+    GetAlphaS(&alphasVal, &alphasmzVal);
     cout
       << "TUtil::BBHiggsMatEl: Reset AlphaS result:\n"
-      << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << endl;
+      << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << ", alphas(Qren): " << alphasVal << ", alphas(MZ): " << alphasmzVal << endl;
   }
   return sum_msqjk;
 }
@@ -6254,7 +6745,7 @@ double TUtil::ResonancePropagator(double shat, TVar::ResonancePropagatorScheme s
 
   const double GeV=1./100.; // JHUGen mom. scale factor
   int isch=(int)scheme;
-  double shat_jhu = shat*GeV;
+  double shat_jhu = pow(shat*GeV, 2);
   double prop = __modkinematics_MOD_getbwpropagator(&shat_jhu, &isch);
   prop *= pow(GeV, 4);
   return prop;
@@ -6681,20 +7172,14 @@ void TUtil::GetBoostedParticleVectors(
   double pz1 = -(sysE-sysPz)/2.;
   int motherId[2]={ 0, 0 };
   if (melaCand->getNMothers()==2){
-    // Match the assumed M1==(pz>0) and M2==(pz<0) to the pz of the actual mothers.
-    if ((melaCand->getMother(0)->p4).Z()<0.){ // Swap by Z to get the correct momentum matching default M1, M2
-      double pztmp = pz1;
-      pz1=pz0;
-      pz0=pztmp;
-    }
-    if (motherId[0]<0){ // Swap the ids of mothers and their "assumed" momenta to achieve ordering as "incoming" q-qbar
-      double pztmp = pz1;
-      pz1=pz0;
-      pz0=pztmp;
-      for (int ip=0; ip<2; ip++) motherId[1-ip]=melaCand->getMother(ip)->id;
-    }
-    else{ // No swap of mothers necessary, just get their ids
-      for (int ip=0; ip<2; ip++) motherId[ip]=melaCand->getMother(ip)->id;
+    for (int ip=0; ip<2; ip++) motherId[ip]=melaCand->getMother(ip)->id;
+    // Match the "assumed" M'1==(pz>0) and M'2==(pz<0) to the pz of the actual mothers:
+    // Swap pZs to get the correct momentum matching default M1, M2.
+    if ((melaCand->getMother(0)->p4).Z()<0.) swap(pz0, pz1);
+    // Swap the ids of mothers and their pT=0-assumed momenta to achieve ordering as "incoming" q-qbar
+    if ((motherId[0]<0 && motherId[1]>=0) || (motherId[1]>0 && motherId[0]<=0)){
+      swap(pz0, pz1);
+      swap(motherId[0], motherId[1]);
     }
   }
   TLorentzVector pM[2];

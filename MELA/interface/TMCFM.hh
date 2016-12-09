@@ -114,6 +114,10 @@ extern "C" {
   } ewcouple_;
 
   extern struct {
+    double aemmz;
+  } em_;
+
+  extern struct {
     double Q[11], tau[11];
   } ewcharge_;
 
@@ -249,6 +253,10 @@ extern "C" {
     int nwz;
   } nwz_;
 
+  extern struct {
+    double Vud, Vus, Vub, Vcd, Vcs, Vcb;
+  } cabib_;
+  
   extern struct {
     double taumin;
   } taumin_;
