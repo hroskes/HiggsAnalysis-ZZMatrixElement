@@ -46,6 +46,36 @@ ROOT.gROOT.Macro(os.path.join(os.environ["CMSSW_BASE"], "src", "ZZMatrixElement"
 include("ZZMatrixElement/MELA/interface/Mela.h")
 
 from ROOT import TVar
+f = tempfile.NamedTemporaryFile(suffix=".C", bufsize=0)
+contents = """
+  #include <ZZMatrixElement/MELA/interface/TCouplingsBase.hh>
+  #include <ZZMatrixElement/MELA/interface/TMCFM.hh>
+  auto size_HQQ = ::SIZE_HQQ;
+  auto size_HGG = ::SIZE_HGG;
+  auto size_HVV = ::SIZE_HVV;
+  auto size_HVV_LAMBDAQSQ = ::SIZE_HVV_LAMBDAQSQ;
+  auto size_HVV_CQSQ = ::SIZE_HVV_CQSQ;
+  auto size_ZQQ = ::SIZE_ZQQ;
+  auto size_ZVV = ::SIZE_ZVV;
+  auto size_GQQ = ::SIZE_GQQ;
+  auto size_GGG = ::SIZE_GGG;
+  auto size_GVV = ::SIZE_GVV;
+"""
+f.write(contents)
+ROOT.gROOT.ProcessLine(".L {}+".format(f.name))
+from ROOT import (
+                  size_HQQ as SIZE_HQQ,
+                  size_HGG as SIZE_HGG,
+                  size_HVV as SIZE_HVV,
+                  size_HVV_LAMBDAQSQ as SIZE_HVV_LAMBDAQSQ,
+                  size_HVV_CQSQ as SIZE_HVV_CQSQ,
+                  size_ZQQ as SIZE_ZQQ,
+                  size_ZVV as SIZE_ZVV,
+                  size_GQQ as SIZE_GQQ,
+                  size_GGG as SIZE_GGG,
+                  size_GVV as SIZE_GVV,
+                 )
+from ROOT import nSupportedHiggses
 
 class MultiDimensionalCppArray(object):
   functionfiletemplate = """
@@ -254,19 +284,24 @@ class Mela(object):
     type(self).counter += 1
 
     arrays  = (
-               ("selfDHqqcoupl", (2, 2)),
-               ("selfDHggcoupl", (3, 2)),
-               ("selfDHzzcoupl", (2, 39, 2)),
-               ("selfDHwwcoupl", (2, 39, 2)),
-               ("selfDHzzLambda_qsq", (2, 4, 3)),
-               ("selfDHwwLambda_qsq", (2, 4, 3)),
-               ("selfDHzzCLambda_qsq", (2, 3)),
-               ("selfDHwwCLambda_qsq", (2, 3)),
-               ("selfDZqqcoupl", (2, 2)),
-               ("selfDZvvcoupl", (2, 2)),
-               ("selfDGqqcoupl", (2, 2)),
-               ("selfDGggcoupl", (5, 2)),
-               ("selfDGvvcoupl", (10, 2)),
+               ("selfDHggcoupl", (nSupportedHiggses, SIZE_HGG, 2)),
+               ("selfDHg4g4coupl", (nSupportedHiggses, SIZE_HGG, 2)),
+               ("selfDHqqcoupl", (nSupportedHiggses, SIZE_HQQ, 2)),
+               ("selfDHbbcoupl", (nSupportedHiggses, SIZE_HQQ, 2)),
+               ("selfDHttcoupl", (nSupportedHiggses, SIZE_HQQ, 2)),
+               ("selfDHb4b4coupl", (nSupportedHiggses, SIZE_HQQ, 2)),
+               ("selfDHt4t4coupl", (nSupportedHiggses, SIZE_HQQ, 2)),
+               ("selfDHzzcoupl", (nSupportedHiggses, SIZE_HVV, 2)),
+               ("selfDHwwcoupl", (nSupportedHiggses, SIZE_HVV, 2)),
+               ("selfDHzzLambda_qsq", (nSupportedHiggses, SIZE_HVV_LAMBDAQSQ, SIZE_HVV_CQSQ)),
+               ("selfDHwwLambda_qsq", (nSupportedHiggses, SIZE_HVV_LAMBDAQSQ, SIZE_HVV_CQSQ)),
+               ("selfDHzzCLambda_qsq", (nSupportedHiggses, SIZE_HVV_CQSQ)),
+               ("selfDHwwCLambda_qsq", (nSupportedHiggses, SIZE_HVV_CQSQ)),
+               ("selfDZqqcoupl", (SIZE_ZQQ, 2)),
+               ("selfDZvvcoupl", (SIZE_ZVV, 2)),
+               ("selfDGqqcoupl", (SIZE_GQQ, 2)),
+               ("selfDGggcoupl", (SIZE_GGG, 2)),
+               ("selfDGvvcoupl", (SIZE_GVV, 2)),
               )
 
     f = None
