@@ -84,7 +84,7 @@ public:
   std::vector<MELATopCandidate*>* getTopCandidateCollection();
 
 
-  float getConstant();
+  void getConstant(float& prob); // <ME> constants
   void getPAux(float& prob); // SuperProb
 
   void computeDecayAngles(
@@ -326,6 +326,7 @@ protected:
     const char* relpath,
     const char* spname
     );
+  void setConstant();
   float getConstant_JHUGenUndecayed();
   float getConstant_4l();
   float getConstant_2l2q();

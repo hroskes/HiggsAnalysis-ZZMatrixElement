@@ -1,7 +1,4 @@
-/*
-
-************* CMS MELA interface to MCFM/JHUGen-MELA *************
-Last update: 29.05.2016 by U. Sarica
+/************** MELA interface to MCFM/JHUGen-MELA *************
 
 Notes:
 1) Each specific type of computeP* function comes with its wrapper for common use.
@@ -15,7 +12,7 @@ Please adhere to the following coding conventions:
    does not reset the couplings properly.
 2) ...
 
-*/
+***************************************************************/
 
 #include <ZZMatrixElement/MELA/interface/Mela.h>
 #include <ZZMatrixElement/MELA/interface/newZZMatrixElement.h>
@@ -629,7 +626,11 @@ void Mela::computeP(
       }
     }
 
-    if (useConstant) prob *= getConstant();
+    if (useConstant){
+      float pConst=1.;
+      getConstant(pConst);
+      prob *= pConst;
+    }
   }
 
   reset_SelfDCouplings();
@@ -800,7 +801,11 @@ void Mela::computeProdDecP(
       myModel_, myME_, myProduction_,
       prob
       );
-    if(useConstant) prob *= getConstant();
+    if (useConstant){
+      float pConst=1.;
+      getConstant(pConst);
+      prob *= pConst;
+    }
   }
 
   reset_SelfDCouplings();
@@ -916,7 +921,8 @@ void Mela::computeProdP(
           prob
           ); // Higgs + 2 jets: SBF or WBF main probability
 
-        float constant = getConstant();
+        float constant=1.;
+        getConstant(constant);
 
         int nGrid=11;
         std::vector<double> etaArray;
@@ -1083,7 +1089,11 @@ void Mela::computeProdP(
         }
 
         if (fabs(prob)>0) auxiliaryProb /= prob;
-        if (useConstant) prob *= constant;
+        if (useConstant){
+          float pConst=1.;
+          getConstant(pConst);
+          prob *= pConst;
+        }
       }
       else{
         if (myProduction_ == TVar::JJQCD || myProduction_ == TVar::JJVBF){
@@ -1116,7 +1126,11 @@ void Mela::computeProdP(
             ); // Higgs + 1 jet; only SM is supported for now.
         }
 
-        if (useConstant) prob *= getConstant();
+        if (useConstant){
+          float pConst=1.;
+          getConstant(pConst);
+          prob *= pConst;
+        }
       }
     }
 
@@ -1185,7 +1199,11 @@ void Mela::computeProdP_VH(
         includeHiggsDecay
         ); // VH
 
-      if (useConstant) prob *= getConstant();
+      if (useConstant){
+        float pConst=1.;
+        getConstant(pConst);
+        prob *= pConst;
+      }
     }
   }
 
@@ -1228,7 +1246,11 @@ void Mela::computeProdP_ttH(
       topProcess, topDecay
       );
 
-    if (useConstant) prob *= getConstant();
+    if (useConstant){
+      float pConst=1.;
+      getConstant(pConst);
+      prob *= pConst;
+    }
   }
 
   reset_SelfDCouplings();
@@ -1388,7 +1410,7 @@ void Mela::computeD_gg(
     float ggScale=0;
     setProcess(TVar::bkgZZ, myME, TVar::ZZGG); computeP(ggzz_VAMCFM_noscale, false);
     setProcess(TVar::HSMHiggs, myME, TVar::ZZGG); computeP(ggHZZ_prob_pure_noscale, false);
-    setProcess(TVar::bkgZZ_SMHiggs, myME, TVar::ZZGG); computeP(bkgHZZ_prob_noscale, false); ggScale = getConstant();
+    setProcess(TVar::bkgZZ_SMHiggs, myME, TVar::ZZGG); computeP(bkgHZZ_prob_noscale, false); getConstant(ggScale);
     if (ggScale>0.){
       bkgHZZ_prob_noscale /= ggScale;
       ggHZZ_prob_pure_noscale /= ggScale;
@@ -1603,64 +1625,61 @@ bool Mela::configureAnalyticalPDFs(){
 
 
 // Constants to normalize probabilities
-float Mela::getConstant(){
+void Mela::getConstant(float& prob){ prob = getIORecord()->getMEConst(); }
+void Mela::setConstant(){
   float constant = 1;
-  if (melaCand==0){
-    if (myVerbosity_>=TVar::DEBUG) cout << "Mela::getConstant: melaCand==0" << endl;
-    return constant;
+  if (melaCand==0){ if (myVerbosity_>=TVar::DEBUG) cout << "Mela::getConstant: melaCand==0" << endl; }
+  else{
+    if ( // Undecayed Higgs MEs from JHUGen
+      myME_ == TVar::JHUGen
+      &&
+      (
+      myProduction_ == TVar::JQCD
+      ||
+      myProduction_ == TVar::JJQCD || myProduction_ == TVar::JJVBF
+      ||
+      myProduction_ == TVar::Lep_ZH || myProduction_ == TVar::Had_ZH
+      ||
+      myProduction_ == TVar::Lep_WH || myProduction_ == TVar::Had_WH
+      ||
+      myProduction_ == TVar::GammaH
+      ||
+      myProduction_ == TVar::ttH || myProduction_ == TVar::bbH
+      )
+      ) constant = getConstant_JHUGenUndecayed();
+    else if ( // H->4l/2l2l
+      melaCand->getSortedV(0)->getNDaughters()==2
+      &&
+      melaCand->getSortedV(1)->getNDaughters()==2
+      &&
+      PDGHelpers::isALepton(melaCand->getSortedV(0)->getDaughter(0)->id) && PDGHelpers::isALepton(melaCand->getSortedV(0)->getDaughter(1)->id)
+      &&
+      PDGHelpers::isALepton(melaCand->getSortedV(1)->getDaughter(0)->id) && PDGHelpers::isALepton(melaCand->getSortedV(1)->getDaughter(1)->id)
+      ) constant = getConstant_4l();
+    else if ( // H->2l2q
+      melaCand->getSortedV(0)->getNDaughters()==2
+      &&
+      melaCand->getSortedV(1)->getNDaughters()==2
+      &&
+      (
+      (
+      PDGHelpers::isALepton(melaCand->getSortedV(0)->getDaughter(0)->id) && PDGHelpers::isALepton(melaCand->getSortedV(0)->getDaughter(1)->id)
+      &&
+      PDGHelpers::isAJet(melaCand->getSortedV(1)->getDaughter(0)->id) && PDGHelpers::isAJet(melaCand->getSortedV(1)->getDaughter(1)->id)
+      )
+      ||
+      (
+      PDGHelpers::isALepton(melaCand->getSortedV(1)->getDaughter(0)->id) && PDGHelpers::isALepton(melaCand->getSortedV(1)->getDaughter(1)->id)
+      &&
+      PDGHelpers::isAJet(melaCand->getSortedV(0)->getDaughter(0)->id) && PDGHelpers::isAJet(melaCand->getSortedV(0)->getDaughter(1)->id)
+      )
+      )
+      ) constant = getConstant_2l2q();
   }
-
-  if ( // Undecayed Higgs MEs from JHUGen
-    myME_ == TVar::JHUGen
-    &&
-    (
-    myProduction_ == TVar::JQCD
-    ||
-    myProduction_ == TVar::JJQCD || myProduction_ == TVar::JJVBF
-    ||
-    myProduction_ == TVar::Lep_ZH || myProduction_ == TVar::Had_ZH
-    ||
-    myProduction_ == TVar::Lep_WH || myProduction_ == TVar::Had_WH
-    ||
-    myProduction_ == TVar::GammaH
-    ||
-    myProduction_ == TVar::ttH || myProduction_ == TVar::bbH
-    )
-    ) constant = getConstant_JHUGenUndecayed();
-  else if ( // H->4l/2l2l
-    melaCand->getSortedV(0)->getNDaughters()==2
-    &&
-    melaCand->getSortedV(1)->getNDaughters()==2
-    &&
-    PDGHelpers::isALepton(melaCand->getSortedV(0)->getDaughter(0)->id) && PDGHelpers::isALepton(melaCand->getSortedV(0)->getDaughter(1)->id)
-    &&
-    PDGHelpers::isALepton(melaCand->getSortedV(1)->getDaughter(0)->id) && PDGHelpers::isALepton(melaCand->getSortedV(1)->getDaughter(1)->id)
-    ) constant = getConstant_4l();
-  else if ( // H->2l2q
-    melaCand->getSortedV(0)->getNDaughters()==2
-    &&
-    melaCand->getSortedV(1)->getNDaughters()==2
-    &&
-    (
-    (
-    PDGHelpers::isALepton(melaCand->getSortedV(0)->getDaughter(0)->id) && PDGHelpers::isALepton(melaCand->getSortedV(0)->getDaughter(1)->id)
-    &&
-    PDGHelpers::isAJet(melaCand->getSortedV(1)->getDaughter(0)->id) && PDGHelpers::isAJet(melaCand->getSortedV(1)->getDaughter(1)->id)
-    )
-    ||
-    (
-    PDGHelpers::isALepton(melaCand->getSortedV(1)->getDaughter(0)->id) && PDGHelpers::isALepton(melaCand->getSortedV(1)->getDaughter(1)->id)
-    &&
-    PDGHelpers::isAJet(melaCand->getSortedV(0)->getDaughter(0)->id) && PDGHelpers::isAJet(melaCand->getSortedV(0)->getDaughter(1)->id)
-    )
-    )
-    ) constant = getConstant_2l2q();
-
   if (std::isnan(constant) || std::isinf(constant) || constant<=0.) constant=0;
   else constant=1./constant;
   if (myVerbosity_>=TVar::DEBUG) cout << "Mela::getConstant: Constant is " << constant << endl;
-
-  return constant;
+  getIORecord()->setMEConst(constant);
 }
 float Mela::getConstant_JHUGenUndecayed(){
   float constant = 1;

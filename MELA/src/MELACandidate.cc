@@ -9,7 +9,7 @@ associatedByHighestPt(associatedByHighestPt_),
 isShallowCopy(false)
 {}
 MELACandidate::~MELACandidate(){
-  if (!isShallowCopy){ // Delete owned objjects, or not
+  if (!isShallowCopy){ // Delete owned objects, or not
     for (unsigned int i=0; i<sortedVs.size(); i++) delete sortedVs.at(i);
   }
   sortedVs.clear();
