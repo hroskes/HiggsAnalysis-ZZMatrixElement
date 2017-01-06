@@ -33,6 +33,8 @@ namespace TMCFMUtils{
 
   void AssociatedParticleOrdering_QQVVQQAny(int iSel, int jSel, int rSel, int sSel, int order[2]);
   std::vector<intQuad_t> Hash_QQVVQQAny();
+  std::vector<intQuad_t> Hash_QQVVQQ();
+  std::vector<intQuad_t> Hash_QQVVQQStrong();
 }
 
 #endif

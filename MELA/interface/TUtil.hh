@@ -234,6 +234,7 @@ namespace TUtil{
     TVar::VerbosityLevel verbosity
     );
 
+  int WipeMEArray(const TVar::Process& process, const TVar::Production& production, const int id[mxpart], double msq[nmsq][nmsq], const TVar::VerbosityLevel& verbosity);
   bool CheckPartonMomFraction(const TLorentzVector& p0, const TLorentzVector& p1, double xx[2], const double& EBEAM, const TVar::VerbosityLevel& verbosity);
   void ComputePDF(const TLorentzVector& p0, const TLorentzVector& p1, double fx1[nmsq], double fx2[nmsq], const double& EBEAM, const TVar::VerbosityLevel& verbosity);
   double SumMEPDF(const TLorentzVector& p0, const TLorentzVector& p1, double msq[nmsq][nmsq], MelaIO* RcdME, const double& EBEAM, const TVar::VerbosityLevel& verbosity);

@@ -13,6 +13,7 @@
 #include "RooAbsCategory.h"
 #include "Riostream.h" 
 #include "TMath.h"
+#include "TCouplingsBase.hh"
 
 using namespace TMath;
 using namespace std;

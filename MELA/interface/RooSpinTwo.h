@@ -12,7 +12,7 @@ class RooSpinTwo : public RooSpin {
 public:
 
   struct modelCouplings{
-    RooAbsReal* bList[10][2];
+    RooAbsReal* bList[SIZE_GVV][2];
     RooRealVar* Lambda;
     RooRealVar* f_spinz1; // Set to 1 for qqb production
     RooRealVar* f_spinz2; // Set to 0 for qqb production
