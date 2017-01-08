@@ -5,15 +5,14 @@
 #include <string>
 #include <fstream>
 #include <vector>
-
-#include "TLorentzVector.h"
+#include "Mela.h"
+#include "MELACombinePdfs.h"
 #include "Riostream.h"
 #include "RooRealVar.h"
 #include "RooFormulaVar.h"
 #include "RooCBShape.h"
 #include "RooFFTConvPdf.h"
-#include <ZZMatrixElement/MELA/interface/Mela.h>
-#include <ZZMatrixElement/MELA/interface/MELACombinePdfs.h>
+#include "TLorentzVector.h"
 
 
 

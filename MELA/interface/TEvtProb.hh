@@ -25,6 +25,12 @@
 #include <ostream>
 #include <fstream>
 #include <cassert>
+// ME related includes
+#include "TMCFM.hh"
+#include "TCouplings.hh"
+#include "TVar.hh"
+#include "TUtil.hh"
+#include "MELAHXSWidth.h"
 // ROOT includes
 #include "TObject.h"
 #include "TLorentzVector.h"
@@ -34,12 +40,6 @@
 #include "TFile.h"
 #include "TString.h"
 #include "TROOT.h"
-// ME related includes
-#include "TMCFM.hh"
-#include "TCouplings.hh"
-#include "TVar.hh"
-#include "TUtil.hh"
-#include "MELAHXSWidth.h"
 
 
 //----------------------------------------
@@ -156,7 +156,7 @@ protected:
   double _h2width;
   double EBEAM;
   MELAHXSWidth* myCSW_;
-  event_scales_type event_scales;
+  TVar::event_scales_type event_scales;
 
   SpinZeroCouplings selfDSpinZeroCoupl;
   SpinOneCouplings selfDSpinOneCoupl;

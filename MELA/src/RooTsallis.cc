@@ -1,13 +1,10 @@
-
-#include <ZZMatrixElement/MELA/interface/RooTsallis.h>
-
 #include <iostream>
-#include <math.h>
-
-#include "TH1.h"
+#include <cmath>
+#include "RooTsallis.h"
 #include "RooFit.h"
 #include "RooRealVar.h"
 #include "RooRealConstant.h"
+#include "TH1.h"
 
 //ClassImp(RooTsallis) 
 

@@ -6,13 +6,14 @@ Please see the ../src/Mela.cc file for the instructions.
 #ifndef MELA_Mela_h
 #define MELA_Mela_h
 
-#include "TLorentzVector.h"
 #include <vector>
-#include <TRandom3.h>
+#include "TLorentzVector.h"
+#include "TRandom3.h"
 
 
 class TFile; 
-class TH1F; 
+class TGraph;
+class TH1F;
 class TH2F;
 class TH3F;
 class RooRealVar;
@@ -23,7 +24,6 @@ class VectorPdfFactory;
 class TensorPdfFactory;
 class RooqqZZ_JHU_ZgammaZZ_fast;
 class newZZMatrixElement;
-class TGraph;
 class SuperMELA;
 
 #include <ZZMatrixElement/MELA/interface/TVar.hh>

@@ -1,8 +1,8 @@
 #ifndef MELACANDIDATE_H
 #define MELACANDIDATE_H
 
-#include <ZZMatrixElement/MELA/interface/MELAParticle.h>
-#include <ZZMatrixElement/MELA/interface/MELATopCandidate.h>
+#include "MELAParticle.h"
+#include "MELATopCandidate.h"
 
 class MELACandidate : public MELAParticle{
 public:

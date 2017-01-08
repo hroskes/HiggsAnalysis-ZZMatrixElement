@@ -1,4 +1,4 @@
-#include <ZZMatrixElement/MELA/interface/newZZMatrixElement.h>
+#include "newZZMatrixElement.h"
 #include "TLorentzRotation.h"
 
 

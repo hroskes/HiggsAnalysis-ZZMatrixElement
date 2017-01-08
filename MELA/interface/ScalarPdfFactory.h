@@ -1,15 +1,10 @@
 #ifndef SCALAR_PDF_FACTORY
 #define SCALAR_PDF_FACTORY
 
-#ifdef _def_melatools_
-#include <ZZMatrixElement/MELA/interface/RooSpinZero.h>
-#include <ZZMatrixElement/MELA/interface/SpinPdfFactory.h>
-#else
 #include "RooSpinZero.h"
 #include "SpinPdfFactory.h"
-#endif
-#include "TString.h"
 #include "RooFormulaVar.h"
+#include "TString.h"
 
 
 class ScalarPdfFactory : public SpinPdfFactory{

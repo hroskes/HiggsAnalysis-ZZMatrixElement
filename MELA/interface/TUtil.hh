@@ -164,12 +164,12 @@ namespace TUtil{
   bool MCFM_chooser(
     const TVar::Process& process, const TVar::Production& production, const TVar::LeptonInterference& leptonInterf,
     const TVar::VerbosityLevel& verbosity,
-    const simple_event_record& mela_event
+    const TVar::simple_event_record& mela_event
     );
   bool MCFM_SetupParticleCouplings(
     const TVar::Process& process, const TVar::Production& production,
     const TVar::VerbosityLevel& verbosity,
-    const simple_event_record& mela_event,
+    const TVar::simple_event_record& mela_event,
     std::vector<int>* partOrder, std::vector<int>* apartOrder
     );
   TString GetMCFMParticleLabel(const int& pid, bool useQJ=false);
@@ -196,39 +196,39 @@ namespace TUtil{
   // ME computations
   double SumMatrixElementPDF(
     const TVar::Process& process, const TVar::Production& production, const TVar::MatrixElement& matrixElement, const TVar::LeptonInterference& leptonInterf,
-    event_scales_type* event_scales, MelaIO* RcdME,
+    TVar::event_scales_type* event_scales, MelaIO* RcdME,
     const double& EBEAM,
     TVar::VerbosityLevel verbosity
     );
   double JHUGenMatEl(
     const TVar::Process& process, const TVar::Production& production, const TVar::MatrixElement& matrixElement,
-    event_scales_type* event_scales, MelaIO* RcdME,
+    TVar::event_scales_type* event_scales, MelaIO* RcdME,
     const double& EBEAM,
     TVar::VerbosityLevel verbosity
     );
   double HJJMatEl(
     const TVar::Process& process, const TVar::Production& production, const TVar::MatrixElement& matrixElement,
-    event_scales_type* event_scales, MelaIO* RcdME,
+    TVar::event_scales_type* event_scales, MelaIO* RcdME,
     const double& EBEAM,
     TVar::VerbosityLevel verbosity
     );
   double VHiggsMatEl(
     const TVar::Process& process, const TVar::Production& production, const TVar::MatrixElement& matrixElement,
-    event_scales_type* event_scales, MelaIO* RcdME,
+    TVar::event_scales_type* event_scales, MelaIO* RcdME,
     const double& EBEAM,
     bool includeHiggsDecay,
     TVar::VerbosityLevel verbosity
     );
   double TTHiggsMatEl(
     const TVar::Process& process, const TVar::Production& production, const TVar::MatrixElement& matrixElement,
-    event_scales_type* event_scales, MelaIO* RcdME,
+    TVar::event_scales_type* event_scales, MelaIO* RcdME,
     const double& EBEAM,
     int topDecay, int topProcess,
     TVar::VerbosityLevel verbosity
     );
   double BBHiggsMatEl(
     const TVar::Process& process, const TVar::Production& production, const TVar::MatrixElement& matrixElement,
-    event_scales_type* event_scales, MelaIO* RcdME,
+    TVar::event_scales_type* event_scales, MelaIO* RcdME,
     const double& EBEAM,
     int botProcess,
     TVar::VerbosityLevel verbosity
@@ -245,7 +245,7 @@ namespace TUtil{
   // Boost the particles with or without associated ones to pT=0 frame and return std::vectors filled with (id, momentum) pairs
   void GetBoostedParticleVectors(
     MELACandidate* melaCand,
-    simple_event_record& mela_event,
+    TVar::simple_event_record& mela_event,
     TVar::VerbosityLevel verbosity=TVar::DEBUG
     );
 

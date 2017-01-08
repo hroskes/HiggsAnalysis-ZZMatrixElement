@@ -1,11 +1,7 @@
-#ifdef _def_melatools_
-#include <ZZMatrixElement/MELA/interface/RooSpinTwo.h>
-#else
-#include "../include/RooSpinTwo.h"
-#endif
-
+#include "RooSpinTwo.h"
 
 using namespace std;
+
 
 RooSpinTwo::RooSpinTwo(
   const char* name, const char* title,

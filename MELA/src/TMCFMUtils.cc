@@ -1,4 +1,4 @@
-#include <ZZMatrixElement/MELA/interface/TMCFMUtils.hh>
+#include "TMCFMUtils.hh"
 #include "TMath.h"
 
 using namespace std;

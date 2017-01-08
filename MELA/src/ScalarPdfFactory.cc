@@ -1,8 +1,4 @@
-#ifdef _def_melatools_
-#include <ZZMatrixElement/MELA/interface/ScalarPdfFactory.h>
-#else
-#include "../include/ScalarPdfFactory.h"
-#endif
+#include "ScalarPdfFactory.h"
 
 
 ScalarPdfFactory::ScalarPdfFactory(RooSpin::modelMeasurables measurables_, bool acceptance_, RooSpin::VdecayType V1decay_, RooSpin::VdecayType V2decay_, Bool_t OnshellH_) :

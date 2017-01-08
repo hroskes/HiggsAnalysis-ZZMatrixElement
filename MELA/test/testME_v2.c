@@ -1339,7 +1339,7 @@ void testME_ProdDec_MCFM_JHUGen_WBFZZWW_Comparison_Ping(int motherflavor=0, int 
   int idMother[2]={ 0 };
   if (vbfvhchannel<=1){
     // VBF ZZ(+)WW
-    if (motherflavor==0){ // qq-<qq gives wrong ratio in 4l interf.
+    if (motherflavor==0){
       doEval = true;
     }
     else if (motherflavor==1){

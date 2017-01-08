@@ -1,13 +1,10 @@
 #ifndef ROOSPINZERO_3D_PP_VH
 #define ROOSPINZERO_3D_PP_VH
 
-#ifdef _def_melatools_
-#include <ZZMatrixElement/MELA/interface/RooSpinZero.h>
-#else
 #include "RooSpinZero.h"
-#endif
 #include "TLorentzVector.h"
 #include "TLorentzRotation.h"
+
 
 class RooSpinZero_3D_pp_VH : public RooSpinZero {
 public:

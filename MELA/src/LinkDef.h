@@ -1,7 +1,9 @@
-#include <ZZMatrixElement/MELA/interface/Mela.h>
-#include <ZZMatrixElement/MELA/interface/newZZMatrixElement.h>
+#include "Mela.h"
+#include "newZZMatrixElement.h"
 
 #ifdef __CINT__
+
+
 #pragma link off all globals;
 #pragma link off all classes;
 #pragma link off all functions;
@@ -14,7 +16,7 @@
 #pragma link C++ class MELATopCandidate;
 #pragma link C++ class MELACandidate;
 #pragma link C++ class MelaIO;
-#pragma link C++ class TVar;
+#pragma link C++ namespace TVar;
 
 #pragma link C++ namespace TUtil;
 #pragma link C++ function TUtil::computeAngles;
@@ -49,7 +51,6 @@
 #pragma link C++ class TEvtProb;
 #pragma link C++ class Mela;
 #pragma link C++ class newZZMatrixElement;
-
 
 
 #endif

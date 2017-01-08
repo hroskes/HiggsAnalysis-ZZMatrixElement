@@ -1,8 +1,8 @@
-#include "Riostream.h"
-
-#include <ZZMatrixElement/MELA/interface/MELACombinePdfs.h>
 #include <cmath>
 #include <complex>
+#include <algorithm>
+#include "MELACombinePdfs.h"
+#include "Riostream.h"
 #include "RooAbsReal.h"
 #include "RooRealVar.h"
 #include "RooVoigtian.h"
@@ -10,7 +10,6 @@
 #include "RooAbsCategory.h"
 #include "TMath.h"
 #include "TComplex.h"
-#include <algorithm>
 
 using namespace std;
 using namespace TMath;

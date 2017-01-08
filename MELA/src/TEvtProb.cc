@@ -10,7 +10,7 @@
 // K. Burkett (burkett@fnal.gov)
 //-----------------------------------------------------------------------------
 
-#include <ZZMatrixElement/MELA/interface/TEvtProb.hh>
+#include "TEvtProb.hh"
 
 
 ClassImp(TEvtProb)

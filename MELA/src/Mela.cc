@@ -14,17 +14,6 @@ Please adhere to the following coding conventions:
 
 ***************************************************************/
 
-#include <ZZMatrixElement/MELA/interface/Mela.h>
-#include <ZZMatrixElement/MELA/interface/newZZMatrixElement.h>
-#include <DataFormats/GeometryVector/interface/Pi.h>
-#include <FWCore/ParameterSet/interface/FileInPath.h>
-
-#include <ZZMatrixElement/MELA/interface/VectorPdfFactory.h>
-#include <ZZMatrixElement/MELA/interface/TensorPdfFactory.h>
-#include <ZZMatrixElement/MELA/interface/RooqqZZ_JHU_ZgammaZZ_fast.h>
-#include <ZZMatrixElement/MELA/interface/RooqqZZ_JHU.h>
-#include <ZZMatrixElement/MELA/interface/SuperMELA.h>
-
 #include <vector>
 #include <string>
 #include <cstdio>
@@ -32,6 +21,16 @@ Please adhere to the following coding conventions:
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#include <DataFormats/GeometryVector/interface/Pi.h>
+#include <FWCore/ParameterSet/interface/FileInPath.h>
+#include "Mela.h"
+#include "newZZMatrixElement.h"
+#include "VectorPdfFactory.h"
+#include "TensorPdfFactory.h"
+#include "RooqqZZ_JHU_ZgammaZZ_fast.h"
+#include "RooqqZZ_JHU.h"
+#include "SuperMELA.h"
 
 #include "RooMsgService.h"
 #include "TFile.h"

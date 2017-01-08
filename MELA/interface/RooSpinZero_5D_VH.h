@@ -1,11 +1,7 @@
 #ifndef ROOSPINZERO_5D_VH
 #define ROOSPINZERO_5D_VH
 
-#ifdef _def_melatools_
-#include <ZZMatrixElement/MELA/interface/RooSpinZero.h>
-#else
 #include "RooSpinZero.h"
-#endif
 
 
 class RooSpinZero_5D_VH : public RooSpinZero {

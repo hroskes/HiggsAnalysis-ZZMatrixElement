@@ -1,14 +1,16 @@
-#include <ZZMatrixElement/MELA/interface/TUtil.hh>
 #include <iostream>
 #include <cstdio>
 #include <cmath>
 #include <utility>
 #include <algorithm>
+#include "TUtil.hh"
 #include "TMath.h"
 #include "TLorentzRotation.h"
 
 
 using namespace std;
+using TVar::event_scales_type;
+using TVar::simple_event_record;
 
 
 namespace TUtil{

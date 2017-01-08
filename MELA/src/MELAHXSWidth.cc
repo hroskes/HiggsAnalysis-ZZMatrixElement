@@ -2,9 +2,9 @@
 #include <cstdlib>
 #include <cmath>
 #include <fstream>
+#include "MELAHXSWidth.h"
 #include "TROOT.h"
 #include "TF1.h"
-#include <ZZMatrixElement/MELA/interface/MELAHXSWidth.h>
 
 using namespace std;
 

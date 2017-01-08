@@ -1,11 +1,7 @@
 #ifndef ROOSPINTWO_7DCOMPLEX_HVV
 #define ROOSPINTWO_7DCOMPLEX_HVV
 
-#ifdef _def_melatools_
-#include <ZZMatrixElement/MELA/interface/RooSpinTwo.h>
-#else
 #include "RooSpinTwo.h"
-#endif
 
 
 class RooSpinTwo_7DComplex_HVV : public RooSpinTwo {

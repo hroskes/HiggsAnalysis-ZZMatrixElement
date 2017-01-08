@@ -1,13 +1,14 @@
 #include <boost/algorithm/string.hpp>
 #include <sstream>
 #include <cmath>
+#include <FWCore/ParameterSet/interface/FileInPath.h>
+#include "SuperMELA.h"
+#include "MELAHXSWidth.h"
 #include "RooArgSet.h"
 #include "RooArgList.h"
-#include <FWCore/ParameterSet/interface/FileInPath.h>
-#include <ZZMatrixElement/MELA/interface/SuperMELA.h>
-#include <ZZMatrixElement/MELA/interface/MELAHXSWidth.h>
 
 using namespace RooFit;
+
 
 SuperMELA::SuperMELA(
   double mH,

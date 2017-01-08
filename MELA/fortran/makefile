@@ -29,17 +29,17 @@ endif
 
 
 ifeq ($(Comp),ifort)
-	fcomp = ifort -fpp -O2 -vec-report0 -Dcompiler=1 -D_def_melatools_ -lifcore -fPIC
+	fcomp = ifort -fpp -O2 -vec-report0 -Dcompiler=1 -lifcore -fPIC
 endif
 ifeq ($(Comp),gfort)
-	fcomp = gfortran -O0 -ffree-line-length-none -Dcompiler=2 -D_def_melatools_ $(LHAPDFflags) -fno-automatic -fno-f2c  -fPIC -g 
+	fcomp = gfortran -O0 -ffree-line-length-none -Dcompiler=2 $(LHAPDFflags) -fno-automatic -fno-f2c  -fPIC -g 
 endif
 
 ifeq ($(Comp),gfort)
-	ccomp = gcc -D_def_melatools_
+	ccomp = gcc
 endif
 ifeq ($(Comp),ifort)
-	ccomp = icc -D_def_melatools_
+	ccomp = icc
 endif
 
 ifeq ($(Comp),gfort)

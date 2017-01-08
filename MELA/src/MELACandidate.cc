@@ -1,4 +1,4 @@
-#include <ZZMatrixElement/MELA/interface/MELACandidate.h>
+#include "MELACandidate.h"
 #include "TMath.h"
 
 using namespace PDGHelpers;
