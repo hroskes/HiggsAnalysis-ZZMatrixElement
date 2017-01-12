@@ -26,6 +26,8 @@ MELA/test/input.DAT
 MELA/test/process.DAT
 MELA/test/*.root
 MELA/test/*.out
+MELA/test/*.ref
+MELA/test/reference/*.out
 MELA/test/*.o
 MELA/test/*_c.so
 MELA/test/*_c.d

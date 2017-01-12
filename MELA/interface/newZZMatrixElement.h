@@ -2,8 +2,8 @@
 #define newZZMatrixElement_newZZMatrixElement_h
 
 #include <vector>
-#include <ZZMatrixElement/MELA/interface/TVar.hh>
-#include <ZZMatrixElement/MELA/interface/TEvtProb.hh>
+#include "TVar.hh"
+#include "TEvtProb.hh"
 
 
 class  newZZMatrixElement{

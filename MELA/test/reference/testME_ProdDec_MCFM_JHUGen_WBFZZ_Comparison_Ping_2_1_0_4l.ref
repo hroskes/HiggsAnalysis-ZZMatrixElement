@@ -1,10 +1,13 @@
+JHUGen production chosen: JJVBF
+MCFM production chosen: JJVBF_S
+spinzerohiggs_anomcoupl_.AnomalCouplDK=1
 Production variables:
 	mJJ = 830.608
 	Phi = 0.354914
 	JHUGen (mass, width): (125, 0.00407)
 	JHUGen propagator: 4.39991e-07
 Bkg
-	MCFM ME: 7.40173e-17
+	MCFM ME: 7.36598e-17
 0mplus
 	JHUGen decay-alone: 1.68395e-05
 	JHUGen prod.-alone: 8.02068e-15
@@ -305,8 +308,8 @@ Bkg
 	0	0	0	0	0	0	0	0	0	0	0
 	0	0	0	0	0	0	0	0	0	0	0
 	0	0	0	0	0	0	0	0	0	0	0
-	0	0	0	0	1.06432e-16	0	0	0	0	0	0
-	0	0	0	2.16645e-18	0	0	0	0	0	0	0
+	0	0	0	0	1.05883e-16	0	0	0	0	0	0
+	0	0	0	2.18853e-18	0	0	0	0	0	0	0
 	0	0	0	0	0	0	0	0	0	0	0
 	0	0	0	0	0	0	0	0	0	0	0
 	0	0	0	0	0	0	0	0	0	0	0
@@ -317,8 +320,8 @@ Bkg
 	0	0	0	0	0	0	0	0	0	0	0
 	0	0	0	0	0	0	0	0	0	0	0
 	0	0	0	0	0	0	0	0	0	0	0
-	0	0	0	0	3.03508e-07	0	0	0	0	0	0
-	0	0	0	0.0860436	0	0	0	0	0	0	0
+	0	0	0	0	3.05081e-07	0	0	0	0	0	0
+	0	0	0	0.0851757	0	0	0	0	0	0	0
 	0	0	0	0	0	0	0	0	0	0	0
 	0	0	0	0	0	0	0	0	0	0	0
 	0	0	0	0	0	0	0	0	0	0	0
@@ -326,7 +329,7 @@ Bkg
 	0	0	0	0	0	0	0	0	0	0	0
 	0	0	0	0	0	0	0	0	0	0	0
 ***** TUtil::PrintCandidateSummary *****
-Candidate: 0x6b66e70
+Candidate: 0x7437820
 	Has 2 mothers
 		V0 (0) (X,Y,Z,T)=( 0 , 0 , -865.379 , -865.379 )
 		V1 (0) (X,Y,Z,T)=( 0 , 0 , 624.034 , -624.034 )

@@ -22,8 +22,6 @@ Please adhere to the following coding conventions:
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <DataFormats/GeometryVector/interface/Pi.h>
-#include <FWCore/ParameterSet/interface/FileInPath.h>
 #include "Mela.h"
 #include "newZZMatrixElement.h"
 #include "VectorPdfFactory.h"
@@ -63,24 +61,25 @@ Mela::Mela(
   const double maxSqrts = 8.;
 
   // Create symlinks to the required files, if these are not already present (do nothing otherwise)
-  if (myVerbosity_>=TVar::DEBUG) cout << "Create symlinks to the required files, if these are not already present:" << endl;
-  edm::FileInPath mcfmInput1("ZZMatrixElement/MELA/data/input.DAT");
-  edm::FileInPath mcfmInput2("ZZMatrixElement/MELA/data/process.DAT");
-  edm::FileInPath mcfmInput3("ZZMatrixElement/MELA/data/Pdfdata/cteq6l1.tbl");
-  edm::FileInPath mcfmInput4("ZZMatrixElement/MELA/data/Pdfdata/cteq6l.tbl");
-  edm::FileInPath mcfmWarning("ZZMatrixElement/MELA/data/ffwarn.dat");
-  edm::FileInPath mcfm_brsm_o("ZZMatrixElement/MELA/data/br.sm1");
-  edm::FileInPath mcfm_brsm_t("ZZMatrixElement/MELA/data/br.sm2");
-  mkdir("Pdfdata", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-  if (myVerbosity_>=TVar::DEBUG) cout << "\t- MCFM paths are taken" << endl;
-  symlink(mcfmWarning.fullPath().c_str(), "ffwarn.dat");
-  symlink(mcfm_brsm_o.fullPath().c_str(), "br.sm1");
-  symlink(mcfm_brsm_t.fullPath().c_str(), "br.sm2");
-  symlink(mcfmInput1.fullPath().c_str(), "input.DAT");
-  symlink(mcfmInput2.fullPath().c_str(), "process.DAT");
+  if (myVerbosity_>=TVar::DEBUG) cout << "Create symlinks to the required files if these are not already present:" << endl;
+
+#ifdef _melapkgpathstr_
+  const string MELAPKGPATH = _melapkgpathstr_;
+  if (myVerbosity_>=TVar::DEBUG)  cout << "\t- MELA package path: " << MELAPKGPATH << endl;
+#else
+  cout << "MELA package path is undefined! Please modify the makefle or the makefile-equivalent!" << endl;
+  assert(0);
+#endif
+
+  const string mcfmWarning = MELAPKGPATH + "data/ffwarn.dat"; symlink(mcfmWarning.c_str(), "ffwarn.dat");
+  const string mcfm_brsm_o = MELAPKGPATH + "data/br.sm1"; symlink(mcfm_brsm_o.c_str(), "br.sm1");
+  const string mcfm_brsm_t = MELAPKGPATH + "data/br.sm2"; symlink(mcfm_brsm_t.c_str(), "br.sm2");
+  const string mcfmInput1 = MELAPKGPATH + "data/input.DAT"; symlink(mcfmInput1.c_str(), "input.DAT");
+  const string mcfmInput2 = MELAPKGPATH + "data/process.DAT"; symlink(mcfmInput2.c_str(), "process.DAT");
   if (myVerbosity_>=TVar::DEBUG) cout << "\t- MCFM symlinks are done" << endl;
-  symlink(mcfmInput3.fullPath().c_str(), "Pdfdata/cteq6l1.tbl");
-  symlink(mcfmInput4.fullPath().c_str(), "Pdfdata/cteq6l.tbl");
+  mkdir("Pdfdata", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  const string mcfmInput3 = MELAPKGPATH + "data/Pdfdata/cteq6l1.tbl"; symlink(mcfmInput3.c_str(), "Pdfdata/cteq6l1.tbl");
+  const string mcfmInput4 = MELAPKGPATH + "data/Pdfdata/cteq6l.tbl"; symlink(mcfmInput4.c_str(), "Pdfdata/cteq6l.tbl");
   if (myVerbosity_>=TVar::DEBUG) cout << "\t- PDF symlinks are done" << endl;
 
   if (myVerbosity_>=TVar::DEBUG) cout << "Create variables used in anaMELA" << endl;
@@ -113,16 +112,15 @@ Mela::Mela(
   qqZZmodel = new RooqqZZ_JHU_ZgammaZZ_fast("qqZZmodel", "qqZZmodel", *z1mass_rrv, *z2mass_rrv, *costheta1_rrv, *costheta2_rrv, *phi_rrv, *costhetastar_rrv, *phi1_rrv, *mzz_rrv, *upFrac_rrv);
 
   if (myVerbosity_>=TVar::DEBUG) cout << "Paths for newZZMatrixElement" << endl;
-  edm::FileInPath HiggsWidthFile("ZZMatrixElement/MELA/data/HiggsTotalWidth_YR3.txt");
-  string path = HiggsWidthFile.fullPath();
-  if (myVerbosity_>=TVar::DEBUG) cout << path << endl;
-  edm::FileInPath path_nnpdf("ZZMatrixElement/MELA/data/Pdfdata/NNPDF30_lo_as_0130.LHgrid");
+  const string path_HiggsWidthFile = MELAPKGPATH + "data/HiggsTotalWidth_YR3.txt";
+  if (myVerbosity_>=TVar::DEBUG) cout << "\t- Cross section/width file: " << path_HiggsWidthFile << endl;
+  const string path_nnpdf = MELAPKGPATH + "data/Pdfdata/NNPDF30_lo_as_0130.LHgrid";
   char path_nnpdf_c[] = "Pdfdata/NNPDF30_lo_as_0130.LHgrid";
   int pdfmember = 0;
-  symlink(path_nnpdf.fullPath().c_str(), path_nnpdf_c);
-  if (myVerbosity_>=TVar::DEBUG) cout << path_nnpdf_c << " -> " << path_nnpdf.fullPath().c_str() << endl;
+  if (myVerbosity_>=TVar::DEBUG) cout << "\t- Linking NNPDF path " << path_nnpdf.c_str() << " -> " << path_nnpdf_c << endl;
+  symlink(path_nnpdf.c_str(), path_nnpdf_c);
   if (myVerbosity_>=TVar::DEBUG) cout << "Start newZZMatrixElement" << endl;
-  ZZME = new newZZMatrixElement(path_nnpdf_c, pdfmember, path.substr(0, path.length()-23).c_str(), 1000.*LHCsqrts/2., myVerbosity_);
+  ZZME = new newZZMatrixElement(path_nnpdf_c, pdfmember, path_HiggsWidthFile.substr(0, path_HiggsWidthFile.length()-23).c_str(), 1000.*LHCsqrts/2., myVerbosity_);
   if (myVerbosity_>=TVar::DEBUG) cout << "Set newZZMatrixElement masses" << endl;
   setMelaPrimaryHiggsMass(mh_);
   setMelaHiggsMass(mh_, 0); setMelaHiggsMass(-1., 1);
@@ -146,10 +144,9 @@ Mela::Mela(
   if (superMELA_LHCsqrts > maxSqrts) superMELA_LHCsqrts = maxSqrts;
   super = new SuperMELA(mh_, "4mu", superMELA_LHCsqrts); // preliminary intialization, we adjust the flavor later
   char cardpath[500];
-  sprintf(cardpath, "ZZMatrixElement/MELA/data/CombinationInputs/SM_inputs_%dTeV/inputs_4mu.txt", superMELA_LHCsqrts);
-  edm::FileInPath cardfile(cardpath);
-  string cpath=cardfile.fullPath();
-  super->SetPathToCards(cpath.substr(0, cpath.length()-14).c_str());
+  sprintf(cardpath, "data/CombinationInputs/SM_inputs_%dTeV/inputs_4mu.txt", superMELA_LHCsqrts);
+  string cardfile = MELAPKGPATH + cardpath;
+  super->SetPathToCards(cardfile.substr(0, cardfile.length()-14).c_str());
   super->SetVerbosity((myVerbosity_>=TVar::DEBUG));
   super->init();
 
@@ -2051,14 +2048,17 @@ MelaPConstant* Mela::getPConstantHandle(
   if (myVerbosity_>=TVar::DEBUG) cout << "Begin Mela::getPConstantHandle" << endl;
 
   if (myVerbosity_>=TVar::DEBUG) cout << "Mela::getPConstantHandle: relpath and spline name: " << relpath << ", " << spname << endl;
-
-  TString path = "ZZMatrixElement/MELA/data/";
-  path.Append(relpath);
-  path.Append(".root");
+#ifdef _melapkgpathstr_
+  const string MELAPKGPATH = _melapkgpathstr_;
+#else
+  cout << "Mela::getPConstantHandle: MELA package path is undefined! Please modify the makefle or the makefile-equivalent!" << endl;
+  assert(0);
+#endif
+  const string path = MELAPKGPATH + "data/";
+  string cfile_fullpath = path;
+  cfile_fullpath.append(relpath);
+  cfile_fullpath.append(".root");
   if (myVerbosity_>=TVar::DEBUG) cout << "Mela::getPConstantHandle: path and spline name: " << path << ", " << spname << endl;
-  edm::FileInPath cfile(path.Data());
-  string cfile_fullpath = cfile.fullPath();
-
   if (myVerbosity_>=TVar::DEBUG) cout << "Mela::getPConstantHandle: Full path and spline name: " << cfile_fullpath << ", " << spname << endl;
   MelaPConstant* pchandle = new MelaPConstant(me_, prod_, proc_, cfile_fullpath.c_str(), spname);
 

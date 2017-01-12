@@ -1,3 +1,6 @@
+JHUGen production chosen: JJVBF
+MCFM production chosen: JJVBF_S
+spinzerohiggs_anomcoupl_.AnomalCouplDK=1
 Production variables:
 	mJJ = 830.608
 	Phi = 0.354914
@@ -326,7 +329,7 @@ Bkg
 	0	0	0	0	0	0	0	0	0	0	0
 	0	0	0	0	0	0	0	0	0	0	0
 ***** TUtil::PrintCandidateSummary *****
-Candidate: 0x81e6ff0
+Candidate: 0x8a629c0
 	Has 2 mothers
 		V0 (0) (X,Y,Z,T)=( 0 , 0 , -865.379 , -865.379 )
 		V1 (0) (X,Y,Z,T)=( 0 , 0 , 624.034 , -624.034 )

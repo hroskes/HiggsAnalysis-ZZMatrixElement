@@ -497,15 +497,15 @@ void MELACandidate::createAssociatedVs(std::vector<MELAParticle*>& particleArray
     double Qi = particleArray.at(i)->charge();
     int id_i = particleArray.at(i)->id;
 
-    for (unsigned int j = 1; j<particleArray.size(); j++){
-      if (j<=i) continue;
+    for (unsigned int j = i+1; j<particleArray.size(); j++){
       double Qj = particleArray.at(j)->charge();
       int id_j = particleArray.at(j)->id;
 
       int bosonId=-1;
-      if ((Qi+Qj)==0 && (id_i+id_j)==0) bosonId = (id_i==0 ? 0 : 23);
-      else if (
-        abs(Qi+Qj)==1 // W boson
+      if ((Qi+Qj)==0 && (id_i+id_j)==0) bosonId = (id_i==0 ? 0 : 23); // Z->(f,fb) or 0->(0,0)
+      else if (PDGHelpers::isAnUnknownJet(id_i) || PDGHelpers::isAnUnknownJet(id_j)) bosonId = 0; // 0->(q,0)/(0,qb)
+      else if ( // W->f fb'
+        abs(Qi+Qj)==1
         &&
         (
         ((PDGHelpers::isALepton(id_i) || PDGHelpers::isALepton(id_j)) && std::abs(id_i+id_j)==1) // Require SF lnu particle-antiparticle pairs
@@ -519,12 +519,16 @@ void MELACandidate::createAssociatedVs(std::vector<MELAParticle*>& particleArray
       if (bosonId!=-1){
         TLorentzVector pV = particleArray.at(i)->p4+particleArray.at(j)->p4;
         MELAParticle* boson = new MELAParticle(bosonId, pV);
+        // Order by f-f'b
         int firstdaughter = i, seconddaughter = j;
         if (
-          (particleArray.at(firstdaughter)->id<particleArray.at(seconddaughter)->id && !PDGHelpers::isAWBoson(bosonId))
+          (particleArray.at(firstdaughter)->id<particleArray.at(seconddaughter)->id)
+          &&
+          (
+          !PDGHelpers::isAWBoson(bosonId)
           ||
-          //(std::abs(particleArray.at(firstdaughter)->id)<std::abs(particleArray.at(seconddaughter)->id) && PDGHelpers::isAWBoson(bosonId)) // Order by nu-l / u-d
-          (particleArray.at(firstdaughter)->id<particleArray.at(seconddaughter)->id && particleArray.at(firstdaughter)->id<0 && PDGHelpers::isAWBoson(bosonId)) // Order by f-f'b
+          (particleArray.at(firstdaughter)->id<0 && PDGHelpers::isAWBoson(bosonId))
+          )
           ){
           firstdaughter = j; seconddaughter = i;
         }

@@ -26,13 +26,13 @@ class RooqqZZ_JHU_ZgammaZZ_fast;
 class newZZMatrixElement;
 class SuperMELA;
 
-#include <ZZMatrixElement/MELA/interface/TVar.hh>
-#include <ZZMatrixElement/MELA/interface/TEvtProb.hh>
-#include <ZZMatrixElement/MELA/interface/MelaPConstant.h>
-#include <ZZMatrixElement/MELA/interface/ScalarPdfFactory_ggH.h>
-#include <ZZMatrixElement/MELA/interface/VectorPdfFactory.h>
-#include <ZZMatrixElement/MELA/interface/TensorPdfFactory_HVV.h>
-#include <ZZMatrixElement/MELA/interface/RooqqZZ_JHU_ZgammaZZ_fast.h>
+#include "TVar.hh"
+#include "TEvtProb.hh"
+#include "MelaPConstant.h"
+#include "ScalarPdfFactory_ggH.h"
+#include "VectorPdfFactory.h"
+#include "TensorPdfFactory_HVV.h"
+#include "RooqqZZ_JHU_ZgammaZZ_fast.h"
 
 class Mela{
 
