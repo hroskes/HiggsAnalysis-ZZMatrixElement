@@ -1621,7 +1621,7 @@ bool Mela::configureAnalyticalPDFs(){
 
 
 // Constants to normalize probabilities
-void Mela::getConstant(float& prob){ prob = getIORecord()->getMEConst(); }
+void Mela::getConstant(float& prob){ setConstant(); prob = getIORecord()->getMEConst(); }
 void Mela::setConstant(){
   float constant = 1;
   if (melaCand==0){ if (myVerbosity_>=TVar::DEBUG) cout << "Mela::getConstant: melaCand==0" << endl; }
