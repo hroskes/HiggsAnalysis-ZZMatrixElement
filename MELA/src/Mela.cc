@@ -622,11 +622,7 @@ void Mela::computeP(
       }
     }
 
-    if (useConstant){
-      float pConst=1.;
-      getConstant(pConst);
-      prob *= pConst;
-    }
+    if (useConstant) computeConstant(prob);
   }
 
   reset_SelfDCouplings();
@@ -797,11 +793,7 @@ void Mela::computeProdDecP(
       myModel_, myME_, myProduction_,
       prob
       );
-    if (useConstant){
-      float pConst=1.;
-      getConstant(pConst);
-      prob *= pConst;
-    }
+    if (useConstant) computeConstant(prob);
   }
 
   reset_SelfDCouplings();
@@ -916,9 +908,6 @@ void Mela::computeProdP(
           myModel_, myME_, myProduction_,
           prob
           ); // Higgs + 2 jets: SBF or WBF main probability
-
-        float constant=1.;
-        getConstant(constant);
 
         int nGrid=11;
         std::vector<double> etaArray;
@@ -1085,11 +1074,6 @@ void Mela::computeProdP(
         }
 
         if (fabs(prob)>0) auxiliaryProb /= prob;
-        if (useConstant){
-          float pConst=1.;
-          getConstant(pConst);
-          prob *= pConst;
-        }
       }
       else{
         if (myProduction_ == TVar::JJQCD || myProduction_ == TVar::JJVBF){
@@ -1121,13 +1105,8 @@ void Mela::computeProdP(
             prob
             ); // Higgs + 1 jet; only SM is supported for now.
         }
-
-        if (useConstant){
-          float pConst=1.;
-          getConstant(pConst);
-          prob *= pConst;
-        }
       }
+      if (useConstant) computeConstant(prob);
     }
 
     reset_SelfDCouplings();
@@ -1195,11 +1174,7 @@ void Mela::computeProdP_VH(
         includeHiggsDecay
         ); // VH
 
-      if (useConstant){
-        float pConst=1.;
-        getConstant(pConst);
-        prob *= pConst;
-      }
+      if (useConstant) computeConstant(prob);
     }
   }
 
@@ -1242,11 +1217,7 @@ void Mela::computeProdP_ttH(
       topProcess, topDecay
       );
 
-    if (useConstant){
-      float pConst=1.;
-      getConstant(pConst);
-      prob *= pConst;
-    }
+    if (useConstant) computeConstant(prob);
   }
 
   reset_SelfDCouplings();
@@ -1406,7 +1377,7 @@ void Mela::computeD_gg(
     float ggScale=0;
     setProcess(TVar::bkgZZ, myME, TVar::ZZGG); computeP(ggzz_VAMCFM_noscale, false);
     setProcess(TVar::HSMHiggs, myME, TVar::ZZGG); computeP(ggHZZ_prob_pure_noscale, false);
-    setProcess(TVar::bkgZZ_SMHiggs, myME, TVar::ZZGG); computeP(bkgHZZ_prob_noscale, false); getConstant(ggScale);
+    setProcess(TVar::bkgZZ_SMHiggs, myME, TVar::ZZGG); computeP(bkgHZZ_prob_noscale, false); setConstant(); getConstant(ggScale);
     if (ggScale>0.){
       bkgHZZ_prob_noscale /= ggScale;
       ggHZZ_prob_pure_noscale /= ggScale;
@@ -1622,6 +1593,12 @@ bool Mela::configureAnalyticalPDFs(){
 
 // Constants to normalize probabilities
 void Mela::getConstant(float& prob){ prob = getIORecord()->getMEConst(); }
+void Mela::computeConstant(float& prob){
+  float pConst=1.;
+  setConstant();
+  getConstant(pConst);
+  prob *= pConst;
+}
 void Mela::setConstant(){
   float constant = 1;
   if (melaCand==0){ if (myVerbosity_>=TVar::DEBUG) cout << "Mela::getConstant: melaCand==0" << endl; }

@@ -326,6 +326,7 @@ protected:
     const char* relpath,
     const char* spname
     );
+  void computeConstant(float& prob);
   void setConstant();
   float getConstant_JHUGenUndecayed();
   float getConstant_4l();
