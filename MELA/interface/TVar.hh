@@ -12,8 +12,6 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include "TCouplings.hh"
-#include "MelaIO.h"
 #include "TString.h"
 #include "TH1F.h"
 #include "TH2F.h"
@@ -45,9 +43,10 @@ namespace TVar{
     CandidateDecay_ff,
     CandidateDecay_WW,
     CandidateDecay_ZZ,
+    CandidateDecay_ZW, // Untested
     CandidateDecay_ZG,
-    CandidateDecay_GG,
-    CandidateDecay_ZW // Untested
+    CandidateDecay_WG,
+    CandidateDecay_GG
   };
   enum VerbosityLevel {
     SILENT = 0,
@@ -219,6 +218,7 @@ namespace TVar{
   //---------------------------------
   TString ProcessName(TVar::Process temp);
   TString ProductionName(TVar::Production temp);
+  TString MatrixElementName(TVar::MatrixElement temp);
 
   //---------------------------------
   // Structs
