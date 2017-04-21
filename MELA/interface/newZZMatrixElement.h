@@ -113,6 +113,9 @@ public:
 
   // Get-functions
   MelaIO* get_IORecord();
+  double get_PrimaryMass(int ipart);
+  double get_PrimaryWidth(int ipart);
+  double get_HiggsWidthAtPoleMass(double mass);
   MELACandidate* get_CurrentCandidate();
   int get_CurrentCandidateIndex();
   int get_NCandidates();
