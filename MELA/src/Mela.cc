@@ -94,7 +94,7 @@ Mela::Mela(
   Y_rrv = new RooRealVar("Yzz", "#Y_{ZZ}", 0, -4, 4);
   upFrac_rrv = new RooRealVar("upFrac", "fraction up-quarks", .5, 0., 1.);
 
-  RooSpinZero::modelMeasurables measurables_;
+  RooSpin::modelMeasurables measurables_;
   measurables_.h1 = costheta1_rrv;
   measurables_.h2 = costheta2_rrv;
   measurables_.Phi = phi_rrv;
@@ -106,7 +106,7 @@ Mela::Mela(
   measurables_.Y = Y_rrv;
 
   if (myVerbosity_>=TVar::DEBUG) cout << "Create anaMELA PDF factories" << endl;
-  ggSpin0Model = new ScalarPdfFactory_HVV(measurables_, false, RooSpin::kVdecayType_Zll, RooSpin::kVdecayType_Zll); // RooSpin::kVdecayType_Zll,RooSpin::kVdecayType_Zll==ZZ
+  ggSpin0Model = new ScalarPdfFactory_HVV(measurables_, false, RooSpin::kVdecayType_Zll, RooSpin::kVdecayType_Zll); // RooSpin::kVdecayType_Zll,RooSpin::kVdecayType_Zll==ZZ4l
   spin1Model = new VectorPdfFactory(z1mass_rrv, z2mass_rrv, costhetastar_rrv, costheta1_rrv, costheta2_rrv, phi_rrv, phi1_rrv, mzz_rrv);
   spin2Model = new TensorPdfFactory_ppHVV(measurables_, RooSpin::kVdecayType_Zll, RooSpin::kVdecayType_Zll);
   qqZZmodel = new RooqqZZ_JHU_ZgammaZZ_fast("qqZZmodel", "qqZZmodel", *z1mass_rrv, *z2mass_rrv, *costheta1_rrv, *costheta2_rrv, *phi_rrv, *costhetastar_rrv, *phi1_rrv, *mzz_rrv, *upFrac_rrv);
@@ -290,6 +290,11 @@ void Mela::resetQuarkMasses(){ ZZME->reset_QuarkMasses(); }
 void Mela::resetMCFM_EWKParameters(double ext_Gf, double ext_aemmz, double ext_mW, double ext_mZ, double ext_xW, int ext_ewscheme){
   ZZME->reset_MCFM_EWKParameters(ext_Gf, ext_aemmz, ext_mW, ext_mZ, ext_xW, ext_ewscheme);
 }
+
+double Mela::getPrimaryMass(int ipart){ return ZZME->get_PrimaryMass(ipart); }
+double Mela::getPrimaryWidth(int ipart){ return ZZME->get_PrimaryWidth(ipart); }
+double Mela::getHiggsWidthAtPoleMass(double mass){ return ZZME->get_HiggsWidthAtPoleMass(mass); }
+
 void Mela::setRemoveLeptonMasses(bool MasslessLeptonSwitch){ TUtil::applyLeptonMassCorrection(MasslessLeptonSwitch); }
 void Mela::setRemoveJetMasses(bool MasslessLeptonSwitch){ TUtil::applyJetMassCorrection(MasslessLeptonSwitch); }
 void Mela::setRenFacScaleMode(TVar::EventScaleScheme renormalizationSch, TVar::EventScaleScheme factorizationSch, double ren_sf, double fac_sf){
@@ -299,6 +304,19 @@ std::vector<TLorentzVector> Mela::calculate4Momentum(double Mx, double M1, doubl
 	return ZZME->Calculate4Momentum(Mx, M1, M2, theta, theta1, theta2, Phi1, Phi);
 }
 
+RooSpin::modelMeasurables Mela::getMeasurablesRRV(){
+  RooSpin::modelMeasurables measurables;
+  measurables.h1 = costheta1_rrv;
+  measurables.h2 = costheta2_rrv;
+  measurables.Phi = phi_rrv;
+  measurables.m1 = z1mass_rrv;
+  measurables.m2 = z2mass_rrv;
+  measurables.m12 = mzz_rrv;
+  measurables.hs = costhetastar_rrv;
+  measurables.Phi1 = phi1_rrv;
+  measurables.Y = Y_rrv;
+  return measurables;
+}
 
 
 // Full parton-by-parton ME record

@@ -116,6 +116,9 @@ public:
   SpinOneCouplings* GetSelfDSpinOneCouplings();
   SpinTwoCouplings* GetSelfDSpinTwoCouplings();
   double GetPrimaryHiggsMass();
+  double GetPrimaryMass(int ipart);
+  double GetPrimaryWidth(int ipart);
+  double GetHiggsWidthAtPoleMass(double mass);
   MelaIO* GetIORecord();
   MELACandidate* GetCurrentCandidate();
   int GetCurrentCandidateIndex(); // Return the index of current melaCand in the candList array, or -1 if it does not exist
