@@ -75,6 +75,10 @@ public:
   void resetWidth(double inwidth, int ipart);
   void resetQuarkMasses();
   void resetMCFM_EWKParameters(double ext_Gf, double ext_aemmz, double ext_mW, double ext_mZ, double ext_xW, int ext_ewscheme=3);
+  // Function to get current primary EW/QCD parameters from MCFM/JHUGen (notice Higgs mass/width used in the ME could be different)
+  double getPrimaryMass(int ipart);
+  double getPrimaryWidth(int ipart);
+  double getHiggsWidthAtPoleMass(double mass);
 
 
   MelaIO* getIORecord(); // Full parton-by-parton ME record
@@ -86,6 +90,10 @@ public:
 
   void getConstant(float& prob); // <ME> constants
   void getPAux(float& prob); // SuperProb
+
+
+  RooSpin::modelMeasurables getMeasurablesRRV();
+
 
   void computeDecayAngles(
     float& qH,
