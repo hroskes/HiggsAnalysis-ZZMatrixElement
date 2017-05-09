@@ -350,9 +350,11 @@ class Mela(object):
       ids.append(id)
       mother1s.append(mother1)
       mother2s.append(mother2)
+      if (1 <= abs(id) <= 6 or abs(id) == 21) and not isgen:
+        line = line.replace(str(id), "0", 1)  #replace the first instance of the jet id with 0, which means unknown jet
       if status == -1:
         mothers.append(line)
-      elif status == 1 and (1 <= abs(id) <= 6 or 11 <= abs(id) <= 16 or abs(id) == 22):
+      elif status == 1 and (1 <= abs(id) <= 6 or 11 <= abs(id) <= 16 or abs(id) in (21, 22)):
         while True:
           if mother1 != mother2 or mother1 is None:
             associated.append(line)
