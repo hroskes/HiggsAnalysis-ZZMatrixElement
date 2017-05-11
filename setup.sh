@@ -1,8 +1,10 @@
 #!/bin/sh
 
-
-#echo "$@"
+(
+cd $(dirname ${BASH_SOURCE[0]})
+eval $(scram ru -sh)
 pushd ${CMSSW_BASE}/src/ZZMatrixElement/MELA/
-./setup.sh "$@" || return 1 >& /dev/null || exit 1 #return only works when sourced, exit will exit your whole session if sourced
+./setup.sh "$@" || exit 1
 popd
 scramv1 b "$@"
+)
