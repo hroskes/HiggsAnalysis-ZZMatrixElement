@@ -549,12 +549,15 @@ def SimpleParticleCollection_t(iterable=None):
 
 def SimpleParticle_t(lineorid, pxortlv=None, py=None, pz=None, e=None):
   if pxortlv is py is pz is e is None:
+    if isinstance(lineorid, ROOT.SimpleParticle_t): return lineorid
     if isinstance(lineorid, basestring):
       lineorid = lineorid.split()
     if len(lineorid) == 13:
       id, status, mother1, mother2, color1, color2, px, py, pz, e, m, lifetime, spin = (f(_) for f, _ in zip((int, int, int, int, int, int, float, float, float, float, float, float, float), lineorid))
     elif len(lineorid) == 5:
       id, px, py, pz, e = (f(_) for f, _ in zip((int, float, float, float, float), lineorid))
+    elif len(lineorid) == 2:
+      pxortlv = lineorid[1]
     else:
       raise ValueError("len(lineorid) has to be 5 or 13, not {}".format(len(lineorid)))
   else:
