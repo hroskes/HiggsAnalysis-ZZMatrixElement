@@ -29,6 +29,7 @@ class SuperMELA;
 #include "TVar.hh"
 #include "TEvtProb.hh"
 #include "MelaPConstant.h"
+#include "SuperDijetMela.h"
 #include "ScalarPdfFactory_HVV.h"
 #include "VectorPdfFactory.h"
 #include "TensorPdfFactory_ppHVV.h"
@@ -204,6 +205,9 @@ public:
     float& prob
     );
 
+  //*** SuperJJMela ***//
+  void computeDijetConvBW(float& prob);
+
   //*** Dgg10 ***//
   void computeD_gg(
     TVar::MatrixElement myME,
@@ -214,16 +218,10 @@ public:
   // Access ZZMEs Calculate4Momentum
   std::vector<TLorentzVector> calculate4Momentum(double Mx, double M1, double M2, double theta, double theta1, double theta2, double Phi1, double Phi);
 
-
-  RooAbsPdf* pdf;
-  ScalarPdfFactory_HVV* ggSpin0Model;
-  VectorPdfFactory* spin1Model;
-  TensorPdfFactory_ppHVV* spin2Model;
-  RooqqZZ_JHU_ZgammaZZ_fast* qqZZmodel;
-
-  SuperMELA* super;
-  TRandom3* myRandomNumber; // random number for resolution systematics
-
+  /********************/
+  /*** Data members ***/
+  /********************/
+  TRandom3 melaRandomNumber; // Used in SuperMELA smearing
   RooRealVar* mzz_rrv;
   RooRealVar* z1mass_rrv;
   RooRealVar* z2mass_rrv;
@@ -234,6 +232,14 @@ public:
   RooRealVar* phi1_rrv;
   RooRealVar* Y_rrv;
   RooRealVar* upFrac_rrv;
+
+  RooAbsPdf* pdf;
+  ScalarPdfFactory_HVV* ggSpin0Model;
+  VectorPdfFactory* spin1Model;
+  TensorPdfFactory_ppHVV* spin2Model;
+  RooqqZZ_JHU_ZgammaZZ_fast* qqZZmodel;
+
+  SuperMELA* super;
 
   // Self-define arrays are now members of MELA.
   // There are a lot of them!
@@ -263,10 +269,9 @@ public:
   // That is a lot of them!
 
 protected:
-
-  //
-  // Data memmbers
-  //
+  /********************/
+  /*** Data members ***/
+  /********************/
   double LHCsqrts;
   TVar::Process myModel_;
   TVar::MatrixElement myME_;
@@ -275,6 +280,8 @@ protected:
   TVar::VerbosityLevel myVerbosity_;
 
   newZZMatrixElement* ZZME;
+  SuperDijetMela* superDijet;
+
 
   float auxiliaryProb;
 
@@ -308,9 +315,10 @@ protected:
   MelaPConstant* pAvgSmooth_MCFM_ZZQQB_bkgZZ_4e;
   MelaPConstant* pAvgSmooth_MCFM_ZZQQB_bkgZZ_2mu2e;
 
-  //
-  // Functions
-  //
+
+  /*****************/
+  /*** Functions ***/
+  /*****************/
   bool configureAnalyticalPDFs();
   void reset_SelfDCouplings();
   void reset_PAux(); // SuperProb reset
