@@ -290,11 +290,15 @@ protected:
   /***** ME CONSTANT HANDLES *****/
   // Constants that vary with sqrts due to application of PDFs
   //
+  MelaPConstant* pAvgSmooth_JHUGen_JQCD_HSMHiggs[TVar::nFermionMassRemovalSchemes-1];
+  //
   MelaPConstant* pAvgSmooth_JHUGen_JJQCD_HSMHiggs[TVar::nFermionMassRemovalSchemes-1];
   //
   MelaPConstant* pAvgSmooth_JHUGen_JJVBF_HSMHiggs[TVar::nFermionMassRemovalSchemes-1];
   //
-  MelaPConstant* pAvgSmooth_JHUGen_JQCD_HSMHiggs[TVar::nFermionMassRemovalSchemes-1];
+  MelaPConstant* pAvgSmooth_JHUGen_Had_ZH_HSMHiggs[TVar::nFermionMassRemovalSchemes-1];
+  //
+  MelaPConstant* pAvgSmooth_JHUGen_Had_WH_HSMHiggs[TVar::nFermionMassRemovalSchemes-1];
   //
   MelaPConstant* pAvgSmooth_MCFM_JJQCD_bkgZJets_2l2q;
   // Decay ME constants that do not use PDFs
@@ -307,6 +311,18 @@ protected:
   MelaPConstant* pAvgSmooth_MCFM_ZZGG_HSMHiggs_4e;
   MelaPConstant* pAvgSmooth_MCFM_ZZGG_HSMHiggs_2mu2e;
   //
+  MelaPConstant* pAvgSmooth_MCFM_JJVBF_HSMHiggs_4mu;
+  MelaPConstant* pAvgSmooth_MCFM_JJVBF_HSMHiggs_4e;
+  MelaPConstant* pAvgSmooth_MCFM_JJVBF_HSMHiggs_2mu2e;
+  //
+  MelaPConstant* pAvgSmooth_MCFM_Had_ZH_HSMHiggs_4mu;
+  MelaPConstant* pAvgSmooth_MCFM_Had_ZH_HSMHiggs_4e;
+  MelaPConstant* pAvgSmooth_MCFM_Had_ZH_HSMHiggs_2mu2e;
+  //
+  MelaPConstant* pAvgSmooth_MCFM_Had_WH_HSMHiggs_4mu;
+  MelaPConstant* pAvgSmooth_MCFM_Had_WH_HSMHiggs_4e;
+  MelaPConstant* pAvgSmooth_MCFM_Had_WH_HSMHiggs_2mu2e;
+  //
   MelaPConstant* pAvgSmooth_MCFM_ZZGG_bkgZZ_4mu;
   MelaPConstant* pAvgSmooth_MCFM_ZZGG_bkgZZ_4e;
   MelaPConstant* pAvgSmooth_MCFM_ZZGG_bkgZZ_2mu2e;
@@ -314,6 +330,22 @@ protected:
   MelaPConstant* pAvgSmooth_MCFM_ZZQQB_bkgZZ_4mu;
   MelaPConstant* pAvgSmooth_MCFM_ZZQQB_bkgZZ_4e;
   MelaPConstant* pAvgSmooth_MCFM_ZZQQB_bkgZZ_2mu2e;
+  //
+  MelaPConstant* pAvgSmooth_MCFM_JJVBF_bkgZZ_4mu;
+  MelaPConstant* pAvgSmooth_MCFM_JJVBF_bkgZZ_4e;
+  MelaPConstant* pAvgSmooth_MCFM_JJVBF_bkgZZ_2mu2e;
+  //
+  MelaPConstant* pAvgSmooth_MCFM_Had_ZH_bkgZZ_4mu;
+  MelaPConstant* pAvgSmooth_MCFM_Had_ZH_bkgZZ_4e;
+  MelaPConstant* pAvgSmooth_MCFM_Had_ZH_bkgZZ_2mu2e;
+  //
+  MelaPConstant* pAvgSmooth_MCFM_Had_WH_bkgZZ_4mu;
+  MelaPConstant* pAvgSmooth_MCFM_Had_WH_bkgZZ_4e;
+  MelaPConstant* pAvgSmooth_MCFM_Had_WH_bkgZZ_2mu2e;
+  //
+  MelaPConstant* pAvgSmooth_MCFM_JJQCD_bkgZZ_4mu;
+  MelaPConstant* pAvgSmooth_MCFM_JJQCD_bkgZZ_4e;
+  MelaPConstant* pAvgSmooth_MCFM_JJQCD_bkgZZ_2mu2e;
 
 
   /*****************/
@@ -339,14 +371,17 @@ protected:
     TVar::MatrixElement me_,
     TVar::Production prod_,
     TVar::Process proc_,
-    const char* relpath,
-    const char* spname
+    TString relpath,
+    TString spname,
+    const bool useSqrts=false
     );
+  void deletePConstantHandle(MelaPConstant*& handle);
   void computeConstant(float& prob);
   void setConstant();
   float getConstant_JHUGenUndecayed();
   float getConstant_4l();
   float getConstant_2l2q();
+  float getConstant_FourFermionDecay(int decid);
 
 };
 
