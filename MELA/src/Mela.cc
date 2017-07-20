@@ -217,6 +217,7 @@ void Mela::setVerbosity(TVar::VerbosityLevel verbosity_){
   if (super!=0) super->SetVerbosity((myVerbosity_>=TVar::DEBUG));
   if (superDijet!=0) superDijet->SetVerbosity(myVerbosity_);
 }
+TVar::VerbosityLevel Mela::getVerbosity(){ return myVerbosity_; }
 // Should be called per-event
 void Mela::setMelaPrimaryHiggsMass(double myHiggsMass){ ZZME->set_PrimaryHiggsMass(myHiggsMass); }
 void Mela::setMelaHiggsMass(double myHiggsMass, int index){ ZZME->set_mHiggs(myHiggsMass, index); }
@@ -281,6 +282,23 @@ void Mela::reset_SelfDCouplings(){
       }
     }
   }
+
+  //contact terms
+  for (int im=0; im<2; im++){
+    for (int ic=0; ic<SIZE_HVV; ic++){
+      selfDHzzpcoupl[ic][im] = 0;
+      selfDHzpzpcoupl[ic][im] = 0;
+      selfDHwwpcoupl[ic][im] = 0;
+      selfDHwpwpcoupl[ic][im] = 0;
+    }
+    for (int ic=0; ic<SIZE_Vp; ic++) {
+      selfDHzpcontact[ic][im] = 0;
+      selfDHwpcontact[ic][im] = 0;
+    }
+  }
+  selfDUseVprime = 0;
+  selfDM_Vprime = 10000;
+  selfDGa_Vprime = 100;
 
   //****Spin-1****//
   for (int im=0; im<2; im++){
@@ -397,6 +415,7 @@ void Mela::computeP_selfDspin0(
   float& prob,
   bool useConstant
   ){
+  //remove this line, it's here for counting purposes.  Hzpcontact
   // Don't set these, and you will get 0.
   if (myME_==TVar::JHUGen){
     for (int jh=0; jh<(int)nSupportedHiggses; jh++){
@@ -540,7 +559,8 @@ void Mela::computeP(
     }
     else if (myME_ == TVar::JHUGen || myME_ == TVar::MCFM){
       if (!(myME_ == TVar::MCFM  && myProduction_ == TVar::ZZINDEPENDENT &&  (myModel_ == TVar::bkgZZ || myModel_ == TVar::bkgWW || myModel_ == TVar::bkgZGamma))){
-        if (myME_ == TVar::MCFM || myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
+        if (myME_ == TVar::MCFM || myModel_ == TVar::SelfDefine_spin0){
+          ZZME->set_SpinZeroCouplings(
           selfDHggcoupl,
           selfDHg4g4coupl,
           selfDHqqcoupl,
@@ -556,6 +576,18 @@ void Mela::computeP(
           selfDHwwCLambda_qsq,
           differentiate_HWW_HZZ
           );
+          ZZME->set_SpinZeroContact(
+            selfDHzzpcoupl,
+            selfDHzpzpcoupl,
+            selfDHzpcontact,
+            selfDHwwpcoupl,
+            selfDHwpwpcoupl,
+            selfDHwpcontact,
+            selfDUseVprime,
+            selfDM_Vprime,
+            selfDGa_Vprime
+            );
+        }
         else if (myModel_ == TVar::SelfDefine_spin1) ZZME->set_SpinOneCouplings(selfDZqqcoupl, selfDZvvcoupl);
         else if (myModel_ == TVar::SelfDefine_spin2) ZZME->set_SpinTwoCouplings(selfDGqqcoupl, selfDGggcoupl, selfDGvvcoupl);
         ZZME->computeXS(prob);
@@ -823,6 +855,17 @@ void Mela::computeProdDecP(
       selfDHwwCLambda_qsq,
       differentiate_HWW_HZZ
       );
+    ZZME->set_SpinZeroContact(
+      selfDHzzpcoupl,
+      selfDHzpzpcoupl,
+      selfDHzpcontact,
+      selfDHwwpcoupl,
+      selfDHwpwpcoupl,
+      selfDHwpcontact,
+      selfDUseVprime,
+      selfDM_Vprime,
+      selfDGa_Vprime
+      );
     ZZME->computeProdXS_VVHVV(prob);
     if (useConstant) computeConstant(prob);
   }
@@ -919,7 +962,8 @@ void Mela::computeProdP(
         candCopy->addAssociatedJets(&fakeJet);
         setCurrentCandidate(candCopy);
 
-        if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
+        if (myModel_ == TVar::SelfDefine_spin0){
+          ZZME->set_SpinZeroCouplings(
           selfDHggcoupl,
           selfDHg4g4coupl,
           selfDHqqcoupl,
@@ -935,6 +979,18 @@ void Mela::computeProdP(
           selfDHwwCLambda_qsq,
           differentiate_HWW_HZZ
           );
+          ZZME->set_SpinZeroContact(
+            selfDHzzpcoupl,
+            selfDHzpzpcoupl,
+            selfDHzpcontact,
+            selfDHwwpcoupl,
+            selfDHwpwpcoupl,
+            selfDHwpcontact,
+            selfDUseVprime,
+            selfDM_Vprime,
+            selfDGa_Vprime
+            );
+        }
         ZZME->computeProdXS_JJH(prob); // Higgs + 2 jets: SBF or WBF main probability
 
         int nGrid=11;
@@ -974,6 +1030,17 @@ void Mela::computeProdP(
               selfDHzzCLambda_qsq,
               selfDHwwCLambda_qsq,
               differentiate_HWW_HZZ
+              );
+            ZZME->set_SpinZeroContact(
+              selfDHzzpcoupl,
+              selfDHzpzpcoupl,
+              selfDHzpcontact,
+              selfDHwwpcoupl,
+              selfDHwpwpcoupl,
+              selfDHwpcontact,
+              selfDUseVprime,
+              selfDM_Vprime,
+              selfDGa_Vprime
               );
             ZZME->computeProdXS_JJH(prob_temp);
           }
@@ -1031,7 +1098,8 @@ void Mela::computeProdP(
             TLorentzVector pTotal = higgs+jet1massless+fakeJet.p4;
             double sys = (pTotal.T()+fabs(pTotal.Z()))/2.;
             if (fabs(sys)<threshold){
-              if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
+              if (myModel_ == TVar::SelfDefine_spin0){
+                ZZME->set_SpinZeroCouplings(
                 selfDHggcoupl,
                 selfDHg4g4coupl,
                 selfDHqqcoupl,
@@ -1047,6 +1115,18 @@ void Mela::computeProdP(
                 selfDHwwCLambda_qsq,
                 differentiate_HWW_HZZ
                 );
+                ZZME->set_SpinZeroContact(
+                  selfDHzzpcoupl,
+                  selfDHzpzpcoupl,
+                  selfDHzpcontact,
+                  selfDHwwpcoupl,
+                  selfDHwpwpcoupl,
+                  selfDHwpcontact,
+                  selfDUseVprime,
+                  selfDM_Vprime,
+                  selfDGa_Vprime
+                  );
+              }
               ZZME->computeProdXS_JJH(prob_temp);
             }
             gridIt = pArray.begin()+iG+1;
@@ -1099,7 +1179,8 @@ void Mela::computeProdP(
       }
       else{
         if (myProduction_ == TVar::JJQCD || myProduction_ == TVar::JJVBF){
-          if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
+          if (myModel_ == TVar::SelfDefine_spin0){
+            ZZME->set_SpinZeroCouplings(
             selfDHggcoupl,
             selfDHg4g4coupl,
             selfDHqqcoupl,
@@ -1115,6 +1196,18 @@ void Mela::computeProdP(
             selfDHwwCLambda_qsq,
             differentiate_HWW_HZZ
             );
+            ZZME->set_SpinZeroContact(
+              selfDHzzpcoupl,
+              selfDHzpzpcoupl,
+              selfDHzpcontact,
+              selfDHwwpcoupl,
+              selfDHwpwpcoupl,
+              selfDHwpcontact,
+              selfDUseVprime,
+              selfDM_Vprime,
+              selfDGa_Vprime
+              );
+          }
           ZZME->computeProdXS_JJH(prob); // Higgs + 2 jets: SBF or WBF
         }
         else if (myProduction_ == TVar::JQCD){
@@ -1143,6 +1236,7 @@ void Mela::computeProdP_VH(
   for (int jh=0; jh<(int)nSupportedHiggses; jh++){
     for (int im=0; im<2; im++){
       for (int ic=0; ic<SIZE_HVV; ic++){
+  //remove this line, it's here for counting purposes.  Hzpcontact
         selfDHzzcoupl[jh][ic][im] = selfDHvvcoupl_input[jh][ic][im];
         selfDHwwcoupl[jh][ic][im] = selfDHvvcoupl_input[jh][ic][im]; // Just for extra protection since differentiate_HWW_HZZ is set to false.
       }
@@ -1166,7 +1260,8 @@ void Mela::computeProdP_VH(
   melaCand = getCurrentCandidate();
   if (melaCand!=0){
     if (myProduction_ == TVar::Lep_ZH || myProduction_ == TVar::Lep_WH || myProduction_ == TVar::Had_ZH || myProduction_ == TVar::Had_WH || myProduction_ == TVar::GammaH){
-      if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
+      if (myModel_ == TVar::SelfDefine_spin0){
+        ZZME->set_SpinZeroCouplings(
         selfDHggcoupl,
         selfDHg4g4coupl,
         selfDHqqcoupl,
@@ -1182,6 +1277,18 @@ void Mela::computeProdP_VH(
         selfDHwwCLambda_qsq,
         differentiate_HWW_HZZ
         );
+        ZZME->set_SpinZeroContact(
+          selfDHzzpcoupl,
+          selfDHzpzpcoupl,
+          selfDHzpcontact,
+          selfDHwwpcoupl,
+          selfDHwpwpcoupl,
+          selfDHwpcontact,
+          selfDUseVprime,
+          selfDM_Vprime,
+          selfDGa_Vprime
+          );
+      }
       ZZME->computeProdXS_VH(prob, includeHiggsDecay); // VH
 
       if (useConstant) computeConstant(prob);
@@ -1205,7 +1312,8 @@ void Mela::computeProdP_ttH(
 
   melaCand = getCurrentCandidate();
   if (melaCand!=0){
-    if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
+    if (myModel_ == TVar::SelfDefine_spin0){
+      ZZME->set_SpinZeroCouplings(
       selfDHggcoupl,
       selfDHg4g4coupl,
       selfDHqqcoupl,
@@ -1221,6 +1329,18 @@ void Mela::computeProdP_ttH(
       selfDHwwCLambda_qsq,
       differentiate_HWW_HZZ
       );
+      ZZME->set_SpinZeroContact(
+        selfDHzzpcoupl,
+        selfDHzpzpcoupl,
+        selfDHzpcontact,
+        selfDHwwpcoupl,
+        selfDHwpwpcoupl,
+        selfDHwpcontact,
+        selfDUseVprime,
+        selfDM_Vprime,
+        selfDGa_Vprime
+        );
+    }
     ZZME->computeProdXS_ttH(prob,topProcess, topDecay);
     if (useConstant) computeConstant(prob);
   }
