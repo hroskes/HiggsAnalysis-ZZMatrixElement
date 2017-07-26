@@ -1069,12 +1069,12 @@ void testME_Dec_MCFM_Ping(int flavor=2, int useMothers=0, bool useConstants=fals
   tout.close();
 }
 
-void testME_VH_JHUGen_Ping(){
-  ofstream tout("testME_VH_JHUGen_Ping.out");
+void testME_VH_JHUGen_Ping(int erg_tev=13, bool useConstants=false){
+  TString strtout = Form("testME_VH_JHUGen_%iTeV_Ping.out", erg_tev);
+  ofstream tout(strtout.Data());
   streambuf* coutbuf = cout.rdbuf();
   cout.rdbuf(tout.rdbuf());
 
-  int erg_tev=13;
   float mPOLE=125.;
   float wPOLE=4.07e-3;
 
@@ -1198,70 +1198,76 @@ void testME_VH_JHUGen_Ping(){
 
         float p0mplus=0;
         mela.setProcess(TVar::HSMHiggs, TVar::JHUGen, prod);
-        mela.computeProdP_VH(p0mplus, false, false);
+        mela.computeProdP_VH(p0mplus, false, useConstants);
         cout << "p0mplus: " << p0mplus << '\n' << endl;
 
         float p0g1prime2=0;
         mela.setProcess(TVar::H0_g1prime2, TVar::JHUGen, prod);
-        mela.computeProdP_VH(p0g1prime2, false, false);
+        mela.computeProdP_VH(p0g1prime2, false, useConstants);
         cout << "p0g1prime2: " << p0g1prime2 << '\n' << endl;
 
         float p0hplus=0;
         mela.setProcess(TVar::H0hplus, TVar::JHUGen, prod);
-        mela.computeProdP_VH(p0hplus, false, false);
+        mela.computeProdP_VH(p0hplus, false, useConstants);
         cout << "p0hplus: " << p0hplus << '\n' << endl;
 
         float p0minus=0;
         mela.setProcess(TVar::H0minus, TVar::JHUGen, prod);
-        mela.computeProdP_VH(p0minus, false, false);
+        mela.computeProdP_VH(p0minus, false, useConstants);
         cout << "p0minus: " << p0minus << '\n' << endl;
 
         float p0gzgs1prime2=0;
         mela.setProcess(TVar::H0_Zgsg1prime2, TVar::JHUGen, prod);
-        mela.computeProdP_VH(p0gzgs1prime2, false, false);
+        mela.computeProdP_VH(p0gzgs1prime2, false, useConstants);
         cout << "p0gzgs1prime2: " << p0gzgs1prime2 << '\n' << endl;
 
         float p0hpluszgs=0;
         mela.setProcess(TVar::H0_Zgs, TVar::JHUGen, prod);
-        mela.computeProdP_VH(p0hpluszgs, false, false);
+        mela.computeProdP_VH(p0hpluszgs, false, useConstants);
         cout << "p0hpluszgs: " << p0hpluszgs << '\n' << endl;
 
         // SelfD MEs
         float p0mplus_selfD=0;
         mela.setProcess(TVar::SelfDefine_spin0, TVar::JHUGen, prod);
         mela.selfDHzzcoupl[0][gHIGGS_VV_1][0]=1;
-        mela.computeProdP_VH(p0mplus_selfD, false, false);
+        mela.computeProdP_VH(p0mplus_selfD, false, useConstants);
         cout << "p0mplus_selfD: " << p0mplus_selfD << '\n' << endl;
 
         float p0g1prime2_selfD=0;
         mela.setProcess(TVar::SelfDefine_spin0, TVar::JHUGen, prod);
         mela.selfDHzzcoupl[0][gHIGGS_VV_1_PRIME2][0]=1;
-        mela.computeProdP_VH(p0g1prime2_selfD, false, false);
+        mela.computeProdP_VH(p0g1prime2_selfD, false, useConstants);
         cout << "p0g1prime2_selfD: " << p0g1prime2_selfD << '\n' << endl;
 
         float p0hplus_selfD=0;
         mela.setProcess(TVar::SelfDefine_spin0, TVar::JHUGen, prod);
         mela.selfDHzzcoupl[0][gHIGGS_VV_2][0]=1;
-        mela.computeProdP_VH(p0hplus_selfD, false, false);
+        mela.computeProdP_VH(p0hplus_selfD, false, useConstants);
         cout << "p0hplus_selfD: " << p0hplus_selfD << '\n' << endl;
 
         float p0minus_selfD=0;
         mela.setProcess(TVar::SelfDefine_spin0, TVar::JHUGen, prod);
         mela.selfDHzzcoupl[0][gHIGGS_VV_4][0]=1;
-        mela.computeProdP_VH(p0minus_selfD, false, false);
+        mela.computeProdP_VH(p0minus_selfD, false, useConstants);
         cout << "p0minus_selfD: " << p0minus_selfD << '\n' << endl;
 
         float p0gzgs1prime2_selfD=0;
         mela.setProcess(TVar::SelfDefine_spin0, TVar::JHUGen, prod);
         mela.selfDHzzcoupl[0][gHIGGS_ZA_1_PRIME2][0]=1;
-        mela.computeProdP_VH(p0gzgs1prime2_selfD, false, false);
+        mela.computeProdP_VH(p0gzgs1prime2_selfD, false, useConstants);
         cout << "p0gzgs1prime2_selfD: " << p0gzgs1prime2_selfD << '\n' << endl;
 
         float p0hpluszgs_selfD=0;
         mela.setProcess(TVar::SelfDefine_spin0, TVar::JHUGen, prod);
         mela.selfDHzzcoupl[0][gHIGGS_ZA_2][0]=1;
-        mela.computeProdP_VH(p0hpluszgs_selfD, false, false);
+        mela.computeProdP_VH(p0hpluszgs_selfD, false, useConstants);
         cout << "p0hpluszgs_selfD: " << p0hpluszgs_selfD << '\n' << endl;
+
+        if (prod==TVar::Had_ZH || prod==TVar::Had_WH){
+          float recoBW=0;
+          mela.computeDijetConvBW(recoBW);
+          cout << "Reco BW: " << recoBW << '\n' << endl;
+        }
 
         cout << "*******************************************************" << endl;
       }
@@ -2234,6 +2240,9 @@ void testME_ProdDec_MCFM_JHUGen_WBFZZWW_Comparison_Ping(int motherflavor=0, int 
     p_prod_fa3AA_dec_fa3AA_VAJHU.proddecme = p_prod_fa3AA_dec_fa3AA_VAJHU.prodme*p_prod_fa3AA_dec_fa3AA_VAJHU.decme; p_prod_fa3AA_dec_fa3AA_VAJHU.multiplyarray(p_prod_fa3AA_dec_fa3AA_VAJHU.decme);
 
     /***** MCFM *****/
+    // Reset these in case the function needs to be repeated
+    spinzerohiggs_anomcoupl_.AnomalCouplDK=1;
+    spinzerohiggs_anomcoupl_.AnomalCouplPR=1;
 
     if (isZZWW==ZZWWdec_onevertexflag) spinzerohiggs_anomcoupl_.AnomalCouplDK=0; // Test WW couplings in ZZ decay or ZZ couplings in WW decay
     else spinzerohiggs_anomcoupl_.AnomalCouplDK=1; // Test prod*decay couplings
@@ -2634,14 +2643,55 @@ void testME_ProdDec_MCFM_JHUGen_WBFZZWW_Comparison_Ping(int motherflavor=0, int 
       cout << "\tMCFM" << endl;
       p_bkg_VAMCFM_rssum.printarray();
       cout << "\tMCFM Bkg (re-sum)/Bkg Ratio" << endl;
+      bool wrongRatio=false;
       for (int ii=0; ii<nmsq; ii++){
         for (int jj=0; jj<nmsq; jj++){
           cout << '\t';
-          if (p_bkg_VAMCFM_rssum.mearray[ii][jj]!=0.) cout << p_bkg_VAMCFM_rssum.mearray[ii][jj]/p_bkg_VAMCFM.mearray[ii][jj];
-          else cout << 0;
+          float rr=0;
+          if (p_bkg_VAMCFM_rssum.mearray[ii][jj]!=0.) rr = p_bkg_VAMCFM_rssum.mearray[ii][jj]/p_bkg_VAMCFM.mearray[ii][jj];
+          cout << rr;
+          if (rr!=0. && rr!=4.) wrongRatio=true;
         }
         cout << endl;
       }
+
+      if (wrongRatio){ // Print all non-zero contributions in the manual sum
+        for (int r=-5; r<=5; r++){
+          for (int s=-5; s<=5; s++){
+            MELACandidate* cand = mela.getCurrentCandidate();
+            int idj[2] ={
+              cand->getAssociatedJet(0)->id,
+              cand->getAssociatedJet(1)->id
+            };
+
+            cand->getAssociatedJet(0)->id=r;
+            cand->getAssociatedJet(1)->id=s;
+            mcfmme p_bkg_VAMCFM_rsindiv;
+            mela.computeProdDecP(p_bkg_VAMCFM_rsindiv.proddecme, false);
+            mela.getIORecord()->getUnweightedMEArray(p_bkg_VAMCFM_rsindiv.mearray);
+            if (p_bkg_VAMCFM_rsindiv.proddecme>0.){
+              mela.setVerbosity(TVar::DEBUG_VERBOSE);
+              mela.computeProdDecP(p_bkg_VAMCFM_rsindiv.proddecme, false);
+              cout << endl;
+              cout << "Outgoing id1, id2 = " << r << " , " << s << endl;
+
+              for (int ii=0; ii<nmsq; ii++){
+                for (int jj=0; jj<nmsq; jj++){
+                  cout << '\t';
+                  cout << p_bkg_VAMCFM_rsindiv.mearray[ii][jj];
+                }
+                cout << endl;
+              }
+
+              cout << endl;
+              mela.setVerbosity(verbosity);
+            }
+            cand->getAssociatedJet(0)->id=idj[0];
+            cand->getAssociatedJet(1)->id=idj[1];
+          }
+        }
+      }
+
     }
 
     TUtil::PrintCandidateSummary(mela.getCurrentCandidate());
