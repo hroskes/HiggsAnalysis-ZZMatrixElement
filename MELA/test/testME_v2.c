@@ -22,6 +22,41 @@
 using namespace RooFit;
 using namespace std;
 
+struct MELAwithOptions{
+  Mela* mela;
+  const double sqrts;
+  const double mh;
+
+  MELAwithOptions(double sqrts_, double mh_, TVar::VerbosityLevel verbosity_=TVar::ERROR) :
+    sqrts(sqrts_), mh(mh_),
+    mela(new Mela(sqrts_, mh_, verbosity_))
+  { cout << "Called MELAwithOptions constructor!" << endl; }
+
+  // FIXME: Not working yet, crashes after calling this destructor at delete mela
+  ~MELAwithOptions(){ cout << "Called MELAwithOptions destructor!" << endl; delete mela; }
+};
+
+vector<unique_ptr<MELAwithOptions>> global_mela_list;
+
+Mela* getMela(double sqrts, double mh, TVar::VerbosityLevel verbosity=TVar::ERROR){
+  Mela* res=0;
+  int it=0;
+  for (auto& mwo : global_mela_list){
+    if (mwo->sqrts==sqrts && mwo->mh==mh){
+      res = mwo->mela;
+      break;
+    }
+    it++;
+  }
+  if (res==0){
+    unique_ptr<MELAwithOptions> tmp(new MELAwithOptions(sqrts, mh, verbosity));
+    global_mela_list.push_back(std::move(tmp));
+    res = global_mela_list.back()->mela;
+  }
+  res->setVerbosity(verbosity);
+  return res;
+}
+
 
 void testME_Dec_MCFM_Ping(int flavor=2, int useMothers=0, bool useConstants=false){
   ofstream tout("testME_Dec_MCFM_Ping.out");
