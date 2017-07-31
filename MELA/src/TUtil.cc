@@ -3,6 +3,7 @@
 #include <cmath>
 #include <utility>
 #include <algorithm>
+#include <cassert>
 #include "TUtil.hh"
 #include "TMath.h"
 #include "TLorentzRotation.h"
@@ -1098,38 +1099,39 @@ void TUtil::SetEwkCouplingParameters(double ext_Gf, double ext_aemmz, double ext
   */
 }
 void TUtil::SetMass(double inmass, int ipart){
+  const int ipartabs = abs(ipart);
   bool runcoupling_mcfm=false;
   bool runcoupling_jhugen=false;
 
   // MCFM masses
   // Tprime and bprime masses are not defined in masses.f
-  if (abs(ipart)==8) spinzerohiggs_anomcoupl_.mt_4gen = inmass;
-  else if (abs(ipart)==7) spinzerohiggs_anomcoupl_.mb_4gen = inmass;
-  else if (abs(ipart)==6){ masses_mcfm_.mt=inmass; runcoupling_mcfm=true; }
-  else if (abs(ipart)==5){ masses_mcfm_.mb=inmass; masses_mcfm_.mbsq = pow(masses_mcfm_.mb, 2); runcoupling_mcfm=true; }
-  else if (abs(ipart)==4){ masses_mcfm_.mc=inmass; masses_mcfm_.mcsq = pow(masses_mcfm_.mc, 2); runcoupling_mcfm=true; }
-  else if (abs(ipart)==3) masses_mcfm_.ms=inmass;
-  else if (abs(ipart)==2) masses_mcfm_.mu=inmass;
-  else if (abs(ipart)==1) masses_mcfm_.md=inmass;
-  else if (abs(ipart)==11) masses_mcfm_.mel=inmass;
-  else if (abs(ipart)==13) masses_mcfm_.mmu=inmass;
-  else if (abs(ipart)==15){ masses_mcfm_.mtau=inmass; masses_mcfm_.mtausq = pow(masses_mcfm_.mtau, 2); }
-  else if (abs(ipart)==23){ masses_mcfm_.zmass=inmass; ewinput_.zmass_inp = inmass; runcoupling_mcfm=true; }
-  else if (abs(ipart)==24){ masses_mcfm_.wmass=inmass; ewinput_.wmass_inp = inmass; runcoupling_mcfm=true; }
-  else if (abs(ipart)==25) masses_mcfm_.hmass=inmass;
+  if (ipartabs==8) spinzerohiggs_anomcoupl_.mt_4gen = inmass;
+  else if (ipartabs==7) spinzerohiggs_anomcoupl_.mb_4gen = inmass;
+  else if (ipartabs==6){ masses_mcfm_.mt=inmass; runcoupling_mcfm=true; }
+  else if (ipartabs==5){ masses_mcfm_.mb=inmass; masses_mcfm_.mbsq = pow(masses_mcfm_.mb, 2); runcoupling_mcfm=true; }
+  else if (ipartabs==4){ masses_mcfm_.mc=inmass; masses_mcfm_.mcsq = pow(masses_mcfm_.mc, 2); runcoupling_mcfm=true; }
+  else if (ipartabs==3) masses_mcfm_.ms=inmass;
+  else if (ipartabs==2) masses_mcfm_.mu=inmass;
+  else if (ipartabs==1) masses_mcfm_.md=inmass;
+  else if (ipartabs==11) masses_mcfm_.mel=inmass;
+  else if (ipartabs==13) masses_mcfm_.mmu=inmass;
+  else if (ipartabs==15){ masses_mcfm_.mtau=inmass; masses_mcfm_.mtausq = pow(masses_mcfm_.mtau, 2); }
+  else if (ipartabs==23){ masses_mcfm_.zmass=inmass; ewinput_.zmass_inp = inmass; runcoupling_mcfm=true; }
+  else if (ipartabs==24){ masses_mcfm_.wmass=inmass; ewinput_.wmass_inp = inmass; runcoupling_mcfm=true; }
+  else if (ipartabs==25) masses_mcfm_.hmass=inmass;
 
   // JHUGen masses
   if (
-    abs(ipart)<=6
+    ipartabs<=6
     ||
-    (abs(ipart)>=11 && abs(ipart)<=16)
+    (ipartabs>=11 && ipartabs<=16)
     ||
-    abs(ipart)==23 || abs(ipart)==24 || abs(ipart)==25
+    ipartabs==23 || ipartabs==24 || ipartabs==25
     ){
     runcoupling_jhugen=(
-      abs(ipart)==23
+      ipartabs==23
       ||
-      abs(ipart)==24
+      ipartabs==24
       );
     const double GeV=1./100.;
     double jinmass = inmass*GeV;
@@ -1141,14 +1143,14 @@ void TUtil::SetMass(double inmass, int ipart){
   if (runcoupling_mcfm || runcoupling_jhugen) SetEwkCouplingParameters(ewcouple_.Gf, em_.aemmz, masses_mcfm_.wmass, masses_mcfm_.zmass, ewcouple_.xw, ewscheme_.ewscheme);
 }
 void TUtil::SetDecayWidth(double inwidth, int ipart){
+  const int ipartabs = abs(ipart);
   // No need to recalculate couplings
-
   // MCFM masses
-  if (abs(ipart)==6) masses_mcfm_.twidth=inwidth;
-  else if (abs(ipart)==15) masses_mcfm_.tauwidth=inwidth;
-  else if (abs(ipart)==23) masses_mcfm_.zwidth=inwidth;
-  else if (abs(ipart)==24) masses_mcfm_.wwidth=inwidth;
-  else if (abs(ipart)==25) masses_mcfm_.hwidth=inwidth;
+  if (ipartabs==6) masses_mcfm_.twidth=inwidth;
+  else if (ipartabs==15) masses_mcfm_.tauwidth=inwidth;
+  else if (ipartabs==23) masses_mcfm_.zwidth=inwidth;
+  else if (ipartabs==24) masses_mcfm_.wwidth=inwidth;
+  else if (ipartabs==25) masses_mcfm_.hwidth=inwidth;
 
   // JHUGen masses
   const double GeV=1./100.;
@@ -1176,28 +1178,30 @@ void TUtil::SetCKMElements(double* invckm_ud, double* invckm_us, double* invckm_
 }
 
 double TUtil::GetMass(int ipart){
-  if (abs(ipart)==8) return spinzerohiggs_anomcoupl_.mt_4gen;
-  else if (abs(ipart)==7) return spinzerohiggs_anomcoupl_.mb_4gen;
-  else if (abs(ipart)==6) return masses_mcfm_.mt;
-  else if (abs(ipart)==5) return masses_mcfm_.mb;
-  else if (abs(ipart)==4) return masses_mcfm_.mc;
-  else if (abs(ipart)==3) return masses_mcfm_.ms;
-  else if (abs(ipart)==2) return masses_mcfm_.mu;
-  else if (abs(ipart)==1) return masses_mcfm_.md;
-  else if (abs(ipart)==11) return masses_mcfm_.mel;
-  else if (abs(ipart)==13) return masses_mcfm_.mmu;
-  else if (abs(ipart)==15) return masses_mcfm_.mtau;
-  else if (abs(ipart)==23) return masses_mcfm_.zmass;
-  else if (abs(ipart)==24) return masses_mcfm_.wmass;
-  else if (abs(ipart)==25) return masses_mcfm_.hmass;
+  const int ipartabs = abs(ipart);
+
+  if (ipartabs==8) return spinzerohiggs_anomcoupl_.mt_4gen;
+  else if (ipartabs==7) return spinzerohiggs_anomcoupl_.mb_4gen;
+  else if (ipartabs==6) return masses_mcfm_.mt;
+  else if (ipartabs==5) return masses_mcfm_.mb;
+  else if (ipartabs==4) return masses_mcfm_.mc;
+  else if (ipartabs==3) return masses_mcfm_.ms;
+  else if (ipartabs==2) return masses_mcfm_.mu;
+  else if (ipartabs==1) return masses_mcfm_.md;
+  else if (ipartabs==11) return masses_mcfm_.mel;
+  else if (ipartabs==13) return masses_mcfm_.mmu;
+  else if (ipartabs==15) return masses_mcfm_.mtau;
+  else if (ipartabs==23) return masses_mcfm_.zmass;
+  else if (ipartabs==24) return masses_mcfm_.wmass;
+  else if (ipartabs==25) return masses_mcfm_.hmass;
   else{
     // JHUGen masses
     if (
-      abs(ipart)<=6
+      ipartabs<=6
       ||
-      (abs(ipart)>=11 && abs(ipart)<=16)
+      (ipartabs>=11 && ipartabs<=16)
       ||
-      abs(ipart)==23 || abs(ipart)==24 || abs(ipart)==25
+      ipartabs==23 || ipartabs==24 || ipartabs==25
       ){
       const double GeV=1./100.;
       int jpart = convertLHEreverse(&ipart);
@@ -1209,14 +1213,16 @@ double TUtil::GetMass(int ipart){
   }
 }
 double TUtil::GetDecayWidth(int ipart){
-  // MCFM masses
-  if (abs(ipart)==6) return masses_mcfm_.twidth;
-  else if (abs(ipart)==15) return masses_mcfm_.tauwidth;
-  else if (abs(ipart)==23) return masses_mcfm_.zwidth;
-  else if (abs(ipart)==24) return masses_mcfm_.wwidth;
-  else if (abs(ipart)==25) return masses_mcfm_.hwidth;
+  const int ipartabs = abs(ipart);
+
+  // MCFM widths
+  if (ipartabs==6) return masses_mcfm_.twidth;
+  else if (ipartabs==15) return masses_mcfm_.tauwidth;
+  else if (ipartabs==23) return masses_mcfm_.zwidth;
+  else if (ipartabs==24) return masses_mcfm_.wwidth;
+  else if (ipartabs==25) return masses_mcfm_.hwidth;
   else{
-    // JHUGen masses
+    // JHUGen widths
     const double GeV=1./100.;
     int jpart = convertLHEreverse(&ipart);
     double joutwidth = __modparameters_MOD_getdecaywidth(&jpart);
@@ -3716,47 +3722,62 @@ double TUtil::SumMatrixElementPDF(
           || production==TVar::JJVBF_S || production==TVar::JJEW_S
           || production==TVar::JJVBF_TU || production==TVar::JJEW_TU
           ){
-          qq_zzqq_(p4[0], msq[0]);
-          if (PDGHelpers::isAnUnknownJet(id[partOrder.size()+2]) && PDGHelpers::isAnUnknownJet(id[partOrder.size()+3])){
-            for (unsigned int ix=0; ix<4; ix++){
-              for (int ip=0; ip<mxpart; ip++) p4_tmp[ix][ip]=p4[ix][ip];
-              swap(p4_tmp[ix][partOrder.size()+2], p4_tmp[ix][partOrder.size()+3]);
-            }
-            qq_zzqq_(p4_tmp[0], msq_tmp[0]);
-            for (int iquark=-5; iquark<=5; iquark++){ for (int jquark=-5; jquark<=5; jquark++){ msq[jquark+5][iquark+5] = (msq[jquark+5][iquark+5] + msq_tmp[jquark+5][iquark+5]); if (iquark==jquark) msq[jquark+5][iquark+5]*=0.5; } }
-          }
-          else if (PDGHelpers::isAnUnknownJet(id[partOrder.size()+2]) || PDGHelpers::isAnUnknownJet(id[partOrder.size()+3])){
-            for (unsigned int ix=0; ix<4; ix++){
-              for (int ip=0; ip<mxpart; ip++) p4_tmp[ix][ip]=p4[ix][ip];
-              swap(p4_tmp[ix][partOrder.size()+2], p4_tmp[ix][partOrder.size()+3]);
-            }
-            TString strlabel[2] ={ (plabel_.plabel)[7], (plabel_.plabel)[6] }; for (unsigned int il=0; il<2; il++) strlabel[il].Resize(2);
-            for (int ip=0; ip<mxpart; ip++){
-              if (ip!=6 && ip!=7) sprintf((plabel_.plabel)[ip], (plabel_.plabel)[ip]);
-              else sprintf((plabel_.plabel)[ip], strlabel[ip-6].Data());
-            }
-            qq_zzqq_(p4_tmp[0], msq_tmp[0]);
-            if (verbosity>=TVar::DEBUG){
-              cout << "TUtil::SumMatrixElementPDF: Adding missing contributions:\n";
-              cout << "\tplabels:\n";
-              for (int ip=0; ip<mxpart; ip++) cout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
-              cout << "\tMEsq initial:" << endl;
-              for (int iquark=-5; iquark<=5; iquark++){
-                for (int jquark=-5; jquark<=5; jquark++) cout << msq[jquark+5][iquark+5] << '\t';
-                cout << endl;
+          /*
+          if (process==TVar::bkgZZ){//
+            qq_zzqq_bkg_(p4[0], msq[0]);
+            if (PDGHelpers::isAnUnknownJet(id[partOrder.size()+2]) && PDGHelpers::isAnUnknownJet(id[partOrder.size()+3])){
+              for (unsigned int ix=0; ix<4; ix++){
+                for (int ip=0; ip<mxpart; ip++) p4_tmp[ix][ip]=p4[ix][ip];
+                swap(p4_tmp[ix][partOrder.size()+2], p4_tmp[ix][partOrder.size()+3]);
               }
-              cout << "\tMEsq added:" << endl;
-              for (int iquark=-5; iquark<=5; iquark++){
-                for (int jquark=-5; jquark<=5; jquark++) cout << msq_tmp[jquark+5][iquark+5] << '\t';
-                cout << endl;
-              }
-            }
-            for (int iquark=-5; iquark<=5; iquark++){
-              for (int jquark=-5; jquark<=5; jquark++){
-                if (msq[jquark+5][iquark+5]==0.) msq[jquark+5][iquark+5] = msq_tmp[jquark+5][iquark+5];
-              }
+              qq_zzqq_bkg_(p4_tmp[0], msq_tmp[0]);
+              for (int iquark=-5; iquark<=5; iquark++){ for (int jquark=-5; jquark<=5; jquark++){ msq[jquark+5][iquark+5] = (msq[jquark+5][iquark+5] + msq_tmp[jquark+5][iquark+5]); if (iquark==jquark) msq[jquark+5][iquark+5]*=0.5; } }
             }
           }
+          else{//
+            */
+            qq_zzqq_(p4[0], msq[0]);
+            if (PDGHelpers::isAnUnknownJet(id[partOrder.size()+2]) && PDGHelpers::isAnUnknownJet(id[partOrder.size()+3])){
+              for (unsigned int ix=0; ix<4; ix++){
+                for (int ip=0; ip<mxpart; ip++) p4_tmp[ix][ip]=p4[ix][ip];
+                swap(p4_tmp[ix][partOrder.size()+2], p4_tmp[ix][partOrder.size()+3]);
+              }
+              qq_zzqq_(p4_tmp[0], msq_tmp[0]);
+              for (int iquark=-5; iquark<=5; iquark++){ for (int jquark=-5; jquark<=5; jquark++){ msq[jquark+5][iquark+5] = (msq[jquark+5][iquark+5] + msq_tmp[jquark+5][iquark+5]); if (iquark==jquark) msq[jquark+5][iquark+5]*=0.5; } }
+            }
+            else if (PDGHelpers::isAnUnknownJet(id[partOrder.size()+2]) || PDGHelpers::isAnUnknownJet(id[partOrder.size()+3])){
+              for (unsigned int ix=0; ix<4; ix++){
+                for (int ip=0; ip<mxpart; ip++) p4_tmp[ix][ip]=p4[ix][ip];
+                swap(p4_tmp[ix][partOrder.size()+2], p4_tmp[ix][partOrder.size()+3]);
+              }
+              TString strlabel[2] ={ (plabel_.plabel)[7], (plabel_.plabel)[6] }; for (unsigned int il=0; il<2; il++) strlabel[il].Resize(2);
+              for (int ip=0; ip<mxpart; ip++){
+                if (ip!=6 && ip!=7) sprintf((plabel_.plabel)[ip], (plabel_.plabel)[ip]);
+                else sprintf((plabel_.plabel)[ip], strlabel[ip-6].Data());
+              }
+              qq_zzqq_(p4_tmp[0], msq_tmp[0]);
+              if (verbosity>=TVar::DEBUG){
+                cout << "TUtil::SumMatrixElementPDF: Adding missing contributions:\n";
+                cout << "\tplabels:\n";
+                for (int ip=0; ip<mxpart; ip++) cout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
+                cout << "\tMEsq initial:" << endl;
+                for (int iquark=-5; iquark<=5; iquark++){
+                  for (int jquark=-5; jquark<=5; jquark++) cout << msq[jquark+5][iquark+5] << '\t';
+                  cout << endl;
+                }
+                cout << "\tMEsq added:" << endl;
+                for (int iquark=-5; iquark<=5; iquark++){
+                  for (int jquark=-5; jquark<=5; jquark++) cout << msq_tmp[jquark+5][iquark+5] << '\t';
+                  cout << endl;
+                }
+              }
+              for (int iquark=-5; iquark<=5; iquark++){
+                for (int jquark=-5; jquark<=5; jquark++){
+                  if (msq[jquark+5][iquark+5]==0.) msq[jquark+5][iquark+5] = msq_tmp[jquark+5][iquark+5];
+                }
+              }
+            }
+          //}//
         }
         else if (
           production==TVar::JJQCD || production==TVar::JJQCD_S || production==TVar::JJQCD_TU
@@ -7244,11 +7265,11 @@ void TUtil::GetBoostedParticleVectors(
   simple_event_record& mela_event,
   TVar::VerbosityLevel verbosity
   ){
-  if (verbosity>=TVar::DEBUG) cout << "Begin GetBoostedParticles" << endl;
+  if (verbosity>=TVar::DEBUG) cout << "Begin GetBoostedParticleVectors" << endl;
   // This is the beginning of one long function.
 
   int code = mela_event.AssociationCode;
-  if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticles: code=" << code << endl;
+  if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: code=" << code << endl;
   int aVhypo = mela_event.AssociationVCompatibility;
   TLorentzVector nullFourVector(0, 0, 0, 0);
 
@@ -7303,9 +7324,9 @@ void TUtil::GetBoostedParticleVectors(
 
   /***** ASSOCIATED PARTICLES *****/
   if (verbosity>=TVar::DEBUG){
-    cout << "TUtil::GetBoostedParticles: nRequestedLeps=" << mela_event.nRequested_AssociatedLeptons << endl;
-    cout << "TUtil::GetBoostedParticles: nRequestedJets=" << mela_event.nRequested_AssociatedJets << endl;
-    cout << "TUtil::GetBoostedParticles: nRequestedPhotons=" << mela_event.nRequested_AssociatedPhotons << endl;
+    cout << "TUtil::GetBoostedParticleVectors: nRequestedLeps=" << mela_event.nRequested_AssociatedLeptons << endl;
+    cout << "TUtil::GetBoostedParticleVectors: nRequestedJets=" << mela_event.nRequested_AssociatedJets << endl;
+    cout << "TUtil::GetBoostedParticleVectors: nRequestedPhotons=" << mela_event.nRequested_AssociatedPhotons << endl;
   }
   int nsatisfied_jets=0;
   int nsatisfied_lnus=0;
@@ -7313,9 +7334,10 @@ void TUtil::GetBoostedParticleVectors(
   vector<MELAParticle*> candidateVs; // Used if aVhypo!=0
   SimpleParticleCollection_t associated;
   if (aVhypo!=0){
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticles: aVhypo!=0 case start" << endl;
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: aVhypo!=0 case start" << endl;
 
-    for (int iv=2; iv<melaCand->getNSortedVs(); iv++){ // Loop over associated Vs
+    int nsortedvsstart=(melaCand->getDecayMode()!=TVar::CandidateDecay_Stable ? 2 : 0);
+    for (int iv=nsortedvsstart; iv<melaCand->getNSortedVs(); iv++){ // Loop over associated Vs
       MELAParticle* Vdau = melaCand->getSortedV(iv);
       if (Vdau!=0){
         bool doAdd=false;
@@ -7394,11 +7416,11 @@ void TUtil::GetBoostedParticleVectors(
       for (unsigned int ias=0; ias<associated_tmp.size(); ias++) associated.push_back(associated_tmp.at(ias)); // Fill associated at the last step
     }
 
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticles: aVhypo!=0 case associated.size=" << associated.size() << endl;
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: aVhypo!=0 case associated.size=" << associated.size() << endl;
   }
   else{ // Could be split to aVhypo==0 and aVhypo<0 if associated V+jets is needed
     // Associated leptons
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticles: aVhypo==0 case begin" << endl;
+    if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: aVhypo==0 case begin" << endl;
 
     if (code%TVar::kUseAssociated_Leptons==0){
       SimpleParticleCollection_t associated_tmp;
@@ -7410,13 +7432,13 @@ void TUtil::GetBoostedParticleVectors(
         }
       }
 
-      if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticles: aVhypo==0 lep case associated_tmp.size=" << associated_tmp.size() << endl;
+      if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: aVhypo==0 lep case associated_tmp.size=" << associated_tmp.size() << endl;
 
       // Adjust the kinematics of associated non-V-originating particles
       if (associated_tmp.size()>=1){
         unsigned int nffs = associated_tmp.size()/2;
         for (unsigned int iv=0; iv<nffs; iv++){
-          if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticles: Removing mass from lepton pair " << 2*iv+0 << '\t' << 2*iv+1 << endl;
+          if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: Removing mass from lepton pair " << 2*iv+0 << '\t' << 2*iv+1 << endl;
           pair<TLorentzVector, TLorentzVector> corrPair = TUtil::removeMassFromPair(
             associated_tmp.at(2*iv+0).second, associated_tmp.at(2*iv+0).first,
             associated_tmp.at(2*iv+1).second, associated_tmp.at(2*iv+1).first
@@ -7425,7 +7447,7 @@ void TUtil::GetBoostedParticleVectors(
           associated_tmp.at(2*iv+1).second = corrPair.second;
         }
         if (2*nffs<associated_tmp.size()){
-          if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticles: Removing mass from last lepton  " << associated_tmp.size()-1 << endl;
+          if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: Removing mass from last lepton  " << associated_tmp.size()-1 << endl;
           TLorentzVector tmp = nullFourVector;
           pair<TLorentzVector, TLorentzVector> corrPair = TUtil::removeMassFromPair(
             associated_tmp.at(associated_tmp.size()-1).second, associated_tmp.at(associated_tmp.size()-1).first,
@@ -7447,13 +7469,13 @@ void TUtil::GetBoostedParticleVectors(
         }
       }
 
-      if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticles: aVhypo==0 jet case associated_tmp.size=" << associated_tmp.size() << endl;
+      if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: aVhypo==0 jet case associated_tmp.size=" << associated_tmp.size() << endl;
 
       // Adjust the kinematics of associated non-V-originating particles
       if (associated_tmp.size()>=1){
         unsigned int nffs = associated_tmp.size()/2;
         for (unsigned int iv=0; iv<nffs; iv++){
-          if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticles: Removing mass from jet pair " << 2*iv+0 << '\t' << 2*iv+1 << endl;
+          if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: Removing mass from jet pair " << 2*iv+0 << '\t' << 2*iv+1 << endl;
           pair<TLorentzVector, TLorentzVector> corrPair = TUtil::removeMassFromPair(
             associated_tmp.at(2*iv+0).second, associated_tmp.at(2*iv+0).first,
             associated_tmp.at(2*iv+1).second, associated_tmp.at(2*iv+1).first
@@ -7462,7 +7484,7 @@ void TUtil::GetBoostedParticleVectors(
           associated_tmp.at(2*iv+1).second = corrPair.second;
         }
         if (2*nffs<associated_tmp.size()){
-          if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticles: Removing mass from last jet  " << associated_tmp.size()-1 << endl;
+          if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: Removing mass from last jet  " << associated_tmp.size()-1 << endl;
           TLorentzVector tmp = nullFourVector;
           pair<TLorentzVector, TLorentzVector> corrPair = TUtil::removeMassFromPair(
             associated_tmp.at(associated_tmp.size()-1).second, associated_tmp.at(associated_tmp.size()-1).first,
@@ -7487,7 +7509,7 @@ void TUtil::GetBoostedParticleVectors(
   }
   /***** END ASSOCIATED PARTICLES *****/
 
-  if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticles: associated.size=" << associated.size() << endl;
+  if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: associated.size=" << associated.size() << endl;
 
   /***** ASSOCIATED TOP OBJECTS *****/
   int nsatisfied_tops=0;
@@ -7611,12 +7633,12 @@ void TUtil::GetBoostedParticleVectors(
   }
   /***** END ASSOCIATED TOP OBJECTS *****/
   if (verbosity>=TVar::DEBUG){
-    cout << "TUtil::GetBoostedParticles: stableTops.size=" << stableTops.size() << endl;
-    cout << "TUtil::GetBoostedParticles: stableAntitops.size=" << stableAntitops.size() << endl;
-    cout << "TUtil::GetBoostedParticles: topDaughters.size=" << topDaughters.size() << endl;
-    for (unsigned int itop=0; itop<topDaughters.size(); itop++) cout << "TUtil::GetBoostedParticles: topDaughters.at(" << itop << ").size=" << topDaughters.at(itop).size() << endl;
-    cout << "TUtil::GetBoostedParticles: antitopDaughters.size=" << antitopDaughters.size() << endl;
-    for (unsigned int itop=0; itop<antitopDaughters.size(); itop++) cout << "TUtil::GetBoostedParticles: antitopDaughters.at(" << itop << ").size=" << antitopDaughters.at(itop).size() << endl;
+    cout << "TUtil::GetBoostedParticleVectors: stableTops.size=" << stableTops.size() << endl;
+    cout << "TUtil::GetBoostedParticleVectors: stableAntitops.size=" << stableAntitops.size() << endl;
+    cout << "TUtil::GetBoostedParticleVectors: topDaughters.size=" << topDaughters.size() << endl;
+    for (unsigned int itop=0; itop<topDaughters.size(); itop++) cout << "TUtil::GetBoostedParticleVectors: topDaughters.at(" << itop << ").size=" << topDaughters.at(itop).size() << endl;
+    cout << "TUtil::GetBoostedParticleVectors: antitopDaughters.size=" << antitopDaughters.size() << endl;
+    for (unsigned int itop=0; itop<antitopDaughters.size(); itop++) cout << "TUtil::GetBoostedParticleVectors: antitopDaughters.at(" << itop << ").size=" << antitopDaughters.at(itop).size() << endl;
   }
 
   /***** BOOSTS TO THE CORRECT PT=0 FRAME *****/
@@ -7694,15 +7716,15 @@ void TUtil::GetBoostedParticleVectors(
 
   // This is the end of one long function.
   if (verbosity>=TVar::DEBUG){
-    cout << "TUtil::GetBoostedParticles mela_event.intermediateVid.size=" << mela_event.intermediateVid.size() << endl;
-    cout << "TUtil::GetBoostedParticles mela_event.pMothers.size=" << mela_event.pMothers.size() << endl;
-    cout << "TUtil::GetBoostedParticles mela_event.pDaughters.size=" << mela_event.pDaughters.size() << endl;
-    cout << "TUtil::GetBoostedParticles mela_event.pAssociated.size=" << mela_event.pAssociated.size() << endl;
-    cout << "TUtil::GetBoostedParticles mela_event.pStableTops.size=" << mela_event.pStableTops.size() << endl;
-    cout << "TUtil::GetBoostedParticles mela_event.pStableAntitops.size=" << mela_event.pStableAntitops.size() << endl;
-    cout << "TUtil::GetBoostedParticles mela_event.pTopDaughters.size=" << mela_event.pTopDaughters.size() << endl;
-    cout << "TUtil::GetBoostedParticles mela_event.pAntitopDaughters.size=" << mela_event.pAntitopDaughters.size() << endl;
-    cout << "End GetBoostedParticles" << endl;
+    cout << "TUtil::GetBoostedParticleVectors mela_event.intermediateVid.size=" << mela_event.intermediateVid.size() << endl;
+    cout << "TUtil::GetBoostedParticleVectors mela_event.pMothers.size=" << mela_event.pMothers.size() << endl;
+    cout << "TUtil::GetBoostedParticleVectors mela_event.pDaughters.size=" << mela_event.pDaughters.size() << endl;
+    cout << "TUtil::GetBoostedParticleVectors mela_event.pAssociated.size=" << mela_event.pAssociated.size() << endl;
+    cout << "TUtil::GetBoostedParticleVectors mela_event.pStableTops.size=" << mela_event.pStableTops.size() << endl;
+    cout << "TUtil::GetBoostedParticleVectors mela_event.pStableAntitops.size=" << mela_event.pStableAntitops.size() << endl;
+    cout << "TUtil::GetBoostedParticleVectors mela_event.pTopDaughters.size=" << mela_event.pTopDaughters.size() << endl;
+    cout << "TUtil::GetBoostedParticleVectors mela_event.pAntitopDaughters.size=" << mela_event.pAntitopDaughters.size() << endl;
+    cout << "End GetBoostedParticleVectors" << endl;
   }
 }
 
@@ -7761,7 +7783,10 @@ MELACandidate* TUtil::ConvertVectorFormat(
   */
 
   // Undecayed Higgs
-  if (daughters.size()==1) cand = new MELACandidate(25, (daughters.at(0))->p4); // No sorting!
+  if (daughters.size()==1){
+    cand = new MELACandidate(25, (daughters.at(0))->p4); // No sorting!
+    cand->setDecayMode(TVar::CandidateDecay_Stable); // Explicitly set the decay mode in case the default of MELACandidate changes in the future
+  }
   // GG / ff final states
   else if (daughters.size()==2){
     MELAParticle* F1 = daughters.at(0);
@@ -7813,6 +7838,15 @@ MELACandidate* TUtil::ConvertVectorFormat(
     // FIXME/REIMPLEMENT: ZW trickier than I thought: Summing over charges over all 4f is not enough, affects SSSF pairing in ZZ
     //TVar::CandidateDecayMode defaultHDecayMode = PDGHelpers::HDecayMode;
     //if (fabs(charge)>0.01) PDGHelpers::setCandidateDecayMode(TVar::CandidateDecay_ZW);
+    if (
+      PDGHelpers::HDecayMode!=TVar::CandidateDecay_WW
+      && PDGHelpers::HDecayMode!=TVar::CandidateDecay_ZZ
+      && PDGHelpers::HDecayMode!=TVar::CandidateDecay_ZW
+      ){
+      cerr << "TUtil::ConvertVectorFormat: PDGHelpers::HDecayMode = " << PDGHelpers::HDecayMode << " is set incorrectly for Ndaughters=" << daughters.size() << ". There is no automatic mechnism for this scenario. ";
+      cerr << "Suggestion: Call PDGHelpers::setCandidateDecayMode(TVar::CandidateDecay_XY) before this call." << endl;
+      assert(0);
+    }
     cand->sortDaughters();
     //PDGHelpers::setCandidateDecayMode(defaultHDecayMode);
   }

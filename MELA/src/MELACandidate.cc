@@ -1,16 +1,46 @@
+#include <algorithm>
+#include <utility>
 #include "MELACandidate.h"
 #include "TMath.h"
 
 using namespace PDGHelpers;
 
+MELACandidate::MELACandidate() :
+MELAParticle(),
+associatedByHighestPt(false),
+isShallowCopy(false),
+selfDecayMode(TVar::CandidateDecay_Stable)
+{}
 MELACandidate::MELACandidate(int id_, TLorentzVector p4_, bool associatedByHighestPt_) :
 MELAParticle(id_, p4_),
 associatedByHighestPt(associatedByHighestPt_),
 isShallowCopy(false),
 selfDecayMode(TVar::CandidateDecay_Stable)
 {}
+MELACandidate::MELACandidate(const MELACandidate& particle_) :
+MELAParticle(particle_),
+associatedByHighestPt(particle_.associatedByHighestPt),
+isShallowCopy(false),
+selfDecayMode(particle_.selfDecayMode),
+associatedLeptons(particle_.associatedLeptons),
+associatedNeutrinos(particle_.associatedNeutrinos),
+associatedPhotons(particle_.associatedPhotons),
+associatedJets(particle_.associatedJets),
+associatedTops(particle_.associatedTops),
+sortedDaughters(particle_.sortedDaughters)
+{
+  for (unsigned int ip=0; ip<particle_.sortedVs.size(); ip++){
+    MELAParticle* tmp = new MELAParticle(*(particle_.sortedVs.at(ip)));
+    sortedVs.push_back(tmp);
+  }
+}
+MELACandidate& MELACandidate::operator=(const MELACandidate& particle_){
+  MELACandidate tmp(particle_);
+  swap(tmp);
+  return *this;
+}
 MELACandidate::~MELACandidate(){
-  if (!isShallowCopy){ // Delete owned objects, or not
+  if (!isShallowCopy){ // Delete owned objects if not a shallow copy
     for (unsigned int i=0; i<sortedVs.size(); i++) delete sortedVs.at(i);
   }
   sortedVs.clear();
@@ -35,23 +65,32 @@ MELACandidate* MELACandidate::shallowCopy(){
 
   // Copy candidate content
   cand->setShallowCopy(true);
-  for (unsigned int ip=0; ip<sortedDaughters.size(); ip++) (cand->sortedDaughters).push_back(sortedDaughters.at(ip));
-  for (unsigned int ip=0; ip<associatedJets.size(); ip++) (cand->associatedJets).push_back(associatedJets.at(ip));
-  for (unsigned int ip=0; ip<associatedNeutrinos.size(); ip++) (cand->associatedNeutrinos).push_back(associatedNeutrinos.at(ip));
   for (unsigned int ip=0; ip<associatedLeptons.size(); ip++) (cand->associatedLeptons).push_back(associatedLeptons.at(ip));
+  for (unsigned int ip=0; ip<associatedNeutrinos.size(); ip++) (cand->associatedNeutrinos).push_back(associatedNeutrinos.at(ip));
   for (unsigned int ip=0; ip<associatedPhotons.size(); ip++) (cand->associatedPhotons).push_back(associatedPhotons.at(ip));
+  for (unsigned int ip=0; ip<associatedJets.size(); ip++) (cand->associatedJets).push_back(associatedJets.at(ip));
   for (unsigned int ip=0; ip<associatedTops.size(); ip++) (cand->associatedTops).push_back(associatedTops.at(ip));
+  for (unsigned int ip=0; ip<sortedDaughters.size(); ip++) (cand->sortedDaughters).push_back(sortedDaughters.at(ip));
   for (unsigned int ip=0; ip<sortedVs.size(); ip++) (cand->sortedVs).push_back(sortedVs.at(ip));
 
   return cand;
 }
-
+void MELACandidate::swap(MELACandidate& particle_){
+  MELAParticle::swap(particle_);
+  std::swap(isShallowCopy, particle_.isShallowCopy);
+  std::swap(associatedLeptons, particle_.associatedLeptons);
+  std::swap(associatedNeutrinos, particle_.associatedNeutrinos);
+  std::swap(associatedPhotons, particle_.associatedPhotons);
+  std::swap(associatedJets, particle_.associatedJets);
+  std::swap(associatedTops, particle_.associatedTops);
+  std::swap(sortedDaughters, particle_.sortedDaughters);
+  std::swap(sortedVs, particle_.sortedVs);
+}
 
 void MELACandidate::setDecayMode(TVar::CandidateDecayMode flag){ selfDecayMode=flag; }
 void MELACandidate::setAddAssociatedByHighestPt(bool associatedByHighestPt_){ associatedByHighestPt=associatedByHighestPt_; }
 void MELACandidate::setShallowCopy(bool flag){ isShallowCopy=flag; }
 bool MELACandidate::testShallowCopy(){ return isShallowCopy; }
-
 
 void MELACandidate::sortDaughters(){
   setDecayMode(PDGHelpers::HDecayMode);
@@ -112,6 +151,23 @@ MELATopCandidate* MELACandidate::getAssociatedTop(int index)const{
   if ((int)associatedTops.size()>index) return associatedTops.at(index);
   else return 0;
 }
+
+std::vector<MELAParticle*>& MELACandidate::getSortedDaughters(){ return sortedDaughters; }
+std::vector<MELAParticle*>& MELACandidate::getSortedVs(){ return sortedVs; }
+std::vector<MELAParticle*>& MELACandidate::getAssociatedLeptons(){ return associatedLeptons; }
+std::vector<MELAParticle*>& MELACandidate::getAssociatedNeutrinos(){ return associatedNeutrinos; }
+std::vector<MELAParticle*>& MELACandidate::getAssociatedPhotons(){ return associatedPhotons; }
+std::vector<MELAParticle*>& MELACandidate::getAssociatedJets(){ return associatedJets; }
+std::vector<MELATopCandidate*>& MELACandidate::getAssociatedTops(){ return associatedTops; }
+
+const std::vector<MELAParticle*>& MELACandidate::getSortedDaughters()const{ return sortedDaughters; }
+const std::vector<MELAParticle*>& MELACandidate::getSortedVs()const{ return sortedVs; }
+const std::vector<MELAParticle*>& MELACandidate::getAssociatedLeptons()const{ return associatedLeptons; }
+const std::vector<MELAParticle*>& MELACandidate::getAssociatedNeutrinos()const{ return associatedNeutrinos; }
+const std::vector<MELAParticle*>& MELACandidate::getAssociatedPhotons()const{ return associatedPhotons; }
+const std::vector<MELAParticle*>& MELACandidate::getAssociatedJets()const{ return associatedJets; }
+const std::vector<MELATopCandidate*>& MELACandidate::getAssociatedTops()const{ return associatedTops; }
+
 void MELACandidate::sortDaughtersInitial(){
   bool beginWithIdPair = (
     selfDecayMode==TVar::CandidateDecay_ZZ
@@ -483,7 +539,6 @@ bool MELACandidate::daughtersInterfere()const{
   return doInterfere;
 }
 
-
 bool MELACandidate::checkDaughtership(MELAParticle* myParticle)const{
   for (int dd=0; dd<getNDaughters(); dd++){
     if (myParticle==getDaughter(dd)) return true;
@@ -507,7 +562,7 @@ void MELACandidate::addAssociatedJets(MELAParticle* myParticle){
   if (!checkDaughtership(myParticle)) addByHighestPt(myParticle, associatedJets);
 }
 void MELACandidate::addAssociatedTops(MELATopCandidate* myParticle){
-  addByHighestPt(myParticle, associatedTops);
+  if (!checkDaughtership(myParticle)) addByHighestPt(myParticle, associatedTops);
 }
 void MELACandidate::addByHighestPt(MELAParticle* myParticle, std::vector<MELAParticle*>& particleArray){
   bool inserted = checkParticleExists(myParticle, particleArray); // Test if the particle is already in the vector
@@ -600,11 +655,20 @@ void MELACandidate::testPreSelectedDaughters(){
   }
 }
 
-
 bool MELACandidate::checkTopCandidateExists(MELATopCandidate* myParticle, std::vector<MELATopCandidate*>& particleArray)const{
   for (std::vector<MELATopCandidate*>::iterator it = particleArray.begin(); it<particleArray.end(); it++){
     if ((*it)==myParticle) return true;
   }
   return false;
+}
+
+void MELACandidate::getRelatedParticles(std::vector<MELAParticle*>& particles){
+  MELAParticle::getRelatedParticles(particles);
+  for (std::vector<MELAParticle*>::iterator it = sortedDaughters.begin(); it<sortedDaughters.end(); it++) (*it)->getRelatedParticles(particles); // Hopefully no particle gets added from here
+  for (std::vector<MELATopCandidate*>::iterator it = associatedTops.begin(); it<associatedTops.end(); it++) (*it)->getRelatedParticles(particles);
+  for (std::vector<MELAParticle*>::iterator it = sortedVs.begin(); it<sortedVs.end(); it++) (*it)->getRelatedParticles(particles);
+  for (std::vector<MELAParticle*>::iterator it = associatedLeptons.begin(); it<associatedLeptons.end(); it++) (*it)->getRelatedParticles(particles);
+  for (std::vector<MELAParticle*>::iterator it = associatedPhotons.begin(); it<associatedPhotons.end(); it++) (*it)->getRelatedParticles(particles);
+  for (std::vector<MELAParticle*>::iterator it = associatedJets.begin(); it<associatedJets.end(); it++) (*it)->getRelatedParticles(particles);
 }
 
