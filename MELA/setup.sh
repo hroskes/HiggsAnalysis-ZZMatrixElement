@@ -1,6 +1,8 @@
 #!/bin/sh
 
-#echo "$@"
+(
+cd $(dirname ${BASH_SOURCE[0]})
+eval $(scram ru -sh)
 if [[ "$1" == *"clean"* ]];then
 	scramv1 b "$@"
 	pushd ${CMSSW_BASE}/src/ZZMatrixElement/MELA/fortran/
@@ -21,6 +23,7 @@ else
 		echo "ERROR: something went wrong in mv, see ^ error message"
 		echo
 		popd
-		return 1 >& /dev/null || exit 1 #return only works when sourced, exit will exit your whole session if sourced
+		exit 1
 	fi
 fi
+)
