@@ -19,6 +19,10 @@ public:
         Hwwcoupl[ic][im] = 0;
         H2zzcoupl[ic][im] = 0;
         H2wwcoupl[ic][im] = 0;
+        Hzzpcoupl[ic][im] = 0;
+        Hzpzpcoupl[ic][im] = 0;
+        Hwwpcoupl[ic][im] = 0;
+        Hwpwpcoupl[ic][im] = 0;
       }
       for (int ic=0; ic<SIZE_HGG; ic++){
         Hggcoupl[ic][im]=0;
@@ -38,13 +42,11 @@ public:
         H2t4t4coupl[ic][im]=0;
         H2b4b4coupl[ic][im]=0;
       }
+      for (int ic = 0; ic < SIZE_Vpff; ic++){
+        Zpffcoupl[ic][im]=0;
+        Wpffcoupl[ic][im]=0;
+      }
     }
-    /*
-    Hqqcoupl[0][0] = 1.0;
-    Hggcoupl[0][0] = 1.0;
-    Hzzcoupl[0][0] = 1.0;
-    Hwwcoupl[0][0] = 1.0;
-    */
     for (int ik=0; ik<SIZE_HVV_CQSQ; ik++){
       HzzCLambda_qsq[ik]=0;
       HwwCLambda_qsq[ik]=0;
@@ -64,6 +66,10 @@ public:
       for (int ic=0; ic<SIZE_HVV; ic++){
         Hzzcoupl[ic][im] = (other.Hzzcoupl)[ic][im];
         Hwwcoupl[ic][im] = (other.Hwwcoupl)[ic][im];
+        Hzzpcoupl[ic][im] = (other.Hzzpcoupl)[ic][im];
+        Hzpzpcoupl[ic][im] = (other.Hzpzpcoupl)[ic][im];
+        Hwwpcoupl[ic][im] = (other.Hwwpcoupl)[ic][im];
+        Hwpwpcoupl[ic][im] = (other.Hwpwpcoupl)[ic][im];
       }
       for (int ic=0; ic<SIZE_HGG; ic++){
         Hggcoupl[ic][im]=(other.Hggcoupl)[ic][im];
@@ -82,6 +88,10 @@ public:
         H2bbcoupl[ic][im]=(other.H2bbcoupl)[ic][im];
         H2t4t4coupl[ic][im]=(other.H2t4t4coupl)[ic][im];
         H2b4b4coupl[ic][im]=(other.H2b4b4coupl)[ic][im];
+      }
+      for (int ic=0; ic<SIZE_Vpff; ic++){
+        Zpffcoupl[ic][im] = (other.Zpffcoupl)[ic][im];
+        Wpffcoupl[ic][im] = (other.Wpffcoupl)[ic][im];
       }
     }
     for (int ik=0; ik<SIZE_HVV_CQSQ; ik++){
@@ -232,6 +242,67 @@ public:
     }
   };
 
+  void SetHVVpCouplings(unsigned int index, double c_real, double c_imag, bool setWWp = false, int whichResonance=1){
+    if (!separateWWZZcouplings && setWWp) return;
+    if (index>=SIZE_HVV){ std::cerr << "Cannot set index " << index << ", out of range for the type requested." << std::endl; }
+    else if (whichResonance!=1) {std::cerr << "Contact terms are only for the first resonance" << std::endl;}
+    else{
+      if (setWWp){
+        Hwwpcoupl[index][0] = c_real;
+        Hwwpcoupl[index][1] = c_imag;
+      }
+      else{
+        Hzzpcoupl[index][0] = c_real;
+        Hzzpcoupl[index][1] = c_imag;
+      }
+    }
+  };
+  void SetHVpVpCouplings(unsigned int index, double c_real, double c_imag, bool setWpWp = false, int whichResonance=1){
+    if (!separateWWZZcouplings && setWpWp) return;
+    if (index>=SIZE_HVV){ std::cerr << "Cannot set index " << index << ", out of range for the type requested." << std::endl; }
+    else if (whichResonance!=1) {std::cerr << "Contact terms are only for the first resonance" << std::endl;}
+    else{
+      if (setWpWp){
+        Hwpwpcoupl[index][0] = c_real;
+        Hwpwpcoupl[index][1] = c_imag;
+      }
+      else{
+        Hzpzpcoupl[index][0] = c_real;
+        Hzpzpcoupl[index][1] = c_imag;
+      }
+    }
+  };
+  void SetVpffCouplings(unsigned int index, double c_real, double c_imag, bool setWpff = false, int whichResonance=1){
+    if (whichResonance!=1){ std::cerr << "Contact terms are only for the first resonance" << std::endl; }
+    else if (index > SIZE_Vpff){
+      std::cerr << "index too big for SetZpffCouplings: " << index << std::endl;
+    }
+    else{
+      if (!setWpff){
+        Zpffcoupl[index][0] = c_real;
+        Zpffcoupl[index][1] = c_imag;
+      }
+      else{
+        if (
+          (index == gHIGGS_Vp_NuE_left || index == gHIGGS_Vp_NuE_right
+          || index == gHIGGS_Vp_Dn_left || index == gHIGGS_Vp_Dn_right
+          || index == gHIGGS_Vp_Str_left || index == gHIGGS_Vp_Str_right
+          || index == gHIGGS_Vp_Bot_left || index == gHIGGS_Vp_Bot_right
+          ) && (c_real!=0. || c_imag!=0.)
+          ) std::cerr << "no W' contact terms for neutrino, down, strange, or bottom (use the lepton or up-quark versions instead)" << std::endl;
+        else{
+          Wpffcoupl[index][0] = c_real;
+          Wpffcoupl[index][1] = c_imag;
+        }
+      }
+    }
+  }
+  void SetUseVprime(bool useVp, double mass, double width){
+    UseVprime = useVp;
+    M_Vprime = mass;
+    Ga_Vprime = width;
+  }
+
   double Hggcoupl[SIZE_HGG][2];
   double Hqqcoupl[SIZE_HQQ][2];
   double Httcoupl[SIZE_HQQ][2];
@@ -262,7 +333,16 @@ public:
   int H2zzCLambda_qsq[SIZE_HVV_CQSQ];
   int H2wwCLambda_qsq[SIZE_HVV_CQSQ];
 
+  double Hzzpcoupl[SIZE_HVV][2];
+  double Hzpzpcoupl[SIZE_HVV][2];
+  double Zpffcoupl[SIZE_Vpff][2];
+  double Hwwpcoupl[SIZE_HVV][2];
+  double Hwpwpcoupl[SIZE_HVV][2];
+  double Wpffcoupl[SIZE_Vpff][2];
+
   bool separateWWZZcouplings;
+  bool UseVprime;
+  double M_Vprime, Ga_Vprime;
 
   inline virtual ~SpinZeroCouplings(){};
 };

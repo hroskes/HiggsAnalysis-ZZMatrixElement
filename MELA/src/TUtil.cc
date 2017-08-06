@@ -2445,7 +2445,7 @@ bool TUtil::MCFM_SetupParticleCouplings(
           if (jetid==6) jetid = 2;
           zcouple_.q1=ewcharge_.Q[5+jetid];
           zcouple_.l1=zcouple_.l[-1+jetid];
-          zcouple_.r1=zcouple_.r[jetid];
+          zcouple_.r1=zcouple_.r[-1+jetid];
 
           // Special Z1->qq cases
           if (useQQBZGAM){
@@ -2533,7 +2533,7 @@ bool TUtil::MCFM_SetupParticleCouplings(
           if (jetid==6) jetid = 2;
           zcouple_.q2=ewcharge_.Q[5+jetid];
           zcouple_.l2=zcouple_.l[-1+jetid];
-          zcouple_.r2=zcouple_.r[jetid];
+          zcouple_.r2=zcouple_.r[-1+jetid];
 
           // Special Z2->qq cases
           if (useQQVVQQany){
@@ -2926,6 +2926,7 @@ void TUtil::SetMCFMSpinZeroCouplings(bool useBSM, SpinZeroCouplings* Hcouplings,
       spinzerohiggs_anomcoupl_.ghw4_prime5[im] = 0;
       spinzerohiggs_anomcoupl_.ghw4_prime6[im] = 0;
       spinzerohiggs_anomcoupl_.ghw4_prime7[im] = 0;
+
     }
     /***** END REGULAR RESONANCE *****/
     //
@@ -3433,6 +3434,17 @@ void TUtil::SetJHUGenSpinZeroVVCouplings(double Hvvcoupl[SIZE_HVV][2], int Hvvco
   int iWWcoupl = (useWWcoupl ? 1 : 0);
   for (int c=0; c<SIZE_HVV_LAMBDAQSQ; c++){ for (int k=0; k<SIZE_HVV_CQSQ; k++) HvvLambda_qsq[c][k] *= GeV; } // GeV units in JHUGen
   __modjhugenmela_MOD_setspinzerovvcouplings(Hvvcoupl, Hvvcoupl_cqsq, HvvLambda_qsq, &iWWcoupl);
+}
+void TUtil::SetJHUGenSpinZeroContactTerms(
+  double Hzzpcoupl[SIZE_HVV][2], double Hzpzpcoupl[SIZE_HVV][2], double Zpffcoupl[SIZE_Vpff][2],
+  double Hwwpcoupl[SIZE_HVV][2], double Hwpwpcoupl[SIZE_HVV][2], double Wpffcoupl[SIZE_Vpff][2],
+  bool UseVprime, double M_Vprime, double Ga_Vprime
+  ){
+  const double GeV=1./100.;
+  M_Vprime *= GeV;
+  Ga_Vprime *= GeV;
+  int usevp = UseVprime;
+  __modjhugenmela_MOD_setspinzerocontactterms(Hzzpcoupl, Hzpzpcoupl, Zpffcoupl, Hwwpcoupl, Hwpwpcoupl, Wpffcoupl, &usevp, &M_Vprime, &Ga_Vprime);
 }
 void TUtil::SetJHUGenSpinZeroGGCouplings(double Hggcoupl[SIZE_HGG][2]){ __modjhugenmela_MOD_setspinzeroggcouplings(Hggcoupl); }
 void TUtil::SetJHUGenSpinZeroQQCouplings(double Hqqcoupl[SIZE_HQQ][2]){ __modjhugenmela_MOD_setspinzeroqqcouplings(Hqqcoupl); }
@@ -4391,6 +4403,10 @@ double TUtil::JHUGenMatEl(
   // Set aL/R 1,2 into RcdME
   RcdME->setVDaughterCouplings(aL1, aR1, 0);
   RcdME->setVDaughterCouplings(aL2, aR2, 1);
+  if (verbosity >= TVar::DEBUG_VERBOSE) cout
+    << "TUtil::JHUGenMatEl: aL1, aR1, aL2, aR2: "
+    << aL1 << ", " << aR1 << ", " << aL2 << ", " << aR2
+    << endl;
 
   // This constant is needed to account for the different units used in
   // JHUGen compared to the MCFM

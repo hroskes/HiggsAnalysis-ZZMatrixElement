@@ -48,6 +48,7 @@ public:
 
   void setProcess(TVar::Process myModel, TVar::MatrixElement myME, TVar::Production myProduction);
   void setVerbosity(TVar::VerbosityLevel verbosity_=TVar::ERROR);
+  TVar::VerbosityLevel getVerbosity();
   void setMelaLeptonInterference(TVar::LeptonInterference myLepInterf=TVar::DefaultLeptonInterf);
   void setRemoveLeptonMasses(bool MasslessLeptonSwitch=true);
   void setRemoveJetMasses(bool MasslessLeptonSwitch=true);
@@ -262,6 +263,15 @@ public:
   int selfDHzzCLambda_qsq[nSupportedHiggses][SIZE_HVV_CQSQ];
   int selfDHwwCLambda_qsq[nSupportedHiggses][SIZE_HVV_CQSQ];
   bool differentiate_HWW_HZZ;
+  double selfDHzzpcoupl[SIZE_HVV][2];
+  double selfDHzpzpcoupl[SIZE_HVV][2];
+  double selfDZpffcoupl[SIZE_Vpff][2];
+  double selfDHwwpcoupl[SIZE_HVV][2];
+  double selfDHwpwpcoupl[SIZE_HVV][2];
+  double selfDWpffcoupl[SIZE_Vpff][2];
+  bool selfDUseVprime;
+  double selfDM_Vprime;
+  double selfDGa_Vprime;
   //****Spin-1****//
   double selfDZqqcoupl[SIZE_ZQQ][2];
   double selfDZvvcoupl[SIZE_ZVV][2];
