@@ -228,7 +228,6 @@ int newZZMatrixElement::get_NCandidates(){ return Xcal2.GetNCandidates(); }
 vector<MELATopCandidate*>* newZZMatrixElement::get_TopCandidateCollection(){ return Xcal2.GetTopCandidates(); }
 
 
-// LEFT HERE
 void newZZMatrixElement::set_SpinZeroCouplings(
   double selfDHggcoupl[nSupportedHiggses][SIZE_HGG][2],
   double selfDHg4g4coupl[nSupportedHiggses][SIZE_HGG][2],
@@ -276,16 +275,24 @@ void newZZMatrixElement::set_SpinZeroContact(
   double selfDHwpwpcoupl[SIZE_HVV][2],
   double selfDWpffcoupl[SIZE_Vpff][2],
   bool UseVprime,
-  double M_Vprime,
-  double Ga_Vprime
-){
-  for (int ic=0; ic<SIZE_HVV; ic++) selfD_SpinZeroCouplings->SetHVVpCouplings(ic, selfDHzzpcoupl[ic][0], selfDHzzpcoupl[ic][1]);
-  for (int ic=0; ic<SIZE_HVV; ic++) selfD_SpinZeroCouplings->SetHVpVpCouplings(ic, selfDHzpzpcoupl[ic][0], selfDHzpzpcoupl[ic][1]);
-  for (int ic=0; ic<SIZE_Vpff; ic++) selfD_SpinZeroCouplings->SetVpffCouplings(ic, selfDZpffcoupl[ic][0], selfDZpffcoupl[ic][1]);
-  for (int ic=0; ic<SIZE_HVV; ic++) selfD_SpinZeroCouplings->SetHVVpCouplings(ic, selfDHwwpcoupl[ic][0], selfDHwwpcoupl[ic][1], true);
-  for (int ic=0; ic<SIZE_HVV; ic++) selfD_SpinZeroCouplings->SetHVpVpCouplings(ic, selfDHwpwpcoupl[ic][0], selfDHwpwpcoupl[ic][1], true);
-  for (int ic=0; ic<SIZE_Vpff; ic++) selfD_SpinZeroCouplings->SetVpffCouplings(ic, selfDWpffcoupl[ic][0], selfDWpffcoupl[ic][1], true);
-  selfD_SpinZeroCouplings->SetUseVprime(UseVprime, M_Vprime, Ga_Vprime);
+  double M_Zprime,
+  double Ga_Zprime,
+  double M_Wprime,
+  double Ga_Wprime
+  ){
+  selfD_SpinZeroCouplings->SetUseVprime(UseVprime);
+  for (int ic=0; ic<SIZE_HVV; ic++){
+    selfD_SpinZeroCouplings->SetHVVpCouplings(ic, selfDHzzpcoupl[ic][0], selfDHzzpcoupl[ic][1]);
+    selfD_SpinZeroCouplings->SetHVpVpCouplings(ic, selfDHzpzpcoupl[ic][0], selfDHzpzpcoupl[ic][1]);
+    selfD_SpinZeroCouplings->SetHVVpCouplings(ic, selfDHwwpcoupl[ic][0], selfDHwwpcoupl[ic][1], true);
+    selfD_SpinZeroCouplings->SetHVpVpCouplings(ic, selfDHwpwpcoupl[ic][0], selfDHwpwpcoupl[ic][1], true);
+  }
+  for (int ic=0; ic<SIZE_Vpff; ic++){
+    selfD_SpinZeroCouplings->SetVpffCouplings(ic, selfDZpffcoupl[ic][0], selfDZpffcoupl[ic][1]);
+    selfD_SpinZeroCouplings->SetVpffCouplings(ic, selfDWpffcoupl[ic][0], selfDWpffcoupl[ic][1], true);
+  }
+  selfD_SpinZeroCouplings->SetZPrimeMassWidth(M_Zprime, Ga_Zprime);
+  selfD_SpinZeroCouplings->SetWPrimeMassWidth(M_Wprime, Ga_Wprime);
 }
 void newZZMatrixElement::set_SpinOneCouplings(
   double selfDZqqcoupl[SIZE_ZQQ][2],

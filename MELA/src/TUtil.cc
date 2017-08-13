@@ -4,6 +4,7 @@
 #include <utility>
 #include <algorithm>
 #include <cassert>
+#include "TJHUGenUtils.hh"
 #include "TUtil.hh"
 #include "TMath.h"
 #include "TLorentzRotation.h"
@@ -12,6 +13,7 @@
 using namespace std;
 using TVar::event_scales_type;
 using TVar::simple_event_record;
+using namespace TJHUGenUtils;
 
 
 namespace TUtil{
@@ -1127,6 +1129,8 @@ void TUtil::SetMass(double inmass, int ipart){
     (ipartabs>=11 && ipartabs<=16)
     ||
     ipartabs==23 || ipartabs==24 || ipartabs==25
+    ||
+    ipartabs==32 || ipartabs==34
     ){
     runcoupling_jhugen=(
       ipartabs==23
@@ -2964,11 +2968,12 @@ void TUtil::SetMCFMSpinZeroCouplings(bool useBSM, SpinZeroCouplings* Hcouplings,
     spinzerohiggs_anomcoupl_.Lambda2_w30 = 100;
     spinzerohiggs_anomcoupl_.Lambda2_w40 = 100;
     //
+    // AllowAnomalousCouplings==0, so these are still treated as 1 when h2mass>=0
+    spinzerohiggs_anomcoupl_.kappa2_top[0] = 0; spinzerohiggs_anomcoupl_.kappa2_top[1] = 0;
+    spinzerohiggs_anomcoupl_.kappa2_bot[0] = 0; spinzerohiggs_anomcoupl_.kappa2_bot[1] = 0;
     spinzerohiggs_anomcoupl_.gh2z1[0] = 0; spinzerohiggs_anomcoupl_.gh2z1[1] = 0;
     spinzerohiggs_anomcoupl_.gh2w1[0] = 0; spinzerohiggs_anomcoupl_.gh2w1[1] = 0;
     for (int im=0; im<2; im++){
-      spinzerohiggs_anomcoupl_.kappa2_top[im] = 0;
-      spinzerohiggs_anomcoupl_.kappa2_bot[im] = 0;
       spinzerohiggs_anomcoupl_.kappa2_tilde_top[im] = 0;
       spinzerohiggs_anomcoupl_.kappa2_tilde_bot[im] = 0;
       spinzerohiggs_anomcoupl_.gh2g2[im] = 0;
@@ -3438,13 +3443,10 @@ void TUtil::SetJHUGenSpinZeroVVCouplings(double Hvvcoupl[SIZE_HVV][2], int Hvvco
 void TUtil::SetJHUGenSpinZeroContactTerms(
   double Hzzpcoupl[SIZE_HVV][2], double Hzpzpcoupl[SIZE_HVV][2], double Zpffcoupl[SIZE_Vpff][2],
   double Hwwpcoupl[SIZE_HVV][2], double Hwpwpcoupl[SIZE_HVV][2], double Wpffcoupl[SIZE_Vpff][2],
-  bool UseVprime, double M_Vprime, double Ga_Vprime
+  bool UseVprime
   ){
-  const double GeV=1./100.;
-  M_Vprime *= GeV;
-  Ga_Vprime *= GeV;
-  int usevp = UseVprime;
-  __modjhugenmela_MOD_setspinzerocontactterms(Hzzpcoupl, Hzpzpcoupl, Zpffcoupl, Hwwpcoupl, Hwpwpcoupl, Wpffcoupl, &usevp, &M_Vprime, &Ga_Vprime);
+  int usevp = (UseVprime ? 1 : 0);
+  __modjhugenmela_MOD_setspinzerocontactterms(Hzzpcoupl, Hzpzpcoupl, Zpffcoupl, Hwwpcoupl, Hwpwpcoupl, Wpffcoupl, &usevp);
 }
 void TUtil::SetJHUGenSpinZeroGGCouplings(double Hggcoupl[SIZE_HGG][2]){ __modjhugenmela_MOD_setspinzeroggcouplings(Hggcoupl); }
 void TUtil::SetJHUGenSpinZeroQQCouplings(double Hqqcoupl[SIZE_HQQ][2]){ __modjhugenmela_MOD_setspinzeroqqcouplings(Hqqcoupl); }
@@ -4349,6 +4351,8 @@ double TUtil::JHUGenMatEl(
         double mv, gv;
         __modjhugenmela_MOD_getmvgv(&mv, &gv);
         cout << "TUtil::JHUGenMatEl: M_V=" << mv/GeV << ", Ga_V=" << gv/GeV << endl;
+        __modjhugenmela_MOD_getmvprimegvprime(&mv, &gv);
+        cout << "TUtil::JHUGenMatEl: M_Vprime=" << mv/GeV << ", Ga_Vprime=" << gv/GeV << endl;
       }
 
       // Sum over possible left/right couplings of the Vs
@@ -4602,14 +4606,13 @@ double TUtil::HJJMatEl(
     }
   }
   else if (production==TVar::JJQCD){
-    int ijsel[3][121];
-    int nijchannels=77;
-    __modhiggsjj_MOD_get_hjjchannelhash_nosplit(ijsel, &nijchannels);
+    const std::vector<TNumericUtil::intTriplet_t>& ijsel = Get_JHUGenHash_OnshellHJJHash();
+    int nijchannels = ijsel.size();
     for (int ic=0; ic<nijchannels; ic++){
       // Emulate EvalWeighted_HJJ_test
-      int isel = ijsel[0][ic];
-      int jsel = ijsel[1][ic];
-      int code = ijsel[2][ic];
+      int isel = ijsel[ic][0];
+      int jsel = ijsel[ic][1];
+      int code = ijsel[ic][2];
 
       if (verbosity >= TVar::DEBUG_VERBOSE) cout << "HJJ channel " << ic << " code " << code << endl;
 
@@ -4763,8 +4766,8 @@ double TUtil::HJJMatEl(
       } // End unswapped isel>=jsel cases
 
       if (isel==jsel) continue;
-      isel = ijsel[1][ic];
-      jsel = ijsel[0][ic];
+      isel = ijsel[ic][1];
+      jsel = ijsel[ic][0];
 
       if (verbosity >= TVar::DEBUG_VERBOSE) cout << "HJJ mother swapped case" << endl;
       // Reset to default assignments
@@ -5397,16 +5400,14 @@ double TUtil::HJJMatEl(
       }
     }
 
-    int ijsel[3][121];
-    int nijchannels=68;
-    __modhiggsjj_MOD_get_vbfchannelhash_nosplit(ijsel, &nijchannels);
-
+    const std::vector<TNumericUtil::intTriplet_t>& ijsel = Get_JHUGenHash_OnshellVBFHash();
+    int nijchannels = ijsel.size();
     // BEGIN COMPUTATION
     for (int ic=0; ic<nijchannels; ic++){
       // Emulate EvalWeighted_HJJ_test
-      isel = ijsel[0][ic];
-      jsel = ijsel[1][ic];
-      int code = ijsel[2][ic];
+      isel = ijsel[ic][0];
+      jsel = ijsel[ic][1];
+      int code = ijsel[ic][2];
       bool ijselIsUpType[2];
       bool ijselIsDownType[2];
       bool ijselIsParticle[2];
@@ -5634,8 +5635,8 @@ double TUtil::HJJMatEl(
       } // End unswapped isel>=jsel cases
 
       if (isel==jsel) continue;
-      isel = ijsel[1][ic];
-      jsel = ijsel[0][ic];
+      isel = ijsel[ic][1];
+      jsel = ijsel[ic][0];
 
       // Reset to default assignments
       if (verbosity >= TVar::DEBUG_VERBOSE) cout << "VBF mother swapped case" << endl;
