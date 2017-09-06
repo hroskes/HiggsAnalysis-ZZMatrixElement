@@ -1,9 +1,10 @@
 #!/bin/sh
 
 (
+set -euo pipefail
 cd $(dirname ${BASH_SOURCE[0]})
 eval $(scram ru -sh)
-if [[ "$1" == *"clean"* ]];then
+if [[ $# > 0 ]] && [[ "$1" == *"clean"* ]];then
 	scramv1 b "$@"
 	pushd ${CMSSW_BASE}/src/ZZMatrixElement/MELA/fortran/
 	make clean

@@ -1,6 +1,7 @@
 ifndef ROOTSYS
 all:
 	@echo "ROOTSYS is not set. Please set ROOT environment properly"; echo
+	false
 else
 
 CMSROOT = ./
