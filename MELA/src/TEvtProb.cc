@@ -570,11 +570,11 @@ double TEvtProb::XsecCalc_XVV(){
           for (int i=0; i<SIZE_HVV_LAMBDAQSQ; i++){ if ((selfDSpinZeroCoupl.HzzLambda_qsq)[i][j]!=0.) cout << "HvvLambda_qsq[" << i << "][" << j << "] = " << (selfDSpinZeroCoupl.HzzLambda_qsq)[i][j] << endl; }
           if ((selfDSpinZeroCoupl.HzzCLambda_qsq)[j]!=0.) cout << "HvvCLambda_qsq[" << j << "] = " << (selfDSpinZeroCoupl.HzzCLambda_qsq)[j] << endl;
         }
-          cout << "M_Zprime = " << selfDSpinZeroCoupl.M_Zprime << endl;
-          cout << "Ga_Zprime = " << selfDSpinZeroCoupl.Ga_Zprime << endl;
-          cout << "M_Wprime = " << selfDSpinZeroCoupl.M_Wprime << endl;
-          cout << "Ga_Wprime = " << selfDSpinZeroCoupl.Ga_Wprime << endl;
-        }
+        cout << "M_Zprime = " << selfDSpinZeroCoupl.M_Zprime << endl;
+        cout << "Ga_Zprime = " << selfDSpinZeroCoupl.Ga_Zprime << endl;
+        cout << "M_Wprime = " << selfDSpinZeroCoupl.M_Wprime << endl;
+        cout << "Ga_Wprime = " << selfDSpinZeroCoupl.Ga_Wprime << endl;
+      }
 
       isSpinZero = true;
     }
