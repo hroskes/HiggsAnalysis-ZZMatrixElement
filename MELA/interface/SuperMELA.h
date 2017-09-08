@@ -16,7 +16,7 @@
 
 
 
-class SuperMELA {
+class SuperMELA{
 
 public:
 
@@ -46,6 +46,7 @@ public:
 
 protected:
 
+  void splitLine(const string rawoption, vector<string>& splitoptions, char delimiter);
   void readSigParsFromFile(
     string& str_mean_CB,
     string& str_sigma_CB,
@@ -86,6 +87,9 @@ protected:
 
   RooRealVar* mean_CB_err_;
   RooRealVar* sigma_CB_err_;
+
+  RooRealVar* corr_mean_sig;
+  RooRealVar* corr_sigma_sig;
 
   MELADoubleCB *sig_CB_;
   MELARelBWUFParam *sig_BW_;

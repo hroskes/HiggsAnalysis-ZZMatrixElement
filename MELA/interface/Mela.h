@@ -23,7 +23,7 @@ class ScalarPdfFactory_HVV;
 class VectorPdfFactory;
 class TensorPdfFactory;
 class RooqqZZ_JHU_ZgammaZZ_fast;
-class newZZMatrixElement;
+class ZZMatrixElement;
 class SuperMELA;
 
 #include "TVar.hh"
@@ -39,12 +39,16 @@ class Mela{
 
 public:
 
-  // Mela(){};
-  Mela(double LHCsqrts_=13., double mh_=125., TVar::VerbosityLevel verbosity_=TVar::ERROR); // higgs mass for supermela
+  Mela(double LHCsqrts_=13., double mh_=125., TVar::VerbosityLevel verbosity_=TVar::ERROR); // Higgs mass for supermela
+  Mela(const Mela& other);
   ~Mela();
+
+  // Constructor wrapper
+  void build(double mh_);
 
   void setProcess(TVar::Process myModel, TVar::MatrixElement myME, TVar::Production myProduction);
   void setVerbosity(TVar::VerbosityLevel verbosity_=TVar::ERROR);
+  TVar::VerbosityLevel getVerbosity();
   void setMelaLeptonInterference(TVar::LeptonInterference myLepInterf=TVar::DefaultLeptonInterf);
   void setRemoveLeptonMasses(bool MasslessLeptonSwitch=true);
   void setRemoveJetMasses(bool MasslessLeptonSwitch=true);
@@ -206,7 +210,7 @@ public:
     );
 
   //*** SuperJJMela ***//
-  void computeDijetConvBW(float& prob);
+  void computeDijetConvBW(float& prob, bool useTrueBW=false);
 
   //*** Dgg10 ***//
   void computeD_gg(
@@ -259,6 +263,16 @@ public:
   int selfDHzzCLambda_qsq[nSupportedHiggses][SIZE_HVV_CQSQ];
   int selfDHwwCLambda_qsq[nSupportedHiggses][SIZE_HVV_CQSQ];
   bool differentiate_HWW_HZZ;
+  double selfDHzzpcoupl[SIZE_HVV][2];
+  double selfDHzpzpcoupl[SIZE_HVV][2];
+  double selfDZpffcoupl[SIZE_Vpff][2];
+  double selfDHwwpcoupl[SIZE_HVV][2];
+  double selfDHwpwpcoupl[SIZE_HVV][2];
+  double selfDWpffcoupl[SIZE_Vpff][2];
+  double selfDM_Zprime;
+  double selfDGa_Zprime;
+  double selfDM_Wprime;
+  double selfDGa_Wprime;
   //****Spin-1****//
   double selfDZqqcoupl[SIZE_ZQQ][2];
   double selfDZvvcoupl[SIZE_ZVV][2];
@@ -279,7 +293,7 @@ protected:
   TVar::LeptonInterference myLepInterf_;
   TVar::VerbosityLevel myVerbosity_;
 
-  newZZMatrixElement* ZZME;
+  ZZMatrixElement* ZZME;
   SuperDijetMela* superDijet;
 
 

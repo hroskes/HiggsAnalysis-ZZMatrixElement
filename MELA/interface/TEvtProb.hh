@@ -51,7 +51,8 @@ public:
   // Constructors and Destructor
   //---------------------------------------------------------------------------
   TEvtProb() {};
-  TEvtProb(const char* path, double ebeam, const char* pathtoPDFSet, int PDFMember=0, TVar::VerbosityLevel verbosity_=TVar::ERROR);
+  TEvtProb(const char* pathtoXSW, double ebeam, const char* pathtoPDFSet, int PDFMember=0, TVar::VerbosityLevel verbosity_=TVar::ERROR);
+  TEvtProb(const TEvtProb& other);
   ~TEvtProb();
 
   //----------------------
@@ -69,6 +70,8 @@ public:
   void AllowSeparateWWCouplings(bool doAllow=false);
   void ResetMass(double inmass, int ipart);
   void ResetWidth(double inwidth, int ipart);
+  void SetZprimeMassWidth(double inmass, double inwidth);
+  void SetWprimeMassWidth(double inmass, double inwidth);
   void ResetQuarkMasses();
   void ResetMCFM_EWKParameters(double ext_Gf, double ext_aemmz, double ext_mW, double ext_mZ, double ext_xW, int ext_ewscheme=3);
   void ResetCouplings();
@@ -112,6 +115,7 @@ public:
   double GetXPropagator(TVar::ResonancePropagatorScheme scheme);
 
   // Get-functions
+  MELAHXSWidth const* GetHXSWidthEstimator() const;
   SpinZeroCouplings* GetSelfDSpinZeroCouplings();
   SpinOneCouplings* GetSelfDSpinOneCouplings();
   SpinTwoCouplings* GetSelfDSpinTwoCouplings();
@@ -129,6 +133,8 @@ protected:
   //--------------------
   // Variables
   //--------------------
+  const char* pathtoPDFSet_;
+  int PDFMember_;
   TVar::Process process;
   TVar::MatrixElement matrixElement;
   TVar::Production production;
@@ -140,7 +146,7 @@ protected:
   double _h2mass;
   double _h2width;
   double EBEAM;
-  MELAHXSWidth* myCSW_;
+  MELAHXSWidth myCSW_;
   TVar::event_scales_type event_scales;
 
   SpinZeroCouplings selfDSpinZeroCoupl;
@@ -169,6 +175,8 @@ protected:
   bool CheckSelfDCouplings_Hbb();
   bool CheckSelfDCouplings_HVV();
 
+  // Constructor wrapper
+  void Build();
 
   ClassDef(TEvtProb, 0);
 };

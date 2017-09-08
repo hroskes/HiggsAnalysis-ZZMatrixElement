@@ -24,25 +24,41 @@ using namespace TUtil;
 // Constructors and Destructor
 //-----------------------------------------------------------------------------
 TEvtProb::TEvtProb(
-  const char* path, double ebeam, const char* pathtoPDFSet, int PDFMember, TVar::VerbosityLevel verbosity_
+  const char* pathtoXSW, double ebeam, const char* pathtoPDFSet, int PDFMember, TVar::VerbosityLevel verbosity_
   ) :
+  pathtoPDFSet_(pathtoPDFSet),
+  PDFMember_(PDFMember),
   verbosity(verbosity_),
-  EBEAM(ebeam)
+  EBEAM(ebeam),
+  myCSW_(pathtoXSW)
 {
   if (verbosity>=TVar::DEBUG) cout << "Begin TEvtProb constructor" << endl;
 
-  SetLeptonInterf(TVar::DefaultLeptonInterf);
+  /***** Build everything except MELAHXSWidth *****/
+  Build();
 
-  /***** Initialize Higgs width reader *****/
-  string path_string = path;
-  myCSW_ = new MELAHXSWidth(path_string);
-  if (verbosity>=TVar::DEBUG) cout << "TEvtProb::TEvtProb: HXS successful" << endl;
+  if (verbosity>=TVar::DEBUG) cout << "End TEvtProb constructor" << endl;
+}
+TEvtProb::TEvtProb(const TEvtProb& other) :
+pathtoPDFSet_(other.pathtoPDFSet_),
+PDFMember_(other.PDFMember_),
+verbosity(other.verbosity),
+EBEAM(other.EBEAM),
+myCSW_(other.myCSW_)
+{
+
+}
+void TEvtProb::Build(){
+  if (verbosity>=TVar::DEBUG) cout << "Begin TEvtProb::Build" << endl;
+
+  /***** Initialize lepton interference scheme *****/
+  SetLeptonInterf(TVar::DefaultLeptonInterf);
 
   /***** Initialize MCFM *****/
   InitializeMCFM();
 
   /***** Initialize JHUGen *****/
-  InitializeJHUGen(pathtoPDFSet, PDFMember);
+  InitializeJHUGen(pathtoPDFSet_, PDFMember_);
 
   /***** Cross-initializations *****/
   CrossInitialize();
@@ -51,14 +67,14 @@ TEvtProb::TEvtProb(
   ResetInputEvent();
   SetCandidateDecayMode(TVar::CandidateDecay_ZZ);
 
-  if (verbosity>=TVar::DEBUG) cout << "End TEvtProb constructor" << endl;
+  if (verbosity>=TVar::DEBUG) cout << "End TEvtProb::Build" << endl;
 }
+
 
 TEvtProb::~TEvtProb(){
   if (verbosity>=TVar::DEBUG) cout << "Begin TEvtProb destructor" << endl;
 
   ResetInputEvent();
-  if (myCSW_!=0) delete myCSW_;
 
   if (verbosity>=TVar::DEBUG) cout << "End TEvtProb destructor" << endl;
 }
@@ -207,7 +223,7 @@ void TEvtProb::SetHiggsMass(double mass, double wHiggs, int whichResonance){
     }
     else if (wHiggs<0.){
       _hmass = mass;
-      _hwidth = myCSW_->HiggsWidth(_hmass);
+      _hwidth = myCSW_.HiggsWidth(_hmass);
     }
     else{
       _hmass = mass;
@@ -228,7 +244,7 @@ void TEvtProb::SetHiggsMass(double mass, double wHiggs, int whichResonance){
     }
     else if (wHiggs<0.){
       _h2mass = mass;
-      _h2width = myCSW_->HiggsWidth(_h2mass);
+      _h2width = myCSW_.HiggsWidth(_h2mass);
     }
     else{
       _h2mass = mass;
@@ -294,6 +310,8 @@ void TEvtProb::SetCurrentCandidate(MELACandidate* cand){
 void TEvtProb::ResetIORecord(){ RcdME.reset(); }
 void TEvtProb::ResetRenFacScaleMode(){ SetRenFacScaleMode(TVar::DefaultScaleScheme, TVar::DefaultScaleScheme, 0.5, 0.5); }
 void TEvtProb::ResetMass(double inmass, int ipart){ TUtil::SetMass(inmass, ipart); }
+void TEvtProb::SetZprimeMassWidth(double inmass, double inwidth){ this->ResetMass(inmass, 32); this->ResetWidth(inwidth, 32); }
+void TEvtProb::SetWprimeMassWidth(double inmass, double inwidth){ this->ResetMass(inmass, 34); this->ResetWidth(inwidth, 34); }
 void TEvtProb::ResetWidth(double inwidth, int ipart){ TUtil::SetDecayWidth(inwidth, ipart); }
 void TEvtProb::ResetQuarkMasses(){
   ResetMass(1e-3, 1); // d
@@ -339,6 +357,7 @@ void TEvtProb::ResetInputEvent(){
 }
 
 // Get-functions
+MELAHXSWidth const* TEvtProb::GetHXSWidthEstimator() const{ return &myCSW_; }
 SpinZeroCouplings* TEvtProb::GetSelfDSpinZeroCouplings(){ return selfDSpinZeroCoupl.getRef(); }
 SpinOneCouplings* TEvtProb::GetSelfDSpinOneCouplings(){ return selfDSpinOneCoupl.getRef(); }
 SpinTwoCouplings* TEvtProb::GetSelfDSpinTwoCouplings(){ return selfDSpinTwoCoupl.getRef(); }
@@ -348,11 +367,11 @@ double TEvtProb::GetPrimaryMass(int ipart){
   else return TUtil::GetMass(ipart);
 }
 double TEvtProb::GetPrimaryWidth(int ipart){
-  if (PDGHelpers::isAHiggs(ipart)) return myCSW_->HiggsWidth(GetPrimaryHiggsMass());
+  if (PDGHelpers::isAHiggs(ipart)) return myCSW_.HiggsWidth(GetPrimaryHiggsMass());
   else return TUtil::GetDecayWidth(ipart);
 }
 double TEvtProb::GetHiggsWidthAtPoleMass(double mass){
-  if (mass>0.) return myCSW_->HiggsWidth(mass);
+  if (mass>0.) return myCSW_.HiggsWidth(mass);
   else return -1.;
 }
 MelaIO* TEvtProb::GetIORecord(){ return RcdME.getRef(); }
@@ -425,6 +444,17 @@ double TEvtProb::XsecCalc_XVV(){
     double HvvLambda_qsq[SIZE_HVV_LAMBDAQSQ][SIZE_HVV_CQSQ] ={ { 0 } };
     int HvvCLambda_qsq[SIZE_HVV_CQSQ] ={ 0 };
 
+    double Hzzpcoupl[SIZE_HVV][2] = { { 0 } };
+    double Hzpzpcoupl[SIZE_HVV][2] = { { 0 } };
+    double Zpffcoupl[SIZE_Vpff][2] = { { 0 } };
+    double Hwwpcoupl[SIZE_HVV][2] = { { 0 } };
+    double Hwpwpcoupl[SIZE_HVV][2] = { { 0 } };
+    double Wpffcoupl[SIZE_Vpff][2] = { { 0 } };
+    double M_Zprime = -1;
+    double Ga_Zprime = 0;
+    double M_Wprime = -1;
+    double Ga_Wprime = 0;
+
     double Zqqcoupl[SIZE_ZQQ][2] ={ { 0 } };
     double Zvvcoupl[SIZE_ZVV][2] ={ { 0 } };
 
@@ -496,22 +526,56 @@ double TEvtProb::XsecCalc_XVV(){
     else if (process == TVar::SelfDefine_spin0){
       for (int j=0; j<2; j++){
         for (int i=0; i<SIZE_HGG; i++) Hggcoupl[i][j] = (selfDSpinZeroCoupl.Hggcoupl)[i][j];
-        for (int i=0; i<SIZE_HVV; i++) Hvvcoupl[i][j] = (selfDSpinZeroCoupl.Hzzcoupl)[i][j];
+        for (int i=0; i<SIZE_HVV; i++){
+          Hvvcoupl[i][j] = (selfDSpinZeroCoupl.Hzzcoupl)[i][j];
+
+          Hzzpcoupl[i][j] = (selfDSpinZeroCoupl.Hzzpcoupl)[i][j];
+          Hzpzpcoupl[i][j] = (selfDSpinZeroCoupl.Hzpzpcoupl)[i][j];
+
+          Hwwpcoupl[i][j] = (selfDSpinZeroCoupl.Hwwpcoupl)[i][j];
+          Hwpwpcoupl[i][j] = (selfDSpinZeroCoupl.Hwpwpcoupl)[i][j];
+        }
+        for (int i=0; i<SIZE_Vpff; i++){
+          Zpffcoupl[i][j] = (selfDSpinZeroCoupl.Zpffcoupl)[i][j];
+          Wpffcoupl[i][j] = (selfDSpinZeroCoupl.Wpffcoupl)[i][j];
+        }
       }
       for (int j=0; j<SIZE_HVV_CQSQ; j++){
         for (int i=0; i<SIZE_HVV_LAMBDAQSQ; i++) HvvLambda_qsq[i][j] = (selfDSpinZeroCoupl.HzzLambda_qsq)[i][j];
         HvvCLambda_qsq[j] = (selfDSpinZeroCoupl.HzzCLambda_qsq)[j];
       }
+      M_Zprime = selfDSpinZeroCoupl.M_Zprime;
+      Ga_Zprime = selfDSpinZeroCoupl.Ga_Zprime;
+      M_Wprime = selfDSpinZeroCoupl.M_Wprime;
+      Ga_Wprime = selfDSpinZeroCoupl.Ga_Wprime;
+
       if (verbosity>=TVar::DEBUG_VERBOSE){
         for (int j=0; j<2; j++){
-          for (int i=0; i<SIZE_HGG; i++) cout << "Hggcoupl[" << i << "][" << j << "] = " << (selfDSpinZeroCoupl.Hggcoupl)[i][j] << endl;
-          for (int i=0; i<SIZE_HVV; i++) cout << "Hvvcoupl[" << i << "][" << j << "] = " << (selfDSpinZeroCoupl.Hzzcoupl)[i][j] << endl;
+          for (int i=0; i<SIZE_HGG; i++){ if ((selfDSpinZeroCoupl.Hggcoupl)[i][j]!=0.) cout << "Hggcoupl[" << i << "][" << j << "] = " << (selfDSpinZeroCoupl.Hggcoupl)[i][j] << endl; }
+          for (int i=0; i<SIZE_HVV; i++){
+            if ((selfDSpinZeroCoupl.Hzzcoupl)[i][j]!=0.) cout << "Hvvcoupl[" << i << "][" << j << "] = " << (selfDSpinZeroCoupl.Hzzcoupl)[i][j] << endl;
+
+            if ((selfDSpinZeroCoupl.Hzzpcoupl)[i][j]!=0.) cout << "Hzzpcoupl[" << i << "][" << j << "] = " << (selfDSpinZeroCoupl.Hzzpcoupl)[i][j] << endl;
+            if ((selfDSpinZeroCoupl.Hzpzpcoupl)[i][j]!=0.) cout << "Hzpzpcoupl[" << i << "][" << j << "] = " << (selfDSpinZeroCoupl.Hzpzpcoupl)[i][j] << endl;
+
+            if ((selfDSpinZeroCoupl.Hwwpcoupl)[i][j]!=0.) cout << "Hwwpcoupl[" << i << "][" << j << "] = " << (selfDSpinZeroCoupl.Hwwpcoupl)[i][j] << endl;
+            if ((selfDSpinZeroCoupl.Hwpwpcoupl)[i][j]!=0.) cout << "Hwpwpcoupl[" << i << "][" << j << "] = " << (selfDSpinZeroCoupl.Hwpwpcoupl)[i][j] << endl;
+          }
+          for (int i=0; i<SIZE_Vpff; i++){
+            if ((selfDSpinZeroCoupl.Zpffcoupl)[i][j]!=0.) cout << "Zpffcoupl[" << i << "][" << j << "] = " << (selfDSpinZeroCoupl.Zpffcoupl)[i][j] << endl;
+            if ((selfDSpinZeroCoupl.Wpffcoupl)[i][j]!=0.) cout << "Wpffcoupl[" << i << "][" << j << "] = " << (selfDSpinZeroCoupl.Wpffcoupl)[i][j] << endl;
+          }
         }
         for (int j=0; j<SIZE_HVV_CQSQ; j++){
-          for (int i=0; i<SIZE_HVV_LAMBDAQSQ; i++) cout << "HvvLambda_qsq[" << i << "][" << j << "] = " << (selfDSpinZeroCoupl.HzzLambda_qsq)[i][j] << endl;
-          cout << "HvvCLambda_qsq[" << j << "] = " << (selfDSpinZeroCoupl.HzzCLambda_qsq)[j] << endl;
+          for (int i=0; i<SIZE_HVV_LAMBDAQSQ; i++){ if ((selfDSpinZeroCoupl.HzzLambda_qsq)[i][j]!=0.) cout << "HvvLambda_qsq[" << i << "][" << j << "] = " << (selfDSpinZeroCoupl.HzzLambda_qsq)[i][j] << endl; }
+          if ((selfDSpinZeroCoupl.HzzCLambda_qsq)[j]!=0.) cout << "HvvCLambda_qsq[" << j << "] = " << (selfDSpinZeroCoupl.HzzCLambda_qsq)[j] << endl;
         }
+        cout << "M_Zprime = " << selfDSpinZeroCoupl.M_Zprime << endl;
+        cout << "Ga_Zprime = " << selfDSpinZeroCoupl.Ga_Zprime << endl;
+        cout << "M_Wprime = " << selfDSpinZeroCoupl.M_Wprime << endl;
+        cout << "Ga_Wprime = " << selfDSpinZeroCoupl.Ga_Wprime << endl;
       }
+
       isSpinZero = true;
     }
 
@@ -611,6 +675,9 @@ double TEvtProb::XsecCalc_XVV(){
     if (isSpinZero){
       SetJHUGenSpinZeroGGCouplings(Hggcoupl);
       SetJHUGenSpinZeroVVCouplings(Hvvcoupl, HvvCLambda_qsq, HvvLambda_qsq, false);
+      SetJHUGenSpinZeroContactTerms(Hzzpcoupl, Hzpzpcoupl, Zpffcoupl, Hwwpcoupl, Hwpwpcoupl, Wpffcoupl);
+      SetZprimeMassWidth(M_Zprime, Ga_Zprime);
+      SetWprimeMassWidth(M_Wprime, Ga_Wprime);
     }
     else if (isSpinOne) SetJHUGenSpinOneCouplings(Zqqcoupl, Zvvcoupl);
     else if (isSpinTwo) SetJHUGenSpinTwoCouplings(Gggcoupl, Gvvcoupl, Gqqcoupl);
@@ -705,6 +772,16 @@ double TEvtProb::XsecCalcXJJ(){
       double HwwLambda_qsq[SIZE_HVV_LAMBDAQSQ][SIZE_HVV_CQSQ] ={ { 0 } };
       int HzzCLambda_qsq[SIZE_HVV_CQSQ] ={ 0 };
       int HwwCLambda_qsq[SIZE_HVV_CQSQ] ={ 0 };
+      double Hzzpcoupl[SIZE_HVV][2] = { { 0 } };
+      double Hzpzpcoupl[SIZE_HVV][2] = { { 0 } };
+      double Zpffcoupl[SIZE_Vpff][2] = { { 0 } };
+      double Hwwpcoupl[SIZE_HVV][2] = { { 0 } };
+      double Hwpwpcoupl[SIZE_HVV][2] = { { 0 } };
+      double Wpffcoupl[SIZE_Vpff][2] = { { 0 } };
+      double M_Zprime = -1;
+      double Ga_Zprime = 0;
+      double M_Wprime = -1;
+      double Ga_Wprime = 0;
 
       for (int ic=0; ic<SIZE_HVV_LAMBDAQSQ; ic++){ for (int ik=0; ik<SIZE_HVV_CQSQ; ik++){ HzzLambda_qsq[ic][ik]=100.; HwwLambda_qsq[ic][ik]=100.; } }
       SetJHUGenDistinguishWWCouplings(false);
@@ -719,7 +796,21 @@ double TEvtProb::XsecCalcXJJ(){
       else if (process == TVar::H0_gsgs){ Hzzcoupl[gHIGGS_AA_2][0] = 1.; }
       else if (process == TVar::H0_gsgs_PS){ Hzzcoupl[gHIGGS_AA_4][0] = 1.; }
       else if (process == TVar::SelfDefine_spin0){
-        for (int i=0; i<SIZE_HVV; i++){ for (int j=0; j<2; j++){ Hzzcoupl[i][j] = (selfDSpinZeroCoupl.Hzzcoupl)[i][j]; Hwwcoupl[i][j] = (selfDSpinZeroCoupl.Hwwcoupl)[i][j]; } }
+        for (int j=0; j<2; j++){
+          for (int i=0; i<SIZE_HVV; i++){
+            Hzzcoupl[i][j] = (selfDSpinZeroCoupl.Hzzcoupl)[i][j]; Hwwcoupl[i][j] = (selfDSpinZeroCoupl.Hwwcoupl)[i][j];
+
+            Hzzpcoupl[i][j] = (selfDSpinZeroCoupl.Hzzpcoupl)[i][j]; Hwwpcoupl[i][j] = (selfDSpinZeroCoupl.Hwwpcoupl)[i][j];
+            Hzpzpcoupl[i][j] = (selfDSpinZeroCoupl.Hzpzpcoupl)[i][j]; Hwpwpcoupl[i][j] = (selfDSpinZeroCoupl.Hwpwpcoupl)[i][j];
+          }
+          for (int i=0; i<SIZE_Vpff; i++){
+            Zpffcoupl[i][j] = (selfDSpinZeroCoupl.Zpffcoupl)[i][j]; Wpffcoupl[i][j] = (selfDSpinZeroCoupl.Wpffcoupl)[i][j];
+          }
+        }
+        M_Zprime = selfDSpinZeroCoupl.M_Zprime;
+        Ga_Zprime = selfDSpinZeroCoupl.Ga_Zprime;
+        M_Wprime = selfDSpinZeroCoupl.M_Wprime;
+        Ga_Wprime = selfDSpinZeroCoupl.Ga_Wprime;
         for (int j=0; j<SIZE_HVV_CQSQ; j++){
           for (int i=0; i<SIZE_HVV_LAMBDAQSQ; i++){ HzzLambda_qsq[i][j] = (selfDSpinZeroCoupl.HzzLambda_qsq)[i][j]; HwwLambda_qsq[i][j] = (selfDSpinZeroCoupl.HwwLambda_qsq)[i][j]; }
           HzzCLambda_qsq[j] = (selfDSpinZeroCoupl.HzzCLambda_qsq)[j]; HwwCLambda_qsq[j] = (selfDSpinZeroCoupl.HwwCLambda_qsq)[j];
@@ -728,6 +819,9 @@ double TEvtProb::XsecCalcXJJ(){
       }
       SetJHUGenSpinZeroVVCouplings(Hzzcoupl, HzzCLambda_qsq, HzzLambda_qsq, false);
       SetJHUGenSpinZeroVVCouplings(Hwwcoupl, HwwCLambda_qsq, HwwLambda_qsq, true); // Set the WW couplings regardless of SetJHUGenDistinguishWWCouplings(false/true) because of how JHUGen handles this true flag.
+      SetJHUGenSpinZeroContactTerms(Hzzpcoupl, Hzpzpcoupl, Zpffcoupl, Hwwpcoupl, Hwpwpcoupl, Wpffcoupl);
+      SetZprimeMassWidth(M_Zprime, Ga_Zprime);
+      SetWprimeMassWidth(M_Wprime, Ga_Wprime);
     }
 
     dXsec = HJJMatEl(process, production, matrixElement, &event_scales, &RcdME, EBEAM, verbosity);
@@ -788,6 +882,16 @@ double TEvtProb::XsecCalc_VX(
     double Hvvcoupl[SIZE_HVV][2] ={ { 0 } };
     double HvvLambda_qsq[SIZE_HVV_LAMBDAQSQ][SIZE_HVV_CQSQ] ={ { 0 } };
     int HvvCLambda_qsq[SIZE_HVV_CQSQ] ={ 0 };
+    double Hzzpcoupl[SIZE_HVV][2] = { { 0 } };
+    double Hzpzpcoupl[SIZE_HVV][2] = { { 0 } };
+    double Zpffcoupl[SIZE_Vpff][2] = { { 0 } };
+    double Hwwpcoupl[SIZE_HVV][2] = { { 0 } };
+    double Hwpwpcoupl[SIZE_HVV][2] = { { 0 } };
+    double Wpffcoupl[SIZE_Vpff][2] = { { 0 } };
+    double M_Zprime = -1;
+    double Ga_Zprime = 0;
+    double M_Wprime = -1;
+    double Ga_Wprime = 0;
 
     for (int ic=0; ic<SIZE_HVV_LAMBDAQSQ; ic++){ for (int ik=0; ik<SIZE_HVV_CQSQ; ik++) HvvLambda_qsq[ic][ik]=100.; }
 
@@ -801,13 +905,35 @@ double TEvtProb::XsecCalc_VX(
     else if (process == TVar::H0_gsgs) Hvvcoupl[gHIGGS_AA_2][0] = 1.;
     else if (process == TVar::H0_gsgs_PS) Hvvcoupl[gHIGGS_AA_4][0] = 1.;
     else if (process == TVar::SelfDefine_spin0){
-      for (int i=0; i<SIZE_HVV; i++){ for (int j=0; j<2; j++) Hvvcoupl[i][j] = (selfDSpinZeroCoupl.Hzzcoupl)[i][j]; }
+      for (int i=0; i<SIZE_HVV; i++){
+        for (int j=0; j<2; j++){
+          Hvvcoupl[i][j] = (selfDSpinZeroCoupl.Hzzcoupl)[i][j];
+
+          Hzzpcoupl[i][j] = (selfDSpinZeroCoupl.Hzzpcoupl)[i][j];
+          Hzpzpcoupl[i][j] = (selfDSpinZeroCoupl.Hzpzpcoupl)[i][j];
+          Hwwpcoupl[i][j] = (selfDSpinZeroCoupl.Hwwpcoupl)[i][j];
+          Hwpwpcoupl[i][j] = (selfDSpinZeroCoupl.Hwpwpcoupl)[i][j];
+        }
+      }
+      for (int i=0; i<SIZE_Vpff; i++){
+        for (int j=0; j<2; j++){
+          Zpffcoupl[i][j] = (selfDSpinZeroCoupl.Zpffcoupl)[i][j];
+          Wpffcoupl[i][j] = (selfDSpinZeroCoupl.Wpffcoupl)[i][j];
+        }
+      }
+      M_Zprime = selfDSpinZeroCoupl.M_Zprime;
+      Ga_Zprime = selfDSpinZeroCoupl.Ga_Zprime;
+      M_Wprime = selfDSpinZeroCoupl.M_Wprime;
+      Ga_Wprime = selfDSpinZeroCoupl.Ga_Wprime;
       for (int j=0; j<SIZE_HVV_CQSQ; j++){
         for (int i=0; i<SIZE_HVV_LAMBDAQSQ; i++) HvvLambda_qsq[i][j] = (selfDSpinZeroCoupl.HzzLambda_qsq)[i][j];
         HvvCLambda_qsq[j] = (selfDSpinZeroCoupl.HzzCLambda_qsq)[j];
       }
     }
     SetJHUGenSpinZeroVVCouplings(Hvvcoupl, HvvCLambda_qsq, HvvLambda_qsq, false);
+    SetJHUGenSpinZeroContactTerms(Hzzpcoupl, Hzpzpcoupl, Zpffcoupl, Hwwpcoupl, Hwpwpcoupl, Wpffcoupl);
+    SetZprimeMassWidth(M_Zprime, Ga_Zprime);
+    SetWprimeMassWidth(M_Wprime, Ga_Wprime);
 
     dXsec = VHiggsMatEl(process, production, matrixElement, &event_scales, &RcdME, EBEAM, includeHiggsDecay, verbosity);
     if (verbosity >= TVar::DEBUG) std::cout << "TEVtProb::XsecCalc_VX: Process " << TVar::ProcessName(process) << " dXsec=" << dXsec << endl;

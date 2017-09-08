@@ -1,7 +1,10 @@
 #!/bin/sh
 
-#echo "$@"
-if [[ "$1" == *"clean"* ]];then
+(
+set -euo pipefail
+cd $(dirname ${BASH_SOURCE[0]})
+eval $(scram ru -sh)
+if [[ $# > 0 ]] && [[ "$1" == *"clean"* ]];then
 	scramv1 b "$@"
 	pushd ${CMSSW_BASE}/src/ZZMatrixElement/MELA/fortran/
 	make clean
@@ -21,6 +24,7 @@ else
 		echo "ERROR: something went wrong in mv, see ^ error message"
 		echo
 		popd
-		return 1 >& /dev/null || exit 1 #return only works when sourced, exit will exit your whole session if sourced
+		exit 1
 	fi
 fi
+)
