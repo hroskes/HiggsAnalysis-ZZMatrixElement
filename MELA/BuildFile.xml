@@ -7,8 +7,6 @@
 <flags LDFLAGS="-Wl,-rpath=$(CMSSW_BASE)/src/ZZMatrixElement/MELA/data/$(SCRAM_ARCH) $(shell $(CMSSW_BASE)/src/ZZMatrixElement/MELA/data/retrieve.csh $(SCRAM_ARCH) mcfm_704) -L$(CMSSW_BASE)/src/ZZMatrixElement/MELA/data/$(SCRAM_ARCH) -lmcfm_704 -ljhugenmela" />
 
 <use name="f77compiler"/>
-<use name="boost"/>
-<use name="boost_filesystem"/>
 <use name="root"/>
 <use name="rootmath"/>
 <use name="roofit"/>
