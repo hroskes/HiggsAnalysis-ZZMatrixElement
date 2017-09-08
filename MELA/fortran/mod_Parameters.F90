@@ -56,7 +56,7 @@ integer, public :: LHAPDFMember, lenLHAPDFString ! lenLHAPDFString is needed in 
 integer, public :: PDFSet
 ! End PDFset variables
 logical, public :: includeInterference, writegit
-real(8), public :: M_V,Ga_V
+real(8), public :: M_V,Ga_V, M_Vprime,Ga_Vprime
 real(8), public, parameter :: GeV=1d0/100d0 ! we are using units of 100GeV, i.e. Lambda=10 is 1TeV
 real(8), public, parameter :: percent=1d0/100d0
 ! real(8),public :: GlobalMax=-1d99
@@ -147,6 +147,8 @@ real(8), public            :: Ga_W    = 2.085d0   *GeV      ! W boson width(PDG-
 real(8), public            :: M_Reso  = 125.0d0   *GeV      ! X resonance mass (spin 0, spin 1, spin 2)     (can be overwritten by command line argument)
 real(8), public            :: Ga_Reso = 0.00407d0 *GeV      ! X resonance width
 real(8), public            :: HiggsDecayLengthMM = 0d0      ! Higgs decay length in [mm]
+real(8), public            :: M_Reso2 = -1d0      *GeV      ! second resonance mass (spin 0 in off-shell VBF)     (can be overwritten by command line argument)
+real(8), public            :: Ga_Reso2= 0d0       *GeV      ! second resonance width
 
 real(8), public            :: m_bot = 4.75d0       *GeV     ! bottom quark mass
 real(8), public            :: m_charm = 1.275d0    *GeV     ! charm quark mass
@@ -258,9 +260,11 @@ real(8), public :: scale_alpha_W_tn = 1d0        ! scaling factor of alpha (~par
 !=====================================================
 !resonance couplings
 
-real(8), public, parameter :: Lambda  = 1000d0    *GeV      ! Lambda coupling enters in two places
-                                                            ! overall scale for x-section and in power suppressed
-                                                            ! operators/formfactors (former r).
+! Lambda scale enters in two places
+! overall scale for x-section and in power suppressed
+! operators/formfactors (former r).
+real(8), public, parameter :: Lambda  = 1000d0    *GeV
+real(8), public, parameter :: Lambda2 = 1000d0    *GeV      ! for second resonance
 
 !--------------------!
 !-----! Spin-0 !-----!
@@ -328,9 +332,6 @@ real(8), public, parameter :: Lambda  = 1000d0    *GeV      ! Lambda coupling en
 
    complex(8), public :: ghzgs1_prime2= (0d0,0d0)
 
-   complex(8), public :: ghzzp1 = (0d0,0d0)
-   complex(8), public :: ghzpzp1 = (0d0,0d0)
-
    real(8),    public, parameter :: Lambda_z1 = 10000d0*GeV
    real(8),    public, parameter :: Lambda_z2 = 10000d0*GeV
    real(8),    public, parameter :: Lambda_z3 = 10000d0*GeV
@@ -396,14 +397,10 @@ real(8), public, parameter :: Lambda  = 1000d0    *GeV      ! Lambda coupling en
    complex(8), public :: ghw4_prime6= (0d0,0d0)
    complex(8), public :: ghw4_prime7= (0d0,0d0)
 
-   complex(8), public :: ghwwp1 = (0d0,0d0)
-   complex(8), public :: ghwpwp1 = (0d0,0d0)
-
    real(8),    public, parameter :: Lambda_w1 = 10000d0*GeV
    real(8),    public, parameter :: Lambda_w2 = 10000d0*GeV
    real(8),    public, parameter :: Lambda_w3 = 10000d0*GeV
    real(8),    public, parameter :: Lambda_w4 = 10000d0*GeV
-   !real(8),    public, parameter :: Lambda_w5 = 10000d0*GeV ! Not used
 
    integer,    public :: cw_q1sq = 0 ! Sign of q1,2,12**2 for the following Lambda's, set to 1 or -1 to get q**2-dependence from these form factor Lambdas
    integer,    public :: cw_q2sq = 0
@@ -422,15 +419,17 @@ real(8), public, parameter :: Lambda  = 1000d0    *GeV      ! Lambda coupling en
    real(8),    public :: Lambda_w40 = 100d0*GeV
 
 !-- HVV contact terms
-   logical, public :: UseVprime=.false.  ! false: contact interaction,  true: heavy Zprime propagator
+   complex(8), public :: ghzzp1 = (0d0,0d0)
+   complex(8), public :: ghzpzp1 = (0d0,0d0)
+
    complex(8), public :: ezp_El_left  = (0d0,0d0)
    complex(8), public :: ezp_El_right  = (0d0,0d0)
    complex(8), public :: ezp_Mu_left  = (0d0,0d0)
    complex(8), public :: ezp_Mu_right  = (0d0,0d0)
    complex(8), public :: ezp_Ta_left  = (0d0,0d0)
    complex(8), public :: ezp_Ta_right  = (0d0,0d0)
-   complex(8), public :: ezp_NuE_left  = (0d0,0d0)
-   complex(8), public :: ezp_NuE_right  = (0d0,0d0)
+   complex(8), public :: ezp_NuE_left  = (0d0,0d0)   !same for NuMu and NuTau
+   complex(8), public :: ezp_NuE_right  = (0d0,0d0)  !same for NuMu and NuTau
    complex(8), public :: ezp_Up_left  = (0d0,0d0)
    complex(8), public :: ezp_Up_right  = (0d0,0d0)
    complex(8), public :: ezp_Chm_left  = (0d0,0d0)
@@ -443,7 +442,13 @@ real(8), public, parameter :: Lambda  = 1000d0    *GeV      ! Lambda coupling en
    complex(8), public :: ezp_Bot_right  = (0d0,0d0)
    complex(8), public :: ezp_Top_left  = (0d0,0d0)
    complex(8), public :: ezp_Top_right  = (0d0,0d0)
+
+   real(8), public :: M_Zprime = -1d0 ! <0: CT interaction, >=0: Heavy Zprime propagator
+   real(8), public :: Ga_Zprime = 0d0
 !--
+   complex(8), public :: ghwwp1 = (0d0,0d0)
+   complex(8), public :: ghwpwp1 = (0d0,0d0)
+
    complex(8), public :: ewp_El_left  = (0d0,0d0)
    complex(8), public :: ewp_El_right  = (0d0,0d0)
    complex(8), public :: ewp_Mu_left  = (0d0,0d0)
@@ -456,13 +461,156 @@ real(8), public, parameter :: Lambda  = 1000d0    *GeV      ! Lambda coupling en
    complex(8), public :: ewp_Chm_right  = (0d0,0d0)
    complex(8), public :: ewp_Top_left  = (0d0,0d0)
    complex(8), public :: ewp_Top_right  = (0d0,0d0)
-!--
-   real(8), public :: M_Zprime = -1d0
-   real(8), public :: Ga_Zprime = 0d0
-   real(8), public :: M_Wprime = -1d0
+
+   real(8), public :: M_Wprime = -1d0 ! <0: CT interaction, >=0: Heavy Zprime propagator
    real(8), public :: Ga_Wprime = 0d0
-   real(8), public :: M_Vprime
-   real(8), public :: Ga_Vprime
+!--
+
+
+
+
+!-- second resonance (H2) couplings for off-shell VBF
+!-- HVV' couplings to ZZ/ZA/AA and WW
+   complex(8), public :: gh2z1 = (0.0d0,0d0)
+   complex(8), public :: gh2z2 = (0.0d0,0d0)
+   complex(8), public :: gh2z3 = (0.0d0,0d0)
+   complex(8), public :: gh2z4 = (0.0d0,0d0)   ! pseudoscalar
+
+   complex(8), public :: gh2zgs2  = (0.00d0,0d0)
+   complex(8), public :: gh2zgs3  = (0.00d0,0d0)
+   complex(8), public :: gh2zgs4  = (0.00d0,0d0)
+   complex(8), public :: gh2gsgs2 = (0.00d0,0d0)
+   complex(8), public :: gh2gsgs3 = (0.00d0,0d0)
+   complex(8), public :: gh2gsgs4 = (0.00d0,0d0)
+
+!-- parameters that define q^2 dependent form factors
+   complex(8), public :: gh2z1_prime = (0.0d0,0d0)
+   complex(8), public :: gh2z1_prime2= (0.0d0,0d0)
+   complex(8), public :: gh2z1_prime3= (0.0d0,0d0)
+   complex(8), public :: gh2z1_prime4= (0.0d0,0d0)
+   complex(8), public :: gh2z1_prime5= (0.0d0,0d0)
+   complex(8), public :: gh2z1_prime6= (0.0d0,0d0)
+   complex(8), public :: gh2z1_prime7= (0.0d0,0d0)
+
+   complex(8), public :: gh2z2_prime = (0.0d0,0d0)
+   complex(8), public :: gh2z2_prime2= (0.0d0,0d0)
+   complex(8), public :: gh2z2_prime3= (0.0d0,0d0)
+   complex(8), public :: gh2z2_prime4= (0.0d0,0d0)
+   complex(8), public :: gh2z2_prime5= (0.0d0,0d0)
+   complex(8), public :: gh2z2_prime6= (0.0d0,0d0)
+   complex(8), public :: gh2z2_prime7= (0.0d0,0d0)
+
+   complex(8), public :: gh2z3_prime = (0.0d0,0d0)
+   complex(8), public :: gh2z3_prime2= (0.0d0,0d0)
+   complex(8), public :: gh2z3_prime3= (0.0d0,0d0)
+   complex(8), public :: gh2z3_prime4= (0.0d0,0d0)
+   complex(8), public :: gh2z3_prime5= (0.0d0,0d0)
+   complex(8), public :: gh2z3_prime6= (0.0d0,0d0)
+   complex(8), public :: gh2z3_prime7= (0.0d0,0d0)
+
+   complex(8), public :: gh2z4_prime = (0.0d0,0d0)
+   complex(8), public :: gh2z4_prime2= (0.0d0,0d0)
+   complex(8), public :: gh2z4_prime3= (0.0d0,0d0)
+   complex(8), public :: gh2z4_prime4= (0.0d0,0d0)
+   complex(8), public :: gh2z4_prime5= (0.0d0,0d0)
+   complex(8), public :: gh2z4_prime6= (0.0d0,0d0)
+   complex(8), public :: gh2z4_prime7= (0.0d0,0d0)
+
+   complex(8), public :: gh2zgs1_prime2= (0.0d0,0d0)
+
+   real(8),    public, parameter :: Lambda2_z1 = 10000d0*GeV
+   real(8),    public, parameter :: Lambda2_z2 = 10000d0*GeV
+   real(8),    public, parameter :: Lambda2_z3 = 10000d0*GeV
+   real(8),    public, parameter :: Lambda2_z4 = 10000d0*GeV
+   real(8),    public, parameter :: Lambda2_zgs1 = 10000d0*GeV
+   real(8),    public, parameter :: Lambda2_Q  = 10000d0*GeV
+
+   integer,    public :: c2z_q1sq = 0 ! Sign of q1,2,12**2 for the following Lambda2's, set to 1 or -1 to get q**2-dependence from these form factor Lambda2s
+   integer,    public :: c2z_q2sq = 0
+   integer,    public :: c2z_q12sq = 0
+   real(8),    public :: Lambda2_z11 = 100d0*GeV ! For Z1
+   real(8),    public :: Lambda2_z21 = 100d0*GeV
+   real(8),    public :: Lambda2_z31 = 100d0*GeV
+   real(8),    public :: Lambda2_z41 = 100d0*GeV
+   real(8),    public :: Lambda2_z12 = 100d0*GeV ! For Z2
+   real(8),    public :: Lambda2_z22 = 100d0*GeV
+   real(8),    public :: Lambda2_z32 = 100d0*GeV
+   real(8),    public :: Lambda2_z42 = 100d0*GeV
+   real(8),    public :: Lambda2_z10 = 100d0*GeV ! For the Higgs
+   real(8),    public :: Lambda2_z20 = 100d0*GeV
+   real(8),    public :: Lambda2_z30 = 100d0*GeV
+   real(8),    public :: Lambda2_z40 = 100d0*GeV
+
+
+!-- extra HWW couplings for weak boson fusion when WW-spin-0 couplings are required to be different from ZZ-spin-0
+!-- note: ZZ-spin-0 couplings are used in processes other than VBF, and WW is distinguished from ZZ only in case distinguish_HWWcouplings=.true.
+!    logical, public :: distinguish_HWWcouplings=.false.
+   complex(8), public :: gh2w1 = (0.0d0,0d0)
+   complex(8), public :: gh2w2 = (0.0d0,0d0)
+   complex(8), public :: gh2w3 = (0.0d0,0d0)
+   complex(8), public :: gh2w4 = (0.0d0,0d0)
+
+!-- parameters that define q^2 dependent form factors in WBF WW-spin-0 case described above
+   complex(8), public :: gh2w1_prime = (0.0d0,0d0)
+   complex(8), public :: gh2w1_prime2= (0.0d0,0d0)
+   complex(8), public :: gh2w1_prime3= (0.0d0,0d0)
+   complex(8), public :: gh2w1_prime4= (0.0d0,0d0)
+   complex(8), public :: gh2w1_prime5= (0.0d0,0d0)
+   complex(8), public :: gh2w1_prime6= (0.0d0,0d0)
+   complex(8), public :: gh2w1_prime7= (0.0d0,0d0)
+
+   complex(8), public :: gh2w2_prime = (0.0d0,0d0)
+   complex(8), public :: gh2w2_prime2= (0.0d0,0d0)
+   complex(8), public :: gh2w2_prime3= (0.0d0,0d0)
+   complex(8), public :: gh2w2_prime4= (0.0d0,0d0)
+   complex(8), public :: gh2w2_prime5= (0.0d0,0d0)
+   complex(8), public :: gh2w2_prime6= (0.0d0,0d0)
+   complex(8), public :: gh2w2_prime7= (0.0d0,0d0)
+
+   complex(8), public :: gh2w3_prime = (0.0d0,0d0)
+   complex(8), public :: gh2w3_prime2= (0.0d0,0d0)
+   complex(8), public :: gh2w3_prime3= (0.0d0,0d0)
+   complex(8), public :: gh2w3_prime4= (0.0d0,0d0)
+   complex(8), public :: gh2w3_prime5= (0.0d0,0d0)
+   complex(8), public :: gh2w3_prime6= (0.0d0,0d0)
+   complex(8), public :: gh2w3_prime7= (0.0d0,0d0)
+
+   complex(8), public :: gh2w4_prime = (0.0d0,0d0)
+   complex(8), public :: gh2w4_prime2= (0.0d0,0d0)
+   complex(8), public :: gh2w4_prime3= (0.0d0,0d0)
+   complex(8), public :: gh2w4_prime4= (0.0d0,0d0)
+   complex(8), public :: gh2w4_prime5= (0.0d0,0d0)
+   complex(8), public :: gh2w4_prime6= (0.0d0,0d0)
+   complex(8), public :: gh2w4_prime7= (0.0d0,0d0)
+
+   real(8),    public, parameter :: Lambda2_w1 = 10000d0*GeV
+   real(8),    public, parameter :: Lambda2_w2 = 10000d0*GeV
+   real(8),    public, parameter :: Lambda2_w3 = 10000d0*GeV
+   real(8),    public, parameter :: Lambda2_w4 = 10000d0*GeV
+
+   integer,    public :: c2w_q1sq = 0 ! Sign of q1,2,12**2 for the following Lambda2's, set to 1 or -1 to get q**2-dependence from these form factor Lambda2s
+   integer,    public :: c2w_q2sq = 0
+   integer,    public :: c2w_q12sq = 0
+   real(8),    public :: Lambda2_w11 = 100d0*GeV ! For W+
+   real(8),    public :: Lambda2_w21 = 100d0*GeV
+   real(8),    public :: Lambda2_w31 = 100d0*GeV
+   real(8),    public :: Lambda2_w41 = 100d0*GeV
+   real(8),    public :: Lambda2_w12 = 100d0*GeV ! For W-
+   real(8),    public :: Lambda2_w22 = 100d0*GeV
+   real(8),    public :: Lambda2_w32 = 100d0*GeV
+   real(8),    public :: Lambda2_w42 = 100d0*GeV
+   real(8),    public :: Lambda2_w10 = 100d0*GeV ! For the Higgs
+   real(8),    public :: Lambda2_w20 = 100d0*GeV
+   real(8),    public :: Lambda2_w30 = 100d0*GeV
+   real(8),    public :: Lambda2_w40 = 100d0*GeV
+
+
+
+
+
+
+
+
 
 !-- Hff couplings for ttbar+H and bbar+H
    complex(8), public :: kappa       = (1d0,0d0)
@@ -1109,7 +1257,7 @@ END FUNCTION
 
 
 
-FUNCTION convertLHEreverse(Part)
+FUNCTION convertLHEreverse(Part) ! PDG/PDF->JHU
 implicit none
 integer :: convertLHEreverse
 integer :: Part
@@ -1196,7 +1344,7 @@ END FUNCTION
 
 
 
-FUNCTION convertLHE(Part)
+FUNCTION convertLHE(Part) ! JHU->PDG/PDF
 implicit none
 integer :: convertLHE
 integer :: Part
@@ -1284,7 +1432,7 @@ integer :: Part
 END FUNCTION
 
 
-FUNCTION convertToPartIndex(Part)
+FUNCTION convertToPartIndex(Part) ! JHU->PDF
 implicit none
 integer :: convertToPartIndex
 integer :: Part
@@ -1320,7 +1468,7 @@ integer :: Part
 END FUNCTION
 
 
-FUNCTION convertFromPartIndex(Part)
+FUNCTION convertFromPartIndex(Part) ! PDF->JHU
 implicit none
 integer :: convertFromPartIndex
 integer :: Part
@@ -1419,8 +1567,6 @@ integer :: Part
 
 END subroutine SetDecayWidth
 
-
-
 FUNCTION getMass(Part)
 implicit none
 real(8) :: getMass
@@ -1474,7 +1620,6 @@ integer :: Part
 
 END FUNCTION
 
-
 FUNCTION getDecayWidth(Part)
 implicit none
 real(8) :: getDecayWidth
@@ -1497,6 +1642,53 @@ integer :: Part
       getDecayWidth = Ga_tau
   endif
 
+END FUNCTION
+
+
+subroutine SetHiggsMass(jH,mass)
+implicit none
+real(8) :: mass
+integer :: jH
+   if (jH .eq. 1) then
+      M_Reso=mass
+   elseif (jH .eq.2) then
+      M_Reso2=mass
+   endif
+END subroutine
+
+subroutine SetHiggsDecayWidth(jH,width)
+implicit none
+real(8) :: width
+integer :: jH
+   if (jH .eq. 1) then
+      Ga_Reso=width
+   elseif (jH .eq.2) then
+      Ga_Reso2=width
+   endif
+END subroutine
+
+FUNCTION GetHiggsMass(jH)
+implicit none
+real(8) :: getHiggsMass
+integer :: jH
+   getHiggsMass=0d0
+   if (jH .eq. 1) then
+      getHiggsMass = M_Reso
+   elseif (jH .eq.2) then
+      getHiggsMass = M_Reso2
+   endif
+END FUNCTION
+
+FUNCTION GetHiggsDecayWidth(jH)
+implicit none
+real(8) :: getHiggsDecayWidth
+integer :: jH
+   getHiggsDecayWidth=0d0
+   if (jH .eq. 1) then
+      getHiggsDecayWidth = Ga_Reso
+   elseif (jH .eq.2) then
+      getHiggsDecayWidth = Ga_Reso2
+   endif
 END FUNCTION
 
 
@@ -1689,6 +1881,19 @@ integer :: PartType
    IsLHEUpTypeQuark = ( abs(PartType).eq.2 .or. abs(PartType).eq.4 .or. abs(PartType).eq.6 )
 END FUNCTION
 
+FUNCTION IsUpTypeLightQuark(PartType)
+implicit none
+logical :: IsUpTypeLightQuark
+integer :: PartType
+   IsUpTypeLightQuark = ( abs(PartType).eq.abs(Up_) .or. abs(PartType).eq.abs(Chm_))
+END FUNCTION
+FUNCTION IsLHEUpTypeLightQuark(PartType)
+implicit none
+logical :: IsLHEUpTypeLightQuark
+integer :: PartType
+   IsLHEUpTypeLightQuark = ( abs(PartType).eq.2 .or. abs(PartType).eq.4 )
+END FUNCTION
+
 FUNCTION IsAQuark(PartType)
 implicit none
 logical :: IsAQuark
@@ -1702,6 +1907,18 @@ integer :: PartType
    IsLHEAQuark=IsLHEUpTypeQuark(PartType) .or. IsLHEDownTypeQuark(PartType)
 END FUNCTION
 
+FUNCTION IsALightQuark(PartType)
+implicit none
+logical :: IsALightQuark
+integer :: PartType
+   IsALightQuark=IsUpTypeLightQuark(PartType) .or. IsDownTypeQuark(PartType)
+END FUNCTION
+FUNCTION IsLHEALightQuark(PartType)
+implicit none
+logical :: IsLHEALightQuark
+integer :: PartType
+   IsLHEALightQuark=IsLHEUpTypeLightQuark(PartType) .or. IsLHEDownTypeQuark(PartType)
+END FUNCTION
 
 
 FUNCTION IsANeutrino(PartType)
@@ -2009,17 +2226,17 @@ end subroutine ComputeQCDVariables
 
 !ReadCommandLineArgument is overloaded.  Pass the type needed as "dest"
 !success is set to true if the argument passed matches argumentname, otherwise it's left alone
-!same for success2, success3, and success4 (optional, can be used for other things, see main.F90)
+!same for success2, success3, success4, and success5 (optional, can be used for other things, see main.F90)
 !SetLastArgument (optional) is set to true if the argument matches, otherwise it's set to false
 !for examples of all of them see main.F90
 
-subroutine ReadCommandLineArgument_logical(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4)
+subroutine ReadCommandLineArgument_logical(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4, success5)
 implicit none
 character(len=*) :: argument, argumentname
 logical, intent(inout) :: dest
 logical, intent(inout) :: success
 integer :: length
-logical, optional, intent(inout) :: SetLastArgument, success2, success3, success4
+logical, optional, intent(inout) :: SetLastArgument, success2, success3, success4, success5
 integer :: temp_int
 character(len=*), parameter :: numbers = "0123456789"
 
@@ -2034,6 +2251,7 @@ character(len=*), parameter :: numbers = "0123456789"
         if (present(success2)) success2=.true.
         if (present(success3)) success3=.true.
         if (present(success4)) success4=.true.
+        if (present(success5)) success5=.true.
     elseif( trim(argument).eq."No"//trim(argumentname) ) then
         dest=.false.
         success=.true.
@@ -2041,6 +2259,7 @@ character(len=*), parameter :: numbers = "0123456789"
         if (present(success2)) success2=.true.
         if (present(success3)) success3=.true.
         if (present(success4)) success4=.true.
+        if (present(success5)) success5=.true.
     elseif( argument(1:length+1) .eq. trim(argumentname)//"=" ) then
         if( Index(numbers, argument(length+2:length+2)) .ne. 0 ) then
             read(argument(length+2:len(argument)), *) temp_int
@@ -2050,6 +2269,7 @@ character(len=*), parameter :: numbers = "0123456789"
             if (present(success2)) success2=.true.
             if (present(success3)) success3=.true.
             if (present(success4)) success4=.true.
+            if (present(success5)) success5=.true.
         else
             read(argument(length+2:len(argument)), *) dest
             success=.true.
@@ -2057,18 +2277,19 @@ character(len=*), parameter :: numbers = "0123456789"
             if (present(success2)) success2=.true.
             if (present(success3)) success3=.true.
             if (present(success4)) success4=.true.
+            if (present(success5)) success5=.true.
         endif
     endif
 
 end subroutine ReadCommandLineArgument_logical
 
 
-subroutine ReadCommandLineArgument_integer(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4)
+subroutine ReadCommandLineArgument_integer(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4, success5)
 implicit none
 character(len=*) :: argument, argumentname
 integer, intent(inout) :: dest
 logical, intent(inout) :: success
-logical, optional, intent(inout) :: SetLastArgument, success2, success3, success4
+logical, optional, intent(inout) :: SetLastArgument, success2, success3, success4, success5
 integer :: length
 
     if (present(SetLastArgument)) SetLastArgument=.false.
@@ -2082,17 +2303,18 @@ integer :: length
         if (present(success2)) success2=.true.
         if (present(success3)) success3=.true.
         if (present(success4)) success4=.true.
+        if (present(success5)) success5=.true.
     endif
 
 end subroutine ReadCommandLineArgument_integer
 
 
-subroutine ReadCommandLineArgument_real8(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4)
+subroutine ReadCommandLineArgument_real8(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4, success5)
 implicit none
 character(len=*) :: argument, argumentname
 real(8), intent(inout) :: dest
 logical, intent(inout) :: success
-logical, optional, intent(inout) :: SetLastArgument, success2, success3, success4
+logical, optional, intent(inout) :: SetLastArgument, success2, success3, success4, success5
 integer :: length
 
     if (present(SetLastArgument)) SetLastArgument=.false.
@@ -2106,18 +2328,19 @@ integer :: length
         if (present(success2)) success2=.true.
         if (present(success3)) success3=.true.
         if (present(success4)) success4=.true.
+        if (present(success5)) success5=.true.
     endif
 
 end subroutine ReadCommandLineArgument_real8
 
 
-subroutine ReadCommandLineArgument_complex8(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4)
+subroutine ReadCommandLineArgument_complex8(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4, success5)
 implicit none
 character(len=*) :: argument, argumentname
 complex(8), intent(inout) :: dest
 real(8) :: re, im
 logical, intent(inout) :: success
-logical, optional, intent(inout) :: SetLastArgument, success2, success3, success4
+logical, optional, intent(inout) :: SetLastArgument, success2, success3, success4, success5
 integer :: length
 
     if (present(SetLastArgument)) SetLastArgument=.false.
@@ -2141,17 +2364,18 @@ integer :: length
         if (present(success2)) success2=.true.
         if (present(success3)) success3=.true.
         if (present(success4)) success4=.true.
+        if (present(success5)) success5=.true.
     endif
 
 end subroutine ReadCommandLineArgument_complex8
 
 
-subroutine ReadCommandLineArgument_string(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4)
+subroutine ReadCommandLineArgument_string(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4, success5)
 implicit none
 character(len=*) :: argument, argumentname
 character(len=*), intent(inout) :: dest
 logical, intent(inout) :: success
-logical, optional, intent(inout) :: SetLastArgument, success2, success3, success4
+logical, optional, intent(inout) :: SetLastArgument, success2, success3, success4, success5
 integer :: length
 
     if (present(SetLastArgument)) SetLastArgument=.false.
@@ -2169,6 +2393,7 @@ integer :: length
         if (present(success2)) success2=.true.
         if (present(success3)) success3=.true.
         if (present(success4)) success4=.true.
+        if (present(success5)) success5=.true.
     endif
 
 end subroutine ReadCommandLineArgument_string
