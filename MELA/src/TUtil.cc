@@ -7776,9 +7776,9 @@ void TUtil::GetBoostedParticleVectors(
   int motherId[2]={ 0, 0 };
   if (melaCand->getNMothers()==2){
     for (int ip=0; ip<2; ip++) motherId[ip]=melaCand->getMother(ip)->id;
-    // Match the "assumed" M'1==(pz>0) and M'2==(pz<0) to the pz of the actual mothers:
+    // Match the "assumed" M'1==(larger signed pz) and M'2==(smaller signed pz) to the pz of the actual mothers:
     // Swap pZs to get the correct momentum matching default M1, M2.
-    if (melaCand->getMother(0)->z()<melaCand->getMother(1)->z()){ swap(pz0, pz1); swap(E0, E1); }
+    if (TMath::Sign(1., melaCand->getMother(0)->z()-melaCand->getMother(1)->z())!=TMath::Sign(1., pz0-pz1)){ swap(pz0, pz1); swap(E0, E1); }
     // Swap the ids of mothers and their pT=0-assumed momenta to achieve ordering as "incoming" q-qbar
     if ((motherId[0]<0 && motherId[1]>=0) || (motherId[1]>0 && motherId[0]<=0)){
       swap(pz0, pz1);
