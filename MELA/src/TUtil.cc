@@ -1204,11 +1204,13 @@ double TUtil::GetMass(int ipart){
   else{
     // JHUGen masses
     if (
-      ipartabs<=6
+      ipartabs<=6 // (d, u, s, c, b, t)
       ||
-      (ipartabs>=11 && ipartabs<=16)
+      (ipartabs>=11 && ipartabs<=16) // (l, nu) x (e, mu, tau)
       ||
-      ipartabs==23 || ipartabs==24 || ipartabs==25
+      ipartabs==23 || ipartabs==24 || ipartabs==25 // Z, W, H
+      ||
+      ipartabs==32 || ipartabs==34 // Z', W+-'
       ){
       const double GeV=1./100.;
       int jpart = convertLHEreverse(&ipart);
@@ -1236,6 +1238,22 @@ double TUtil::GetDecayWidth(int ipart){
     double outwidth = joutwidth/GeV;
     return outwidth;
   }
+}
+double TUtil::GetMass(const MELAParticle* part){
+  if (part==nullptr) return GetMass(-9000);
+  return GetMass(part->id);
+}
+double TUtil::GetDecayWidth(const MELAParticle* part){
+  if (part==nullptr) return GetDecayWidth(-9000);
+  return GetDecayWidth(part->id);
+}
+void TUtil::GetMassWidth(int ipart, double& m, double& ga){
+  m=TUtil::GetMass(ipart);
+  ga=TUtil::GetDecayWidth(ipart);
+}
+void TUtil::GetMassWidth(const MELAParticle* part, double& m, double& ga){
+  if (part==nullptr) return GetMassWidth(-9000, m, ga);
+  return GetMassWidth(part->id, m, ga);
 }
 
 double TUtil::InterpretScaleScheme(const TVar::Production& production, const TVar::MatrixElement& matrixElement, const TVar::EventScaleScheme& scheme, TLorentzVector p[mxpart]){
