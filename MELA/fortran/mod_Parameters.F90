@@ -3,7 +3,7 @@ implicit none
 save
 !
 !
-character(len=6),parameter :: JHUGen_Version="v7.0.4"
+character(len=6),parameter :: JHUGen_Version="v7.0.8"
 !
 !
 !=====================================================
@@ -20,7 +20,7 @@ real(8), public :: Collider_Energy
 integer, public :: FacScheme,RenScheme
 real(8), public :: MuFacMultiplier,MuRenMultiplier
 integer, public :: VegasIt1_default,VegasNc0_default,VegasNc1_default,VegasNc2_default
-integer, public :: NumHistograms,RequestNLeptons,RequestOS,RequestOSSF
+integer, public :: NumHistograms,RequestNLeptons,RequestOS,RequestOSSF,RequestNJets
 logical, public :: Unweighted,OffShellReson,OffShellV1,OffShellV2,ReadLHEFile,ConvertLHEFile,DoPrintPMZZ
 logical, public :: ReadCSmax,GenerateEvents,CountTauAsAny,HasLeptonFilter, FoundHiggsMass, FoundHiggsWidth
 integer, public :: WriteFailedEvents
@@ -72,6 +72,7 @@ integer, public :: Br_W_ll_counter=0
 integer, public :: Br_W_ud_counter=0
 integer, public :: Br_counter(1:5,1:5)=0
 integer, public :: LeptInEvent(0:8) = 0
+integer, public :: JetsInEvent(0:8) = 0
 logical, public :: ReweightDecay = .false.
 integer, public :: UserSeed = 0
 integer, public  :: WidthScheme = 0   ! 1=running BW-width, 2=fixed BW-width (default), 3=Passarino's CPS
@@ -127,12 +128,17 @@ logical, public, parameter :: importExternal_LHEinit = .true.
 !=====================================================
 !cuts - should be set on the command line
 real(8), public :: pTjetcut = -1d0*GeV                        ! jet min pt, default is set in main (0 in VH, 15 GeV otherwise)
+real(8), public :: etajetcut = -1d0                           ! jet max |eta|, default is set in main (4 in offshell VBF, infinity elsewhere)
+real(8), public :: detajetcut = -1d0                          ! min difference in eta between jets (default 2 in VBF offshell, 0 elsewhere)
 real(8), public :: Rjet = -1d0                                ! jet deltaR, anti-kt algorithm, default is set in main (0 in VH, 0.3 otherwise)
 real(8), public :: mJJcut = 0d0*GeV                           ! minimum mJJ for VBF, HJJ, bbH, VH
 real(8), public :: m4l_minmax(1:2) = (/ -1d0,-1d0 /)*GeV      ! min and max for m_4l in off-shell VBF production;   default is (-1,-1): m_4l ~ Higgs resonance (on-shell)
 logical, public :: includeGammaStar = .false.                 ! include offshell photons?
 logical, public :: includeVprime = .false.
-real(8), public :: MPhotonCutoff = 4d0*GeV                    ! minimum |mass| for offshell photons when includeGammaStar = .true.
+real(8), public :: MPhotonCutoff = -1d0*GeV                          ! minimum |mass_ll| for offshell photons when includeGammaStar = .true. or in VBF bkg
+real(8), public :: pTlepcut = -1d0*GeV
+real(8), public :: etalepcut = -1d0
+logical, public :: JetsOppositeEta = .true.
 !=====================================================
 
 
@@ -1900,11 +1906,11 @@ logical :: IsAQuark
 integer :: PartType
    IsAQuark=IsUpTypeQuark(PartType) .or. IsDownTypeQuark(PartType)
 END FUNCTION
-FUNCTION IsLHEAQuark(PartType)
+FUNCTION IsALHEQuark(PartType)
 implicit none
-logical :: IsLHEAQuark
+logical :: IsALHEQuark
 integer :: PartType
-   IsLHEAQuark=IsLHEUpTypeQuark(PartType) .or. IsLHEDownTypeQuark(PartType)
+   IsALHEQuark=IsLHEUpTypeQuark(PartType) .or. IsLHEDownTypeQuark(PartType)
 END FUNCTION
 
 FUNCTION IsALightQuark(PartType)
@@ -1913,11 +1919,11 @@ logical :: IsALightQuark
 integer :: PartType
    IsALightQuark=IsUpTypeLightQuark(PartType) .or. IsDownTypeQuark(PartType)
 END FUNCTION
-FUNCTION IsLHEALightQuark(PartType)
+FUNCTION IsALHELightQuark(PartType)
 implicit none
-logical :: IsLHEALightQuark
+logical :: IsALHELightQuark
 integer :: PartType
-   IsLHEALightQuark=IsLHEUpTypeLightQuark(PartType) .or. IsLHEDownTypeQuark(PartType)
+   IsALHELightQuark=IsLHEUpTypeLightQuark(PartType) .or. IsLHEDownTypeQuark(PartType)
 END FUNCTION
 
 
@@ -1945,6 +1951,36 @@ implicit none
 logical :: IsALHELepton
 integer :: PartType
   IsALHELepton = ( abs(PartType).eq.11 .or. abs(PartType).eq.13 .or. abs(PartType).eq.15 )
+END FUNCTION
+
+
+FUNCTION IsAGluon(PartType)
+implicit none
+logical :: IsAGluon
+integer :: PartType
+  IsAGluon = (abs(PartType).eq.Glu_)
+END FUNCTION
+
+FUNCTION IsALHEGluon(PartType)
+implicit none
+logical :: IsALHEGluon
+integer :: PartType
+  IsALHEGluon = (abs(PartType).eq.convertLHE(Glu_))
+END FUNCTION
+
+
+FUNCTION IsAJet(PartType)
+implicit none
+logical :: IsAJet
+integer :: PartType
+  IsAJet = (IsALightQuark(PartType) .or. IsAGluon(PartType))
+END FUNCTION
+
+FUNCTION IsALHEJet(PartType)
+implicit none
+logical :: IsALHEJet
+integer :: PartType
+  IsALHEJet = (IsALHELightQuark(PartType) .or. IsALHEGluon(PartType))
 END FUNCTION
 
 
@@ -2284,12 +2320,13 @@ character(len=*), parameter :: numbers = "0123456789"
 end subroutine ReadCommandLineArgument_logical
 
 
-subroutine ReadCommandLineArgument_integer(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4, success5)
+subroutine ReadCommandLineArgument_integer(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4, success5, multiply)
 implicit none
 character(len=*) :: argument, argumentname
 integer, intent(inout) :: dest
 logical, intent(inout) :: success
 logical, optional, intent(inout) :: SetLastArgument, success2, success3, success4, success5
+integer, optional, intent(in) :: multiply
 integer :: length
 
     if (present(SetLastArgument)) SetLastArgument=.false.
@@ -2298,6 +2335,7 @@ integer :: length
 
     if( argument(1:length+1) .eq. trim(argumentname)//"=" ) then
         read(argument(length+2:len(argument)), *) dest
+        if (present(multiply)) dest = dest*multiply
         success=.true.
         if (present(SetLastArgument)) SetLastArgument=.true.
         if (present(success2)) success2=.true.
@@ -2309,12 +2347,13 @@ integer :: length
 end subroutine ReadCommandLineArgument_integer
 
 
-subroutine ReadCommandLineArgument_real8(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4, success5)
+subroutine ReadCommandLineArgument_real8(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4, success5, multiply)
 implicit none
 character(len=*) :: argument, argumentname
 real(8), intent(inout) :: dest
 logical, intent(inout) :: success
 logical, optional, intent(inout) :: SetLastArgument, success2, success3, success4, success5
+real(8), optional, intent(in) :: multiply
 integer :: length
 
     if (present(SetLastArgument)) SetLastArgument=.false.
@@ -2323,6 +2362,7 @@ integer :: length
 
     if( argument(1:length+1) .eq. trim(argumentname)//"=" ) then
         read(argument(length+2:len(argument)), *) dest
+        if (present(multiply)) dest = dest*multiply
         success=.true.
         if (present(SetLastArgument)) SetLastArgument=.true.
         if (present(success2)) success2=.true.
@@ -2334,13 +2374,15 @@ integer :: length
 end subroutine ReadCommandLineArgument_real8
 
 
-subroutine ReadCommandLineArgument_complex8(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4, success5)
+subroutine ReadCommandLineArgument_complex8(argument, argumentname, success, dest, SetLastArgument, success2, success3, success4, success5, multiply, multiplyreal)
 implicit none
 character(len=*) :: argument, argumentname
 complex(8), intent(inout) :: dest
 real(8) :: re, im
 logical, intent(inout) :: success
 logical, optional, intent(inout) :: SetLastArgument, success2, success3, success4, success5
+complex(8), optional, intent(in) :: multiply
+real(8), optional, intent(in) :: multiplyreal
 integer :: length
 
     if (present(SetLastArgument)) SetLastArgument=.false.
@@ -2359,6 +2401,8 @@ integer :: length
         endif
         read(argument(length+2:len(argument)), *) re, im
         dest = dcmplx(re, im)
+        if (present(multiply)) dest = dest*multiply
+        if (present(multiplyreal)) dest = dest*multiplyreal
         success=.true.
         if (present(SetLastArgument)) SetLastArgument=.true.
         if (present(success2)) success2=.true.
