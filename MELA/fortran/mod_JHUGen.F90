@@ -26,6 +26,7 @@ SUBROUTINE InitFirstTime(pdftable,pdfstrlength,pdfmember)
 
    includeInterference=.true.
    includeGammaStar=.true.
+   MPhotonCutoff=4d0*GeV
    WidthScheme=0
    PDFSet=3      ! 1: CTEQ6L1   2: MRSW with best fit, 2xx: MSTW with eigenvector set xx=01..40
    LHAPDFString = pdftable
