@@ -82,6 +82,9 @@ SUBROUTINE InitFirstTime(pdftable,pdfstrlength,pdfmember)
       print *,"Collider not implemented."
       stop
    ENDIF
+
+   call InitCOLLIER(4,3) ! Arguments for ggZH
+
    return
 
 END SUBROUTINE
