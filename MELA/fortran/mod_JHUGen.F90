@@ -83,6 +83,10 @@ SUBROUTINE InitFirstTime(pdftable,pdfstrlength,pdfmember)
       stop
    ENDIF
 
+#if useCollier==1
+   Collier_maxNLoopProps = -1
+   Collier_maxRank = -1
+#endif
    call InitCOLLIER(4,3) ! Arguments for ggZH
 
    return
