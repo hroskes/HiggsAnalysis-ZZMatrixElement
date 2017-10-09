@@ -1,6 +1,6 @@
 {
   TString LIBCOLLIER="libcollier.so";
-  TString LIBMCFM="libmcfm_704.so";
+  TString LIBMCFM="libmcfm_705.so";
 
   gSystem->AddIncludePath("-I$ROOFITSYS/include/");
   gSystem->AddIncludePath("-I$CMSSW_BASE/interface/");
