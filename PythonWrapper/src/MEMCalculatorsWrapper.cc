@@ -16,11 +16,12 @@ MEMCalculatorsWrapper::computeAngles(TLorentzVector Z1_lept1, int Z1_lept1Id,
 		   TLorentzVector Z2_lept1, int Z2_lept1Id,
 		   TLorentzVector Z2_lept2, int Z2_lept2Id) {
     Angles ret;
-    TUtil::computeAngles(Z1_lept1,Z1_lept1Id,
-                        Z1_lept2,Z1_lept2Id,
-                        Z2_lept1,Z2_lept1Id,
-                        Z2_lept2,Z2_lept2Id,
-                    ret.costhetastar,ret.costheta1,ret.costheta2,ret.phi,ret.phistar1);
+    TUtil::computeAngles(ret.costhetastar, ret.costheta1, ret.costheta2, ret.phi, ret.phistar1,
+      Z1_lept1, Z1_lept1Id,
+      Z1_lept2, Z1_lept2Id,
+      Z2_lept1, Z2_lept1Id,
+      Z2_lept2, Z2_lept2Id
+      );
     return ret;
   }
 
