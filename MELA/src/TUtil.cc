@@ -4,6 +4,7 @@
 #include <utility>
 #include <algorithm>
 #include <cassert>
+#include "MELAStreamHelpers.hh"
 #include "TJHUGenUtils.hh"
 #include "TUtil.hh"
 #include "TMath.h"
@@ -13,6 +14,8 @@
 using namespace std;
 using TVar::event_scales_type;
 using TVar::simple_event_record;
+using MELAStreamHelpers::MELAout;
+using MELAStreamHelpers::MELAerr;
 using namespace TJHUGenUtils;
 
 
@@ -198,15 +201,15 @@ std::pair<TLorentzVector, TLorentzVector> TUtil::ComplexBoost(TVector3 beta, TLo
 
 /***** Decay angles *****/
 void TUtil::computeAngles(
-  TLorentzVector p4M11, int Z1_lept1Id,
-  TLorentzVector p4M12, int Z1_lept2Id,
-  TLorentzVector p4M21, int Z2_lept1Id,
-  TLorentzVector p4M22, int Z2_lept2Id,
   float& costhetastar,
   float& costheta1,
   float& costheta2,
   float& Phi,
-  float& Phi1
+  float& Phi1,
+  TLorentzVector p4M11, int Z1_lept1Id,
+  TLorentzVector p4M12, int Z1_lept2Id,
+  TLorentzVector p4M21, int Z2_lept1Id,
+  TLorentzVector p4M22, int Z2_lept2Id
   ){
   TLorentzVector nullFourVector(0, 0, 0, 0);
   if (p4M12==nullFourVector || p4M22==nullFourVector){
@@ -234,7 +237,7 @@ void TUtil::computeAngles(
 
   // Sort Z1 leptons so that:
   if (
-    Z1_lept2Id!=9000
+    Z1_lept2Id!=-9000
     &&
     (
     (Z1_lept1Id*Z1_lept2Id<0 && Z1_lept1Id<0) // for OS pairs: lep1 must be the negative one
@@ -244,7 +247,7 @@ void TUtil::computeAngles(
     ) swap(p4M11, p4M12);
   // Same for Z2 leptons
   if (
-    Z2_lept2Id!=9000
+    Z2_lept2Id!=-9000
     &&
     (
     (Z2_lept1Id*Z2_lept2Id<0 && Z2_lept1Id<0)
@@ -276,7 +279,7 @@ void TUtil::computeAngles(
   if (!(fabs(Z1_lept1Id)==21 || fabs(Z1_lept1Id)==22 || fabs(Z1_lept2Id)==21 || fabs(Z1_lept2Id)==22)){
     boostV1 = -(p4Z1.BoostVector());
     if (boostV1.Mag()>=1.) {
-      cout << "Warning: Mela::computeAngles: Z1 boost with beta=1, scaling down" << endl;
+      MELAout << "Warning: Mela::computeAngles: Z1 boost with beta=1, scaling down" << endl;
       boostV1*=0.9999/boostV1.Mag();
     }
     TLorentzVector p4M11_BV1(p4M11);
@@ -298,7 +301,7 @@ void TUtil::computeAngles(
   if (!(fabs(Z2_lept1Id)==21 || fabs(Z2_lept1Id)==22 || fabs(Z2_lept2Id)==21 || fabs(Z2_lept2Id)==22)){
     boostV2 = -(p4Z2.BoostVector());
     if (boostV2.Mag()>=1.) {
-      cout << "Warning: Mela::computeAngles: Z2 boost with beta=1, scaling down" << endl;
+      MELAout << "Warning: Mela::computeAngles: Z2 boost with beta=1, scaling down" << endl;
       boostV2*=0.9999/boostV2.Mag();
     }
     TLorentzVector p4M11_BV2(p4M11);
@@ -353,27 +356,27 @@ void TUtil::computeAngles(
   Phi1 = sgnPhi1 * acos(dot_BX1SC);
 
   if (isnan(costhetastar) || isnan(costheta1) || isnan(costheta2) || isnan(Phi) || isnan(Phi1)){
-    cout << "WARNING: NaN in computeAngles: "
+    MELAout << "WARNING: NaN in computeAngles: "
       << costhetastar << " "
       << costheta1  << " "
       << costheta2  << " "
       << Phi  << " "
       << Phi1  << " " << endl;
-    cout << "   boostV1: " <<boostV1.Pt() << " " << boostV1.Eta() << " " << boostV1.Phi() << " " << boostV1.Mag() << endl;
-    cout << "   boostV2: " <<boostV2.Pt() << " " << boostV2.Eta() << " " << boostV2.Phi() << " " << boostV2.Mag() << endl;
+    MELAout << "   boostV1: " <<boostV1.Pt() << " " << boostV1.Eta() << " " << boostV1.Phi() << " " << boostV1.Mag() << endl;
+    MELAout << "   boostV2: " <<boostV2.Pt() << " " << boostV2.Eta() << " " << boostV2.Phi() << " " << boostV2.Mag() << endl;
   }
 }
 void TUtil::computeAnglesCS(
-  TLorentzVector p4M11, int Z1_lept1Id,
-  TLorentzVector p4M12, int Z1_lept2Id,
-  TLorentzVector p4M21, int Z2_lept1Id,
-  TLorentzVector p4M22, int Z2_lept2Id,
   float pbeam,
   float& costhetastar,
   float& costheta1,
   float& costheta2,
   float& Phi,
-  float& Phi1
+  float& Phi1,
+  TLorentzVector p4M11, int Z1_lept1Id,
+  TLorentzVector p4M12, int Z1_lept2Id,
+  TLorentzVector p4M21, int Z2_lept1Id,
+  TLorentzVector p4M22, int Z2_lept2Id
   ){
   TLorentzVector nullFourVector(0, 0, 0, 0);
   if (p4M12==nullFourVector || p4M22==nullFourVector){
@@ -575,7 +578,7 @@ void TUtil::computeAnglesCS(
   else costheta2=0;
 
   if (isnan(costhetastar) || isnan(costheta1) || isnan(costheta2) || isnan(Phi) || isnan(Phi1)){
-    cout << "WARNING: NaN in computeAngles: "
+    MELAout << "WARNING: NaN in computeAngles: "
       << costhetastar << " "
       << costheta1  << " "
       << costheta2  << " "
@@ -585,7 +588,7 @@ void TUtil::computeAnglesCS(
 }
 
 /***** Associated production angles *****/
-void TUtil::computeVBFangles(
+void TUtil::computeVBFAngles(
   float& costhetastar,
   float& costheta1,
   float& costheta2,
@@ -737,7 +740,7 @@ void TUtil::computeVBFangles(
   costheta1 = V1.Vect().Unit().Dot(fermion1.Vect().Unit());
   costheta2 = V2.Vect().Unit().Dot(fermion2.Vect().Unit());
 }
-void TUtil::computeVBFangles_ComplexBoost(
+void TUtil::computeVBFAngles_ComplexBoost(
   float& costhetastar,
   float& costheta1_real, float& costheta1_imag,
   float& costheta2_real, float& costheta2_imag,
@@ -885,7 +888,7 @@ void TUtil::computeVBFangles_ComplexBoost(
   Q2V1 = -(V1.M2());
   Q2V2 = -(V2.M2());
 
-  // Up to here, everything has to be the same as TUtil::computeVBFangles
+  // Up to here, everything has to be the same as TUtil::computeVBFAngles
   // Computations that would have been truly in the frame of X had V1 and V2 not been virtual:
   // Use TUtil::ComplexBoost to evade imaginary gamma problems when beta**2<0
   pair<TLorentzVector, TLorentzVector> V2_BV1 = TUtil::ComplexBoost(V1.BoostVector(), V2);
@@ -898,7 +901,7 @@ void TUtil::computeVBFangles_ComplexBoost(
   costheta2_real = -(V1_BV2.first.Vect().Unit().Dot(fermion2_BV2.first.Vect().Unit()) - V1_BV2.second.Vect().Unit().Dot(fermion2_BV2.second.Vect().Unit()));
   costheta2_imag = -(V1_BV2.first.Vect().Unit().Dot(fermion2_BV2.second.Vect().Unit()) + V1_BV2.second.Vect().Unit().Dot(fermion2_BV2.first.Vect().Unit()));
 }
-void TUtil::computeVHangles(
+void TUtil::computeVHAngles(
   float& costhetastar,
   float& costheta1,
   float& costheta2,
@@ -1024,16 +1027,16 @@ void TUtil::computeVHangles(
   }
 
   TUtil::computeAngles(
-    -P1, 23, // Id is 23 to avoid an attempt to remove quark mass
-    -P2, 0, // Id is 0 to avoid swapping
-    jet1massless, 23,
-    jet2massless, 0,
     costhetastar,
     costheta1,
     costheta2,
     Phi,
-    Phi1
-    );
+    Phi1,
+    -P1, 23, // Id is 23 to avoid an attempt to remove quark mass
+    -P2, 0, // Id is 0 to avoid swapping
+    jet1massless, 23,
+    jet2massless, 0
+  );
 }
 
 
@@ -1360,7 +1363,7 @@ double TUtil::InterpretScaleScheme(const TVar::Production& production, const TVa
   }
 
   if (Q<=0.){
-    cerr << "Scaling fails for production " << production << ", defaulting to dynamic scheme m3456 " << endl;
+    MELAerr << "Scaling fails for production " << production << ", defaulting to dynamic scheme m3456 " << endl;
     TLorentzVector pTotal = p[2]+p[3]+p[4]+p[5];
     Q = fabs(pTotal.M());
   }
@@ -1369,12 +1372,12 @@ double TUtil::InterpretScaleScheme(const TVar::Production& production, const TVa
 void TUtil::SetAlphaS(double& Q_ren, double& Q_fac, double multiplier_ren, double multiplier_fac, int mynloop, int mynflav, string mypartons){
   bool hasReset=false;
   if (multiplier_ren<=0. || multiplier_fac<=0.){
-    cerr << "TUtil::SetAlphaS: Invalid scale multipliers" << endl;
+    MELAerr << "TUtil::SetAlphaS: Invalid scale multipliers" << endl;
     return;
   }
   if (Q_ren<=1. || Q_fac<=1. || mynloop<=0 || mypartons.compare("Default")==0){
-    if (Q_ren<0.) cout << "TUtil::SetAlphaS: Invalid QCD scale for alpha_s, setting to mH/2..." << endl;
-    if (Q_fac<0.) cout << "TUtil::SetAlphaS: Invalid factorization scale, setting to mH/2..." << endl;
+    if (Q_ren<0.) MELAout << "TUtil::SetAlphaS: Invalid QCD scale for alpha_s, setting to mH/2..." << endl;
+    if (Q_fac<0.) MELAout << "TUtil::SetAlphaS: Invalid factorization scale, setting to mH/2..." << endl;
     Q_ren = (masses_mcfm_.hmass)*0.5;
     Q_fac = Q_ren;
     mynloop = 1;
@@ -1387,12 +1390,12 @@ void TUtil::SetAlphaS(double& Q_ren, double& Q_fac, double multiplier_ren, doubl
 
   /***** MCFM Alpha_S *****/
   bool nflav_is_same = (nflav_.nflav == mynflav);
-  if (!nflav_is_same) cout << "TUtil::SetAlphaS: nflav=" << nflav_.nflav << " is the only one supported." << endl;
+  if (!nflav_is_same) MELAout << "TUtil::SetAlphaS: nflav=" << nflav_.nflav << " is the only one supported." << endl;
   scale_.scale = Q_ren;
   scale_.musq = Q_ren*Q_ren;
   facscale_.facscale = Q_fac;
   if (mynloop!=1){
-    cout << "TUtil::SetAlphaS: Only nloop=1 is supported!" << endl;
+    MELAout << "TUtil::SetAlphaS: Only nloop=1 is supported!" << endl;
     mynloop=1;
   }
   nlooprun_.nlooprun = mynloop;
@@ -1402,7 +1405,7 @@ void TUtil::SetAlphaS(double& Q_ren, double& Q_fac, double multiplier_ren, doubl
   ///// Disabling alpha_s computation from MCFM to replace with the JHUGen implementation, allows LHAPDF interface readily /////
   // For proper pdfwrapper_linux.f execution (alpha_s computation does not use pdf but examines the pdf name to initialize amz.)
   if (mypartons.compare("Default")!=0 && mypartons.compare("cteq6_l")!=0 && mypartons.compare("cteq6l1")!=0){
-  cout << "Only default=cteq6l1 or cteq6_l are supported. Modify mela.cc symlinks, put the pdf table into data/Pdfdata and retry. Setting mypartons to Default..." << endl;
+  MELAout << "Only default=cteq6l1 or cteq6_l are supported. Modify mela.cc symlinks, put the pdf table into data/Pdfdata and retry. Setting mypartons to Default..." << endl;
   mypartons = "Default";
   }
   // From pdfwrapper_linux.f:
@@ -1434,8 +1437,8 @@ void TUtil::SetAlphaS(double& Q_ren, double& Q_fac, double multiplier_ren, doubl
   // TEST RUNNING SCALE PER EVENT:
   /*
   if(verbosity >= TVar::DEBUG){
-  cout << "My pdf is: " << pdlabel_.pdlabel << endl;
-  cout << "My Q_ren: " << Q_ren << " | My alpha_s: " << qcdcouple_.as << " at order " << nlooprun_.nlooprun << " with a(m_Z): " << couple_.amz << '\t'
+  MELAout << "My pdf is: " << pdlabel_.pdlabel << endl;
+  MELAout << "My Q_ren: " << Q_ren << " | My alpha_s: " << qcdcouple_.as << " at order " << nlooprun_.nlooprun << " with a(m_Z): " << couple_.amz << '\t'
   << "Nflav: " << nflav_.nflav << endl;
   */
 }
@@ -1466,7 +1469,7 @@ bool TUtil::MCFM_chooser(
   //if (ndau>=4) isZJJ = (PDGHelpers::isAZBoson(mela_event.intermediateVid.at(0)) && PDGHelpers::isAJet(pId[2]) && PDGHelpers::isAJet(pId[3])); // Notice both isZZ and isZJJ could be true
   //bool isZG = (ndau>=3 && PDGHelpers::isAZBoson(mela_event.intermediateVid.at(0)) && PDGHelpers::isAPhoton(mela_event.intermediateVid.at(1)));
   //bool isGG = (ndau>=2 && PDGHelpers::isAPhoton(mela_event.intermediateVid.at(0)) && PDGHelpers::isAPhoton(mela_event.intermediateVid.at(1)));
-  if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: isWW=" << (int)isWW << ", isZZ=" << (int)isZZ << ", hasZZ4fInterf=" << (int)hasZZ4fInterf << endl;
+  if (verbosity>=TVar::DEBUG) MELAout << "TUtil::MCFM_chooser: isWW=" << (int)isWW << ", isZZ=" << (int)isZZ << ", hasZZ4fInterf=" << (int)hasZZ4fInterf << endl;
 
   npart_.npart=4; // Default number of particles is just 4, indicating no associated particles
   sprintf(runstring_.runstring, "test");
@@ -1503,7 +1506,7 @@ bool TUtil::MCFM_chooser(
       interference_.interference=true;
     }
 
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
   else if (
@@ -1524,7 +1527,7 @@ bool TUtil::MCFM_chooser(
     breit_.width3=masses_mcfm_.wwidth;
     srdiags_.srdiags=true;
 
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
   else if (
@@ -1548,7 +1551,7 @@ bool TUtil::MCFM_chooser(
     breit_.mass3=masses_mcfm_.zmass;
     breit_.width3=masses_mcfm_.zwidth;
 
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
   else if (
@@ -1569,7 +1572,7 @@ bool TUtil::MCFM_chooser(
     breit_.width3=masses_mcfm_.zwidth;
     nwz_.nwz=0; ckmfill_(&(nwz_.nwz));
 
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
   else if (
@@ -1605,7 +1608,7 @@ bool TUtil::MCFM_chooser(
       interference_.interference=true;
     }
 
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
   else if (
@@ -1632,7 +1635,7 @@ bool TUtil::MCFM_chooser(
     breit_.n3=1;
     nuflav_.nuflav=1; // Keep this at 1. Mela controls how many flavors in a more exact way.
 
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
   // JJ + ZZ->4f
@@ -1676,7 +1679,7 @@ bool TUtil::MCFM_chooser(
       interference_.interference=true;
     }
 
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
   // JJ + WW->4f
@@ -1713,7 +1716,7 @@ bool TUtil::MCFM_chooser(
     breit_.mass3 =masses_mcfm_.wmass;
     breit_.width3=masses_mcfm_.wwidth;
 
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
   // JJ + VV->4f
@@ -1750,7 +1753,7 @@ bool TUtil::MCFM_chooser(
     breit_.mass3 =masses_mcfm_.wmass;
     breit_.width3=masses_mcfm_.wwidth;
 
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
   // JJ + ZZ->4f (QCD)
@@ -1788,7 +1791,7 @@ bool TUtil::MCFM_chooser(
       interference_.interference=true;
     }
 
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
     // JJ + WW->4f (QCD)
@@ -1819,7 +1822,7 @@ bool TUtil::MCFM_chooser(
     breit_.mass3 =masses_mcfm_.wmass;
     breit_.width3=masses_mcfm_.wwidth;
 
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::MCFM_chooser: Setup is (production, process)=(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << ")" << endl;
 
   }
     // JJ + VV->4f (QCD)
@@ -1834,16 +1837,16 @@ bool TUtil::MCFM_chooser(
     ((isZZ || isWW) && process==TVar::bkgWWZZ)
     ){
     // Procsss 2261 (not supported yet)
-    cerr << "TUtil::MCFM_chooser: MCFM does not support QCD JJ+VV->4f interaction yet. Please contact the MELA authors if you need more information." << endl;
+    MELAerr << "TUtil::MCFM_chooser: MCFM does not support QCD JJ+VV->4f interaction yet. Please contact the MELA authors if you need more information." << endl;
     result = false;
 
   }
   else{
-    cerr << "TUtil::MCFM_chooser: Can't identify (process, production) = (" << process << ", " << production << ")" << endl;
-    cerr << "TUtil::MCFM_chooser: ndau: " << ndau << '\t';
-    cerr << "TUtil::MCFM_chooser: isZZ: " << isZZ << '\t';
-    cerr << "TUtil::MCFM_chooser: isWW: " << isWW << '\t';
-    cerr << endl;
+    MELAerr << "TUtil::MCFM_chooser: Can't identify (process, production) = (" << process << ", " << production << ")" << endl;
+    MELAerr << "TUtil::MCFM_chooser: ndau: " << ndau << '\t';
+    MELAerr << "TUtil::MCFM_chooser: isZZ: " << isZZ << '\t';
+    MELAerr << "TUtil::MCFM_chooser: isWW: " << isWW << '\t';
+    MELAerr << endl;
     result = false;
   }
 
@@ -1886,7 +1889,7 @@ bool TUtil::MCFM_SetupParticleCouplings(
   bool hasW1 = isWW;
   bool hasW2 = isWW;
   if (verbosity>=TVar::DEBUG){
-    cout << "TUtil::MCFM_SetupParticleCouplings(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << "):\nInitial configuration is ";
+    MELAout << "TUtil::MCFM_SetupParticleCouplings(" << TVar::ProductionName(production) << ", " << TVar::ProcessName(process) << "):\nInitial configuration is ";
     vector<TString> strcfgs;
     if (isGG) strcfgs.push_back(TString("GG"));
     if (isZG) strcfgs.push_back(TString("ZG"));
@@ -1895,13 +1898,13 @@ bool TUtil::MCFM_SetupParticleCouplings(
     if (isWW) strcfgs.push_back(TString("WW"));
     if (!strcfgs.empty()){
       for (unsigned int istr=0; istr<strcfgs.size(); istr++){
-        if (istr==0) cout << strcfgs.at(istr);
-        else cout << ", " << strcfgs.at(istr);
+        if (istr==0) MELAout << strcfgs.at(istr);
+        else MELAout << ", " << strcfgs.at(istr);
       }
-      cout << ".";
+      MELAout << ".";
     }
-    else cout << "has no valid decay!";
-    cout << endl;
+    else MELAout << "has no valid decay!";
+    MELAout << endl;
   }
 
   // Setup the ordering arrays
@@ -1988,9 +1991,9 @@ bool TUtil::MCFM_SetupParticleCouplings(
         swap(hasZ1, hasZ2);
       }
       if (verbosity>=TVar::DEBUG){
-        if (hasZ1) cout << "TUtil::MCFM_SetupParticleCouplings: Found a Z1";
-        if (hasZ2) cout << " and a Z2";
-        if (hasZ1 || hasZ2) cout << " in WW." << endl;
+        if (hasZ1) MELAout << "TUtil::MCFM_SetupParticleCouplings: Found a Z1";
+        if (hasZ2) MELAout << " and a Z2";
+        if (hasZ1 || hasZ2) MELAout << " in WW." << endl;
       }
     }
     if (isZZ && !hasW1 && !hasW2){
@@ -2010,9 +2013,9 @@ bool TUtil::MCFM_SetupParticleCouplings(
         hasW2=true;
       }
       if (verbosity>=TVar::DEBUG){
-        if (hasW1) cout << "TUtil::MCFM_SetupParticleCouplings: Found a W1(" << V1id << ")";
-        if (hasW2) cout << " and a W2(" << V2id << ")";
-        if (hasW1 || hasW2) cout << " in ZZ." << endl;
+        if (hasW1) MELAout << "TUtil::MCFM_SetupParticleCouplings: Found a W1(" << V1id << ")";
+        if (hasW2) MELAout << " and a W2(" << V2id << ")";
+        if (hasW1 || hasW2) MELAout << " in ZZ." << endl;
       }
     }
 
@@ -2024,14 +2027,14 @@ bool TUtil::MCFM_SetupParticleCouplings(
     strplabel[0]="pp";
     strplabel[1]="pp";
     if (useQQVVQQany){ // Special case if using qqZZ/VVqq*
-      if (verbosity>=TVar::DEBUG) cout << "TUtil::MCFM_SetupParticleCouplings: Setting up mother labels for MCFM:";
+      if (verbosity>=TVar::DEBUG) MELAout << "TUtil::MCFM_SetupParticleCouplings: Setting up mother labels for MCFM:";
       for (int ip=0; ip<min(2, (int)mela_event.pMothers.size()); ip++){
         const int* idmot = &(mela_event.pMothers.at(ip).first);
         if (!PDGHelpers::isAnUnknownJet((*idmot))) strplabel[ip]=TUtil::GetMCFMParticleLabel(*idmot, false, useQQVVQQany);
-        if (verbosity>=TVar::DEBUG) cout << " " << *idmot << "=" << strplabel[ip];
+        if (verbosity>=TVar::DEBUG) MELAout << " " << *idmot << "=" << strplabel[ip];
         // No need to check unknown parton case, already "pp"
       }
-      if (verbosity>=TVar::DEBUG) cout << endl;
+      if (verbosity>=TVar::DEBUG) MELAout << endl;
     }
 
     // Decay and associated particles
@@ -2498,7 +2501,7 @@ bool TUtil::MCFM_SetupParticleCouplings(
     if (isWW && (production == TVar::ZZINDEPENDENT || production == TVar::ZZQQB) && process == TVar::bkgWW){} // Skip this one, already handled above
     else if (hasZ1){
       if (PDGHelpers::isALepton(pId[pZOrder[0]]) && PDGHelpers::isALepton(pId[pZOrder[1]])){
-        if (verbosity>=TVar::DEBUG) cout << "- Setting Z1->ll couplings." << endl;
+        if (verbosity>=TVar::DEBUG) MELAout << "- Setting Z1->ll couplings." << endl;
 
         zcouple_.q1=-1.0;
         zcouple_.l1=zcouple_.le;
@@ -2516,7 +2519,7 @@ bool TUtil::MCFM_SetupParticleCouplings(
         // End special Z1->ll cases
       }
       else if (PDGHelpers::isANeutrino(pId[pZOrder[0]]) && PDGHelpers::isANeutrino(pId[pZOrder[1]])){
-        if (verbosity>=TVar::DEBUG) cout << "- Setting Z1->nn couplings." << endl;
+        if (verbosity>=TVar::DEBUG) MELAout << "- Setting Z1->nn couplings." << endl;
 
         zcouple_.q1=0;
         zcouple_.l1=zcouple_.ln;
@@ -2534,7 +2537,7 @@ bool TUtil::MCFM_SetupParticleCouplings(
         // End special Z1->nn cases
       }
       else if (PDGHelpers::isAJet(pId[pZOrder[0]]) && PDGHelpers::isAJet(pId[pZOrder[1]])){
-        if (verbosity>=TVar::DEBUG) cout << "- Setting Z1->jj couplings." << endl;
+        if (verbosity>=TVar::DEBUG) MELAout << "- Setting Z1->jj couplings." << endl;
 
         nqcdjets_.nqcdjets += 2;
         int jetid=(PDGHelpers::isAnUnknownJet(pId[pZOrder[0]]) ? abs(pId[pZOrder[1]]) : abs(pId[pZOrder[0]]));
@@ -2604,7 +2607,7 @@ bool TUtil::MCFM_SetupParticleCouplings(
       ){}
     else if (hasZ2){
       if (PDGHelpers::isALepton(pId[pZOrder[2]]) && PDGHelpers::isALepton(pId[pZOrder[3]])){
-        if (verbosity>=TVar::DEBUG) cout << "- Setting Z2->ll couplings." << endl;
+        if (verbosity>=TVar::DEBUG) MELAout << "- Setting Z2->ll couplings." << endl;
         zcouple_.q2=-1.0;
         zcouple_.l2=zcouple_.le;
         zcouple_.r2=zcouple_.re;
@@ -2617,7 +2620,7 @@ bool TUtil::MCFM_SetupParticleCouplings(
         // End special Z2->ll cases
       }
       else if (PDGHelpers::isANeutrino(pId[pZOrder[2]]) && PDGHelpers::isANeutrino(pId[pZOrder[3]])){
-        if (verbosity>=TVar::DEBUG) cout << "- Setting Z2->nn couplings." << endl;
+        if (verbosity>=TVar::DEBUG) MELAout << "- Setting Z2->nn couplings." << endl;
         zcouple_.q2=0;
         zcouple_.l2=zcouple_.ln;
         zcouple_.r2=zcouple_.rn;
@@ -2630,7 +2633,7 @@ bool TUtil::MCFM_SetupParticleCouplings(
         // End special Z2->nn cases
       }
       else if (PDGHelpers::isAJet(pId[pZOrder[2]]) && PDGHelpers::isAJet(pId[pZOrder[3]])){
-        if (verbosity>=TVar::DEBUG) cout << "- Setting Z2->jj couplings." << endl;
+        if (verbosity>=TVar::DEBUG) MELAout << "- Setting Z2->jj couplings." << endl;
 
         nqcdjets_.nqcdjets += 2;
         int jetid=(PDGHelpers::isAnUnknownJet(pId[pZOrder[2]]) ? abs(pId[pZOrder[3]]) : abs(pId[pZOrder[2]]));
@@ -2774,27 +2777,27 @@ bool TUtil::MCFM_SetupParticleCouplings(
   for (int ip=0; ip<mxpart; ip++) sprintf((plabel_.plabel)[ip], strplabel[ip].Data());
 
   if (verbosity>=TVar::DEBUG){
-    cout << "TUtil::MCFM_SetupParticleCouplings: Summary (result=" << (int)result << "):\n";
+    MELAout << "TUtil::MCFM_SetupParticleCouplings: Summary (result=" << (int)result << "):\n";
 
-    cout << "\trunstring=" << runstring_.runstring << endl;
+    MELAout << "\trunstring=" << runstring_.runstring << endl;
 
-    if (hasZ1) cout << "\tProcess found a Z1." << endl;
-    if (hasZ2) cout << "\tProcess found a Z2." << endl;
-    if (hasW1) cout << "\tProcess found a W1." << endl;
-    if (hasW2) cout << "\tProcess found a W2." << endl;
-    cout << "\t(l1, l2) = (" << zcouple_.l1 << ", " << zcouple_.l2 << ")" << endl;
-    cout << "\t(r1, r2) = (" << zcouple_.r1 << ", " << zcouple_.r2 << ")" << endl;
-    cout << "\t(q1, q2) = (" << zcouple_.q1 << ", " << zcouple_.q2 << ")" << endl;
+    if (hasZ1) MELAout << "\tProcess found a Z1." << endl;
+    if (hasZ2) MELAout << "\tProcess found a Z2." << endl;
+    if (hasW1) MELAout << "\tProcess found a W1." << endl;
+    if (hasW2) MELAout << "\tProcess found a W2." << endl;
+    MELAout << "\t(l1, l2) = (" << zcouple_.l1 << ", " << zcouple_.l2 << ")" << endl;
+    MELAout << "\t(r1, r2) = (" << zcouple_.r1 << ", " << zcouple_.r2 << ")" << endl;
+    MELAout << "\t(q1, q2) = (" << zcouple_.q1 << ", " << zcouple_.q2 << ")" << endl;
 
-    cout << "\tplabels:\n";
-    for (int ip=0; ip<mxpart; ip++) cout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
+    MELAout << "\tplabels:\n";
+    for (int ip=0; ip<mxpart; ip++) MELAout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
     if (partOrder!=0){
-      if (partOrder->size()>0) cout << "\tpartOrder[" << partOrder->size() << "]:\n";
-      for (unsigned int ip=0; ip<partOrder->size(); ip++) cout << "\t[" << ip << "] -> " << partOrder->at(ip) << endl;
+      if (partOrder->size()>0) MELAout << "\tpartOrder[" << partOrder->size() << "]:\n";
+      for (unsigned int ip=0; ip<partOrder->size(); ip++) MELAout << "\t[" << ip << "] -> " << partOrder->at(ip) << endl;
     }
     if (apartOrder!=0){
-      if (apartOrder->size()>0) cout << "\tapartOrder[" << apartOrder->size() << "]:\n";
-      for (unsigned int ip=0; ip<apartOrder->size(); ip++) cout << "\t[" << ip << "] -> " << apartOrder->at(ip) << endl;
+      if (apartOrder->size()>0) MELAout << "\tapartOrder[" << apartOrder->size() << "]:\n";
+      for (unsigned int ip=0; ip<apartOrder->size(); ip++) MELAout << "\t[" << ip << "] -> " << apartOrder->at(ip) << endl;
     }
   }
 
@@ -3571,7 +3574,7 @@ double TUtil::SumMatrixElementPDF(
   const double& EBEAM,
   TVar::VerbosityLevel verbosity
   ){
-  if (verbosity>=TVar::DEBUG) cout << "Begin SumMatrixElementPDF" << endl;
+  if (verbosity>=TVar::DEBUG) MELAout << "Begin SumMatrixElementPDF" << endl;
   double msqjk=0;
 
   int nRequested_AssociatedJets=0;
@@ -3581,7 +3584,7 @@ double TUtil::SumMatrixElementPDF(
   if (production==TVar::JQCD){ // Use asociated jets in the pT=0 frame boost
     partIncCode=TVar::kUseAssociated_Jets;
     nRequested_AssociatedJets = 1;
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::SumMatrixElementPDF: Requesting " << nRequested_AssociatedJets << " jets" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::SumMatrixElementPDF: Requesting " << nRequested_AssociatedJets << " jets" << endl;
   }
   else if (
     production==TVar::Had_WH || production==TVar::Had_ZH
@@ -3594,7 +3597,7 @@ double TUtil::SumMatrixElementPDF(
     ){ // Use asociated jets in the pT=0 frame boost
     partIncCode=TVar::kUseAssociated_Jets;
     nRequested_AssociatedJets = 2;
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::SumMatrixElementPDF: Requesting " << nRequested_AssociatedJets << " jets" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::SumMatrixElementPDF: Requesting " << nRequested_AssociatedJets << " jets" << endl;
   }
   else if (
     production==TVar::Lep_ZH || production==TVar::Lep_WH
@@ -3636,14 +3639,14 @@ double TUtil::SumMatrixElementPDF(
   if (doProceed){
     if (partOrder.size()!=mela_event.pDaughters.size()){
       if (verbosity >= TVar::ERROR){
-        cerr << "TUtil::SumMatrixElementPDF: Ordering size " << partOrder.size() << " and number of daughter particles " << mela_event.pDaughters.size() << " are not the same!" << endl;
+        MELAerr << "TUtil::SumMatrixElementPDF: Ordering size " << partOrder.size() << " and number of daughter particles " << mela_event.pDaughters.size() << " are not the same!" << endl;
         TUtil::PrintCandidateSummary(&mela_event);
       }
       doProceed=false;
     }
     if (apartOrder.size()!=mela_event.pAssociated.size()){
       if (verbosity >= TVar::ERROR){
-        cerr << "TUtil::SumMatrixElementPDF: Ordering size " << apartOrder.size() << " and number of associated particles " << mela_event.pAssociated.size() << " are not the same!" << endl;
+        MELAerr << "TUtil::SumMatrixElementPDF: Ordering size " << apartOrder.size() << " and number of associated particles " << mela_event.pAssociated.size() << " are not the same!" << endl;
         TUtil::PrintCandidateSummary(&mela_event);
       }
       doProceed=false;
@@ -3710,7 +3713,7 @@ double TUtil::SumMatrixElementPDF(
       id[ipar] = mela_event.pAssociated.at(apartOrder.at(ix)).first;
     }
 
-    if (verbosity >= TVar::DEBUG){ for (int i=0; i<NPart; i++) cout << "p["<<i<<"] (Px, Py, Pz, E):\t" << p4[0][i] << '\t' << p4[1][i] << '\t' << p4[2][i] << '\t' << p4[3][i] << endl; }
+    if (verbosity >= TVar::DEBUG){ for (int i=0; i<NPart; i++) MELAout << "p["<<i<<"] (Px, Py, Pz, E):\t" << p4[0][i] << '\t' << p4[1][i] << '\t' << p4[2][i] << '\t' << p4[3][i] << endl; }
 
     double defaultRenScale = scale_.scale;
     double defaultFacScale = facscale_.facscale;
@@ -3729,7 +3732,7 @@ double TUtil::SumMatrixElementPDF(
     RcdME->setHiggsMassWidth(masses_mcfm_.hmass, masses_mcfm_.hwidth, 0);
     RcdME->setHiggsMassWidth(spinzerohiggs_anomcoupl_.h2mass, spinzerohiggs_anomcoupl_.h2width, 1);
     if (verbosity>=TVar::DEBUG){
-      cout
+      MELAout
         << "TUtil::SumMatrixElementPDF: Set AlphaS:\n"
         << "\tBefore set, alphas scale: " << defaultRenScale << ", PDF scale: " << defaultFacScale << '\n'
         << "\trenQ: " << renQ << " ( x " << event_scales->ren_scale_factor << "), facQ: " << facQ << " ( x " << event_scales->fac_scale_factor << ")\n"
@@ -3792,8 +3795,8 @@ double TUtil::SumMatrixElementPDF(
         else if (process==TVar::bkgWWZZ) gg_vv_(p4[0], &(msq[5][5])); // |ggZZ+WW|**2
 
         if (verbosity>=TVar::DEBUG){
-          cout << "\tTUtil::SumMatrixElementPDF: ZZGG && ZZ/WW/ZZ+WW MEs using ZZ (runstring: " << runstring_.runstring << ")" << endl;
-          for (int i=0; i<NPart; i++) cout << "\tp["<<i<<"] (Px, Py, Pz, E):\t" << p4[0][i] << '\t' << p4[1][i] << '\t' << p4[2][i] << '\t' << p4[3][i] << endl;
+          MELAout << "\tTUtil::SumMatrixElementPDF: ZZGG && ZZ/WW/ZZ+WW MEs using ZZ (runstring: " << runstring_.runstring << ")" << endl;
+          for (int i=0; i<NPart; i++) MELAout << "\tp["<<i<<"] (Px, Py, Pz, E):\t" << p4[0][i] << '\t' << p4[1][i] << '\t' << p4[2][i] << '\t' << p4[3][i] << endl;
         }
       }
       else if (isWW){
@@ -3801,8 +3804,8 @@ double TUtil::SumMatrixElementPDF(
         else if (process==TVar::bkgWW_SMHiggs || process==TVar::bkgWWZZ_SMHiggs) gg_vv_all_(p4[0], msq[0]); // |ggZZ + ggHZZ (+WW)|**2
         else if (process==TVar::bkgWW || process==TVar::bkgWWZZ) gg_vv_(p4[0], &(msq[5][5])); // |ggZZ+WW|**2
         if (verbosity>=TVar::DEBUG){
-          cout << "\tTUtil::SumMatrixElementPDF: ZZGG && ZZ/WW/ZZ+WW MEs using WW (runstring: " << runstring_.runstring << ")" << endl;
-          for (int i=0; i<NPart; i++) cout << "\tp["<<i<<"] (Px, Py, Pz, E):\t" << p4[0][i] << '\t' << p4[1][i] << '\t' << p4[2][i] << '\t' << p4[3][i] << endl;
+          MELAout << "\tTUtil::SumMatrixElementPDF: ZZGG && ZZ/WW/ZZ+WW MEs using WW (runstring: " << runstring_.runstring << ")" << endl;
+          for (int i=0; i<NPart; i++) MELAout << "\tp["<<i<<"] (Px, Py, Pz, E):\t" << p4[0][i] << '\t' << p4[1][i] << '\t' << p4[2][i] << '\t' << p4[3][i] << endl;
         }
       }
 
@@ -3878,18 +3881,18 @@ double TUtil::SumMatrixElementPDF(
               }
               qq_zzqq_(p4_tmp[0], msq_tmp[0]);
               if (verbosity>=TVar::DEBUG){
-                cout << "TUtil::SumMatrixElementPDF: Adding missing contributions:\n";
-                cout << "\tplabels:\n";
-                for (int ip=0; ip<mxpart; ip++) cout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
-                cout << "\tMEsq initial:" << endl;
+                MELAout << "TUtil::SumMatrixElementPDF: Adding missing contributions:\n";
+                MELAout << "\tplabels:\n";
+                for (int ip=0; ip<mxpart; ip++) MELAout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
+                MELAout << "\tMEsq initial:" << endl;
                 for (int iquark=-5; iquark<=5; iquark++){
-                  for (int jquark=-5; jquark<=5; jquark++) cout << msq[jquark+5][iquark+5] << '\t';
-                  cout << endl;
+                  for (int jquark=-5; jquark<=5; jquark++) MELAout << msq[jquark+5][iquark+5] << '\t';
+                  MELAout << endl;
                 }
-                cout << "\tMEsq added:" << endl;
+                MELAout << "\tMEsq added:" << endl;
                 for (int iquark=-5; iquark<=5; iquark++){
-                  for (int jquark=-5; jquark<=5; jquark++) cout << msq_tmp[jquark+5][iquark+5] << '\t';
-                  cout << endl;
+                  for (int jquark=-5; jquark<=5; jquark++) MELAout << msq_tmp[jquark+5][iquark+5] << '\t';
+                  MELAout << endl;
                 }
               }
               for (int iquark=-5; iquark<=5; iquark++){
@@ -3920,13 +3923,13 @@ double TUtil::SumMatrixElementPDF(
             qq_zzqqstrong_(p4_tmp[0], msq_tmp[0]);
             for (int iquark=-5; iquark<=5; iquark++){ int jquark=-iquark; msq[jquark+5][iquark+5] = (msq[jquark+5][iquark+5] - msq_tmp[jquark+5][iquark+5]); }
             if (verbosity>=TVar::DEBUG){
-              cout << "TUtil::SumMatrixElementPDF: Subtracting qqb/qbq->gg double-counted contribution:\n";
-              cout << "\tplabels:\n";
-              for (int ip=0; ip<mxpart; ip++) cout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
-              cout << "\tMEsq:" << endl;
+              MELAout << "TUtil::SumMatrixElementPDF: Subtracting qqb/qbq->gg double-counted contribution:\n";
+              MELAout << "\tplabels:\n";
+              for (int ip=0; ip<mxpart; ip++) MELAout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
+              MELAout << "\tMEsq:" << endl;
               for (int iquark=-5; iquark<=5; iquark++){
-                for (int jquark=-5; jquark<=5; jquark++) cout << msq_tmp[jquark+5][iquark+5] << '\t';
-                cout << endl;
+                for (int jquark=-5; jquark<=5; jquark++) MELAout << msq_tmp[jquark+5][iquark+5] << '\t';
+                MELAout << endl;
               }
             }
           }
@@ -3942,18 +3945,18 @@ double TUtil::SumMatrixElementPDF(
             }
             qq_zzqqstrong_(p4_tmp[0], msq_tmp[0]);
             if (verbosity>=TVar::DEBUG){
-              cout << "TUtil::SumMatrixElementPDF: Adding missing contributions:\n";
-              cout << "\tplabels:\n";
-              for (int ip=0; ip<mxpart; ip++) cout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
-              cout << "\tMEsq initial:" << endl;
+              MELAout << "TUtil::SumMatrixElementPDF: Adding missing contributions:\n";
+              MELAout << "\tplabels:\n";
+              for (int ip=0; ip<mxpart; ip++) MELAout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
+              MELAout << "\tMEsq initial:" << endl;
               for (int iquark=-5; iquark<=5; iquark++){
-                for (int jquark=-5; jquark<=5; jquark++) cout << msq[jquark+5][iquark+5] << '\t';
-                cout << endl;
+                for (int jquark=-5; jquark<=5; jquark++) MELAout << msq[jquark+5][iquark+5] << '\t';
+                MELAout << endl;
               }
-              cout << "\tMEsq added:" << endl;
+              MELAout << "\tMEsq added:" << endl;
               for (int iquark=-5; iquark<=5; iquark++){
-                for (int jquark=-5; jquark<=5; jquark++) cout << msq_tmp[jquark+5][iquark+5] << '\t';
-                cout << endl;
+                for (int jquark=-5; jquark<=5; jquark++) MELAout << msq_tmp[jquark+5][iquark+5] << '\t';
+                MELAout << endl;
               }
             }
             for (int iquark=-5; iquark<=5; iquark++){ 
@@ -3997,18 +4000,18 @@ double TUtil::SumMatrixElementPDF(
             }
             qq_wwqq_(p4_tmp[0], msq_tmp[0]);
             if (verbosity>=TVar::DEBUG){
-              cout << "TUtil::SumMatrixElementPDF: Adding missing contributions:\n";
-              cout << "\tplabels:\n";
-              for (int ip=0; ip<mxpart; ip++) cout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
-              cout << "\tMEsq initial:" << endl;
+              MELAout << "TUtil::SumMatrixElementPDF: Adding missing contributions:\n";
+              MELAout << "\tplabels:\n";
+              for (int ip=0; ip<mxpart; ip++) MELAout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
+              MELAout << "\tMEsq initial:" << endl;
               for (int iquark=-5; iquark<=5; iquark++){
-                for (int jquark=-5; jquark<=5; jquark++) cout << msq[jquark+5][iquark+5] << '\t';
-                cout << endl;
+                for (int jquark=-5; jquark<=5; jquark++) MELAout << msq[jquark+5][iquark+5] << '\t';
+                MELAout << endl;
               }
-              cout << "\tMEsq added:" << endl;
+              MELAout << "\tMEsq added:" << endl;
               for (int iquark=-5; iquark<=5; iquark++){
-                for (int jquark=-5; jquark<=5; jquark++) cout << msq_tmp[jquark+5][iquark+5] << '\t';
-                cout << endl;
+                for (int jquark=-5; jquark<=5; jquark++) MELAout << msq_tmp[jquark+5][iquark+5] << '\t';
+                MELAout << endl;
               }
             }
             for (int iquark=-5; iquark<=5; iquark++){
@@ -4038,13 +4041,13 @@ double TUtil::SumMatrixElementPDF(
             qq_wwqqstrong_(p4_tmp[0], msq_tmp[0]);
             for (int iquark=-5; iquark<=5; iquark++){ int jquark=-iquark; msq[jquark+5][iquark+5] = (msq[jquark+5][iquark+5] - msq_tmp[jquark+5][iquark+5]); }
             if (verbosity>=TVar::DEBUG){
-              cout << "TUtil::SumMatrixElementPDF: Subtracting qqb/qbq->gg double-counted contribution:\n";
-              cout << "\tplabels:\n";
-              for (int ip=0; ip<mxpart; ip++) cout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
-              cout << "\tMEsq:" << endl;
+              MELAout << "TUtil::SumMatrixElementPDF: Subtracting qqb/qbq->gg double-counted contribution:\n";
+              MELAout << "\tplabels:\n";
+              for (int ip=0; ip<mxpart; ip++) MELAout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
+              MELAout << "\tMEsq:" << endl;
               for (int iquark=-5; iquark<=5; iquark++){
-                for (int jquark=-5; jquark<=5; jquark++) cout << msq_tmp[jquark+5][iquark+5] << '\t';
-                cout << endl;
+                for (int jquark=-5; jquark<=5; jquark++) MELAout << msq_tmp[jquark+5][iquark+5] << '\t';
+                MELAout << endl;
               }
             }
           }
@@ -4060,18 +4063,18 @@ double TUtil::SumMatrixElementPDF(
             }
             qq_wwqqstrong_(p4_tmp[0], msq_tmp[0]);
             if (verbosity>=TVar::DEBUG){
-              cout << "TUtil::SumMatrixElementPDF: Adding missing contributions:\n";
-              cout << "\tplabels:\n";
-              for (int ip=0; ip<mxpart; ip++) cout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
-              cout << "\tMEsq initial:" << endl;
+              MELAout << "TUtil::SumMatrixElementPDF: Adding missing contributions:\n";
+              MELAout << "\tplabels:\n";
+              for (int ip=0; ip<mxpart; ip++) MELAout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
+              MELAout << "\tMEsq initial:" << endl;
               for (int iquark=-5; iquark<=5; iquark++){
-                for (int jquark=-5; jquark<=5; jquark++) cout << msq[jquark+5][iquark+5] << '\t';
-                cout << endl;
+                for (int jquark=-5; jquark<=5; jquark++) MELAout << msq[jquark+5][iquark+5] << '\t';
+                MELAout << endl;
               }
-              cout << "\tMEsq added:" << endl;
+              MELAout << "\tMEsq added:" << endl;
               for (int iquark=-5; iquark<=5; iquark++){
-                for (int jquark=-5; jquark<=5; jquark++) cout << msq_tmp[jquark+5][iquark+5] << '\t';
-                cout << endl;
+                for (int jquark=-5; jquark<=5; jquark++) MELAout << msq_tmp[jquark+5][iquark+5] << '\t';
+                MELAout << endl;
               }
             }
             for (int iquark=-5; iquark<=5; iquark++){
@@ -4115,18 +4118,18 @@ double TUtil::SumMatrixElementPDF(
             }
             qq_vvqq_(p4_tmp[0], msq_tmp[0]);
             if (verbosity>=TVar::DEBUG){
-              cout << "TUtil::SumMatrixElementPDF: Adding missing contributions:\n";
-              cout << "\tplabels:\n";
-              for (int ip=0; ip<mxpart; ip++) cout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
-              cout << "\tMEsq initial:" << endl;
+              MELAout << "TUtil::SumMatrixElementPDF: Adding missing contributions:\n";
+              MELAout << "\tplabels:\n";
+              for (int ip=0; ip<mxpart; ip++) MELAout << "\t[" << ip << "]=" << (plabel_.plabel)[ip] << endl;
+              MELAout << "\tMEsq initial:" << endl;
               for (int iquark=-5; iquark<=5; iquark++){
-                for (int jquark=-5; jquark<=5; jquark++) cout << msq[jquark+5][iquark+5] << '\t';
-                cout << endl;
+                for (int jquark=-5; jquark<=5; jquark++) MELAout << msq[jquark+5][iquark+5] << '\t';
+                MELAout << endl;
               }
-              cout << "\tMEsq added:" << endl;
+              MELAout << "\tMEsq added:" << endl;
               for (int iquark=-5; iquark<=5; iquark++){
-                for (int jquark=-5; jquark<=5; jquark++) cout << msq_tmp[jquark+5][iquark+5] << '\t';
-                cout << endl;
+                for (int jquark=-5; jquark<=5; jquark++) MELAout << msq_tmp[jquark+5][iquark+5] << '\t';
+                MELAout << endl;
               }
             }
             for (int iquark=-5; iquark<=5; iquark++){
@@ -4160,39 +4163,40 @@ double TUtil::SumMatrixElementPDF(
       ) RcdME->setVDaughterCouplings(0., 0., 1);
 
     if (msqjk != msqjk){
-      if (verbosity>=TVar::ERROR) cout << "TUtil::SumMatrixElementPDF: "<< TVar::ProcessName(process) << " msqjk="  << msqjk << endl;
-      for (int i=0; i<NPart; i++) cout << "p["<<i<<"] (Px, Py, Pz, E):\t" << p4[0][i] << '\t' << p4[1][i] << '\t' << p4[2][i] << '\t' << p4[3][i] << endl;
-      cout << "TUtil::SumMatrixElementPDF: The number of ME instances: " << nInstances << ". MEsq[ip][jp] = " << endl;
+      if (verbosity>=TVar::ERROR) MELAout << "TUtil::SumMatrixElementPDF: "<< TVar::ProcessName(process) << " msqjk="  << msqjk << endl;
+      for (int i=0; i<NPart; i++) MELAout << "p["<<i<<"] (Px, Py, Pz, E):\t" << p4[0][i] << '\t' << p4[1][i] << '\t' << p4[2][i] << '\t' << p4[3][i] << endl;
+      MELAout << "TUtil::SumMatrixElementPDF: The number of ME instances: " << nInstances << ". MEsq[ip][jp] = " << endl;
       for (int iquark=-5; iquark<=5; iquark++){
-        for (int jquark=-5; jquark<=5; jquark++) cout << msq[jquark+5][iquark+5] << '\t';
-        cout << endl;
+        for (int jquark=-5; jquark<=5; jquark++) MELAout << msq[jquark+5][iquark+5] << '\t';
+        MELAout << endl;
       }
       msqjk=0;
     }
     else if (verbosity>=TVar::DEBUG){
-      cout << "TUtil::SumMatrixElementPDF: The number of ME instances: " << nInstances << ". MEsq[ip][jp] = " << endl;
+      MELAout << "TUtil::SumMatrixElementPDF: The number of ME instances: " << nInstances << ". MEsq[ip][jp] = " << endl;
       for (int iquark=-5; iquark<=5; iquark++){
-        for (int jquark=-5; jquark<=5; jquark++) cout << msq[jquark+5][iquark+5] << '\t';
-        cout << endl;
+        for (int jquark=-5; jquark<=5; jquark++) MELAout << msq[jquark+5][iquark+5] << '\t';
+        MELAout << endl;
       }
     }
 
-    if (verbosity>=TVar::DEBUG) cout
+    if (verbosity>=TVar::DEBUG) MELAout
         << "TUtil::SumMatrixElementPDF: Reset AlphaS:\n"
         << "\tBefore reset, alphas scale: " << scale_.scale
         << ", PDF scale: " << facscale_.facscale
         << endl;
     SetAlphaS(defaultRenScale, defaultFacScale, 1., 1., defaultNloop, defaultNflav, defaultPdflabel);
-    if (verbosity>=TVar::DEBUG) cout
+    if (verbosity>=TVar::DEBUG) MELAout
         << "TUtil::SumMatrixElementPDF: Reset AlphaS result:\n"
         << "\tAfter reset, alphas scale: " << scale_.scale
         << ", PDF scale: " << facscale_.facscale
         << endl;
   } // End if doProceed
-  if (verbosity>=TVar::DEBUG) cout << "End TUtil::SumMatrixElementPDF(" << msqjk << ")" << endl;
+  if (verbosity>=TVar::DEBUG) MELAout << "End TUtil::SumMatrixElementPDF(" << msqjk << ")" << endl;
   return msqjk;
 }
 
+// ggHdec+0J or Hdec+0J
 double TUtil::JHUGenMatEl(
   const TVar::Process& process, const TVar::Production& production, const TVar::MatrixElement& matrixElement,
   event_scales_type* event_scales, MelaIO* RcdME,
@@ -4202,7 +4206,7 @@ double TUtil::JHUGenMatEl(
   const double GeV=1./100.; // JHUGen mom. scale factor
   double MatElSq=0; // Return value
 
-  if (matrixElement!=TVar::JHUGen){ if (verbosity>=TVar::ERROR) cerr << "TUtil::JHUGenMatEl: Non-JHUGen MEs are not supported" << endl; return MatElSq; }
+  if (matrixElement!=TVar::JHUGen){ if (verbosity>=TVar::ERROR) MELAerr << "TUtil::JHUGenMatEl: Non-JHUGen MEs are not supported" << endl; return MatElSq; }
   bool isSpinZero = (
     process == TVar::HSMHiggs
     || process == TVar::H0minus
@@ -4234,14 +4238,14 @@ double TUtil::JHUGenMatEl(
     || process == TVar::H2_g10
     || process == TVar::SelfDefine_spin2
     );
-  if (!(isSpinZero || isSpinOne || isSpinTwo)){ if (verbosity>=TVar::ERROR) cerr << "TUtil::JHUGenMatEl: Process " << TVar::ProcessName(process) << " (" << process << ")" << " not supported." << endl; return MatElSq; }
+  if (!(isSpinZero || isSpinOne || isSpinTwo)){ if (verbosity>=TVar::ERROR) MELAerr << "TUtil::JHUGenMatEl: Process " << TVar::ProcessName(process) << " (" << process << ")" << " not supported." << endl; return MatElSq; }
   if (verbosity>=TVar::DEBUG){
-    cout << "TUtil::JHUGenMatEl: Process " << TVar::ProcessName(process) << " is computing a spin-";
-    if (isSpinZero) cout << "0";
-    else if (isSpinOne) cout << "1";
-    else if (isSpinTwo) cout << "2";
-    else cout << "?";
-    cout << " ME with production " << TVar::ProductionName(production) << "." << endl;
+    MELAout << "TUtil::JHUGenMatEl: Process " << TVar::ProcessName(process) << " is computing a spin-";
+    if (isSpinZero) MELAout << "0";
+    else if (isSpinOne) MELAout << "1";
+    else if (isSpinTwo) MELAout << "2";
+    else MELAout << "?";
+    MELAout << " ME with production " << TVar::ProductionName(production) << "." << endl;
   }
 
   double msq[nmsq][nmsq]={ { 0 } }; // ME**2[parton2][parton1] for each incoming parton 1 and 2, used in RcdME
@@ -4264,7 +4268,7 @@ double TUtil::JHUGenMatEl(
     verbosity
     );
   if (mela_event.pDaughters.size()<2 || mela_event.intermediateVid.size()!=2){
-    if (verbosity>=TVar::ERROR) cerr << "TUtil::JHUGenMatEl: Number of daughters " << mela_event.pDaughters.size() << " or number of intermediate Vs " << mela_event.intermediateVid.size() << " not supported!" << endl;
+    if (verbosity>=TVar::ERROR) MELAerr << "TUtil::JHUGenMatEl: Number of daughters " << mela_event.pDaughters.size() << " or number of intermediate Vs " << mela_event.intermediateVid << " not supported!" << endl;
     return MatElSq;
   }
 
@@ -4306,7 +4310,7 @@ double TUtil::JHUGenMatEl(
       p4[arrindex+2][2] = momTmp->Y()*GeV;
       p4[arrindex+2][3] = momTmp->Z()*GeV;
       MomStore[arrindex+2] = *momTmp;
-      if (verbosity >= TVar::DEBUG) cout << "MYIDUP_tmp[" << arrindex << "(" << ipar << ")" << "]=" << MYIDUP_tmp[arrindex] << endl;
+      if (verbosity >= TVar::DEBUG) MELAout << "MYIDUP_tmp[" << arrindex << "(" << ipar << ")" << "]=" << MYIDUP_tmp[arrindex] << endl;
     }
   }
   else{
@@ -4325,7 +4329,7 @@ double TUtil::JHUGenMatEl(
       }
       else MYIDUP_tmp[ipar] = -9000; // No need to set p4, which is already 0 by initialization
       // __modparameters_MOD_not_a_particle__?
-      if (verbosity >= TVar::DEBUG) cout << "MYIDUP_tmp[" << ipar << "]=" << MYIDUP_tmp[ipar] << endl;
+      if (verbosity >= TVar::DEBUG) MELAout << "MYIDUP_tmp[" << ipar << "]=" << MYIDUP_tmp[ipar] << endl;
     }
   }
 
@@ -4347,7 +4351,7 @@ double TUtil::JHUGenMatEl(
   RcdME->setHiggsMassWidth(masses_mcfm_.hmass, masses_mcfm_.hwidth, 0);
   RcdME->setHiggsMassWidth(spinzerohiggs_anomcoupl_.h2mass, spinzerohiggs_anomcoupl_.h2width, 1);
   if (verbosity>=TVar::DEBUG){
-    cout
+    MELAout
       << "TUtil::JHUGenMatEl: Set AlphaS:\n"
       << "\tBefore set, alphas scale: " << defaultRenScale << ", PDF scale: " << defaultFacScale << '\n'
       << "\trenQ: " << renQ << " ( x " << event_scales->ren_scale_factor << "), facQ: " << facQ << " ( x " << event_scales->fac_scale_factor << ")\n"
@@ -4449,7 +4453,7 @@ double TUtil::JHUGenMatEl(
       if (idarray[1].at(v2).second!=-9000) MYIDUP[3] = convertLHEreverse(&(idarray[1].at(v2).second));
 
       // Check working ids
-      if (verbosity>=TVar::DEBUG){ for (unsigned int idau=0; idau<4; idau++) cout << "MYIDUP[" << idau << "]=" << MYIDUP[idau] << endl; }
+      if (verbosity>=TVar::DEBUG){ for (unsigned int idau=0; idau<4; idau++) MELAout << "MYIDUP[" << idau << "]=" << MYIDUP[idau] << endl; }
 
       // Determine M_V and Ga_V in JHUGen, needed for g1 vs everything else.
       for (int ip=0; ip<2; ip++){ idfirst[ip]=MYIDUP[ip]; idsecond[ip]=MYIDUP[ip+2]; }
@@ -4457,9 +4461,9 @@ double TUtil::JHUGenMatEl(
       if (verbosity>=TVar::DEBUG){
         double mv, gv;
         __modjhugenmela_MOD_getmvgv(&mv, &gv);
-        cout << "TUtil::JHUGenMatEl: M_V=" << mv/GeV << ", Ga_V=" << gv/GeV << endl;
+        MELAout << "TUtil::JHUGenMatEl: M_V=" << mv/GeV << ", Ga_V=" << gv/GeV << endl;
         __modjhugenmela_MOD_getmvprimegvprime(&mv, &gv);
-        cout << "TUtil::JHUGenMatEl: M_Vprime=" << mv/GeV << ", Ga_Vprime=" << gv/GeV << endl;
+        MELAout << "TUtil::JHUGenMatEl: M_Vprime=" << mv/GeV << ", Ga_Vprime=" << gv/GeV << endl;
       }
 
       // Sum over possible left/right couplings of the Vs
@@ -4500,21 +4504,21 @@ double TUtil::JHUGenMatEl(
       if (PDGHelpers::isAWBoson(mela_event.intermediateVid.at(0))) MatElTmp *= pow(__modparameters_MOD_ckmbare(&(idarray[0].at(v1).first), &(idarray[0].at(v1).second)), 2);
       if (PDGHelpers::isAWBoson(mela_event.intermediateVid.at(1))) MatElTmp *= pow(__modparameters_MOD_ckmbare(&(idarray[1].at(v2).first), &(idarray[1].at(v2).second)), 2);
 
-      if (verbosity >= TVar::DEBUG) cout << "=====\nTUtil::JHUGenMatEl: Instance MatElTmp = " << MatElTmp << "\n=====" << endl;
+      if (verbosity >= TVar::DEBUG) MELAout << "=====\nTUtil::JHUGenMatEl: Instance MatElTmp = " << MatElTmp << "\n=====" << endl;
       MatElSq += MatElTmp;
       if (MatElTmp>0.) nNonZero++;
     }
   }
   if (nNonZero>0) MatElSq /= ((double)nNonZero);
   if (verbosity >= TVar::DEBUG){
-    cout << "TUtil::JHUGenMatEl: Number of matrix element instances computed: " << nNonZero << endl;
-    cout << "TUtil::JHUGenMatEl: MatElSq after division = " << MatElSq << endl;
+    MELAout << "TUtil::JHUGenMatEl: Number of matrix element instances computed: " << nNonZero << endl;
+    MELAout << "TUtil::JHUGenMatEl: MatElSq after division = " << MatElSq << endl;
   }
 
   // Set aL/R 1,2 into RcdME
   RcdME->setVDaughterCouplings(aL1, aR1, 0);
   RcdME->setVDaughterCouplings(aL2, aR2, 1);
-  if (verbosity >= TVar::DEBUG_VERBOSE) cout
+  if (verbosity >= TVar::DEBUG_VERBOSE) MELAout
     << "TUtil::JHUGenMatEl: aL1, aR1, aL2, aR2: "
     << aL1 << ", " << aR1 << ", " << aL2 << ", " << aR2
     << endl;
@@ -4547,24 +4551,25 @@ double TUtil::JHUGenMatEl(
     RcdME->computeWeightedMEArray();
   }
 
-  if (verbosity >= TVar::DEBUG) cout << "TUtil::JHUGenMatEl: Final MatElSq = " << MatElSq << endl;
+  if (verbosity >= TVar::DEBUG) MELAout << "TUtil::JHUGenMatEl: Final MatElSq = " << MatElSq << endl;
 
   // Reset alphas
   if (verbosity>=TVar::DEBUG){
-    cout
+    MELAout
       << "TUtil::JHUGenMatEl: Reset AlphaS:\n"
       << "\tBefore reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << endl;
   }
   SetAlphaS(defaultRenScale, defaultFacScale, 1., 1., defaultNloop, defaultNflav, defaultPdflabel);
   if (verbosity>=TVar::DEBUG){
     GetAlphaS(&alphasVal, &alphasmzVal);
-    cout
+    MELAout
       << "TUtil::JHUGenMatEl: Reset AlphaS result:\n"
       << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << ", alphas(Qren): " << alphasVal << ", alphas(MZ): " << alphasmzVal << endl;
   }
   return MatElSq;
 }
 
+// VBF and HJJ (QCD), H undecayed, includes H BW
 double TUtil::HJJMatEl(
   const TVar::Process& process, const TVar::Production& production, const TVar::MatrixElement& matrixElement,
   event_scales_type* event_scales, MelaIO* RcdME,
@@ -4584,8 +4589,8 @@ double TUtil::HJJMatEl(
   double MatElsq_tmp[nmsq][nmsq]={ { 0 } }; // For H+J
   double msq_tmp=0; // For "*_exact"
 
-  if (matrixElement!=TVar::JHUGen){ if (verbosity>=TVar::ERROR) cerr << "TUtil::HJJMatEl: Non-JHUGen MEs are not supported" << endl; return sum_msqjk; }
-  if (!(production==TVar::JJQCD || production==TVar::JJVBF || production==TVar::JQCD)){ if (verbosity>=TVar::ERROR) cerr << "TUtil::HJJMatEl: Production is not supported!" << endl; return sum_msqjk; }
+  if (matrixElement!=TVar::JHUGen){ if (verbosity>=TVar::ERROR) MELAerr << "TUtil::HJJMatEl: Non-JHUGen MEs are not supported" << endl; return sum_msqjk; }
+  if (!(production==TVar::JJQCD || production==TVar::JJVBF || production==TVar::JQCD)){ if (verbosity>=TVar::ERROR) MELAerr << "TUtil::HJJMatEl: Production is not supported!" << endl; return sum_msqjk; }
 
   // Notice that partIncCode is specific for this subroutine
   int nRequested_AssociatedJets=2;
@@ -4599,7 +4604,7 @@ double TUtil::HJJMatEl(
     mela_event,
     verbosity
     );
-  if (mela_event.pAssociated.size()==0){ if (verbosity>=TVar::ERROR) cerr << "TUtil::HJJMatEl: Number of associated particles is 0!" << endl; return sum_msqjk; }
+  if (mela_event.pAssociated.size()==0){ if (verbosity>=TVar::ERROR) MELAerr << "TUtil::HJJMatEl: Number of associated particles is 0!" << endl; return sum_msqjk; }
 
   int MYIDUP_tmp[4]={ 0 }; // "Incoming" partons 1, 2, "outgoing" partons 3, 4
   double p4[5][4]={ { 0 } };
@@ -4661,9 +4666,9 @@ double TUtil::HJJMatEl(
     else{ for (unsigned int j = 0; j < 4; j++) pOneJet[i][j] = p4[2][j]; } // J1
   }
   if (verbosity >= TVar::DEBUG){ 
-    for (unsigned int i=0; i<5; i++) cout << "p["<<i<<"] (Px, Py, Pz, E, M):\t" << p4[i][1]/GeV << '\t' << p4[i][2]/GeV << '\t' << p4[i][3]/GeV << '\t' << p4[i][0]/GeV << '\t' << sqrt(fabs(pow(p4[i][0], 2)-pow(p4[i][1], 2)-pow(p4[i][2], 2)-pow(p4[i][3], 2)))/GeV << endl;
-    cout << "One-jet momenta: " << endl;
-    for (unsigned int i=0; i<4; i++) cout << "pOneJet["<<i<<"] (Px, Py, Pz, E, M):\t" << pOneJet[i][1]/GeV << '\t' << pOneJet[i][2]/GeV << '\t' << pOneJet[i][3]/GeV << '\t' << pOneJet[i][0]/GeV << '\t' << sqrt(fabs(pow(pOneJet[i][0], 2)-pow(pOneJet[i][1], 2)-pow(pOneJet[i][2], 2)-pow(pOneJet[i][3], 2)))/GeV << endl;
+    for (unsigned int i=0; i<5; i++) MELAout << "p["<<i<<"] (Px, Py, Pz, E, M):\t" << p4[i][1]/GeV << '\t' << p4[i][2]/GeV << '\t' << p4[i][3]/GeV << '\t' << p4[i][0]/GeV << '\t' << sqrt(fabs(pow(p4[i][0], 2)-pow(p4[i][1], 2)-pow(p4[i][2], 2)-pow(p4[i][3], 2)))/GeV << endl;
+    MELAout << "One-jet momenta: " << endl;
+    for (unsigned int i=0; i<4; i++) MELAout << "pOneJet["<<i<<"] (Px, Py, Pz, E, M):\t" << pOneJet[i][1]/GeV << '\t' << pOneJet[i][2]/GeV << '\t' << pOneJet[i][3]/GeV << '\t' << pOneJet[i][0]/GeV << '\t' << sqrt(fabs(pow(pOneJet[i][0], 2)-pow(pOneJet[i][1], 2)-pow(pOneJet[i][2], 2)-pow(pOneJet[i][3], 2)))/GeV << endl;
   }
 
   double defaultRenScale = scale_.scale;
@@ -4683,7 +4688,7 @@ double TUtil::HJJMatEl(
   RcdME->setHiggsMassWidth(masses_mcfm_.hmass, masses_mcfm_.hwidth, 0);
   RcdME->setHiggsMassWidth(spinzerohiggs_anomcoupl_.h2mass, spinzerohiggs_anomcoupl_.h2width, 1);
   if (verbosity>=TVar::DEBUG){
-    cout
+    MELAout
       << "TUtil::HJJMatEl: Set AlphaS:\n"
       << "\tBefore set, alphas scale: " << defaultRenScale << ", PDF scale: " << defaultFacScale << '\n'
       << "\trenQ: " << renQ << " ( x " << event_scales->ren_scale_factor << "), facQ: " << facQ << " ( x " << event_scales->fac_scale_factor << ")\n"
@@ -4708,7 +4713,7 @@ double TUtil::HJJMatEl(
         else rsel=isel; // Covers qg->Hq, qbg->Hqb
         if (!partonIsUnknown[2] && !((PDGHelpers::isAGluon(MYIDUP_tmp[2]) && rsel==0) || MYIDUP_tmp[2]==rsel)) continue;
         MatElsq[jsel+5][isel+5] = MatElsq_tmp[jsel+5][isel+5]; // Assign only those that match gen. info, if present at all.
-        if (verbosity >= TVar::DEBUG) cout << "Channel (isel, jsel)=" << isel << ", " << jsel << endl;
+        if (verbosity >= TVar::DEBUG) MELAout << "Channel (isel, jsel)=" << isel << ", " << jsel << endl;
       }
     }
   }
@@ -4721,10 +4726,10 @@ double TUtil::HJJMatEl(
       int jsel = ijsel[ic][1];
       int code = ijsel[ic][2];
 
-      if (verbosity >= TVar::DEBUG_VERBOSE) cout << "HJJ channel " << ic << " code " << code << endl;
+      if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "HJJ channel " << ic << " code " << code << endl;
 
       // Default assignments
-      if (verbosity >= TVar::DEBUG_VERBOSE) cout << "HJJ mother unswapped case" << endl;
+      if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "HJJ mother unswapped case" << endl;
       int rsel=isel;
       int ssel=jsel;
 
@@ -4746,7 +4751,7 @@ double TUtil::HJJMatEl(
               ){
               __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &msq_tmp);
               MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-              if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+              if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
             }
             if (
               (partonIsUnknown[2] || (PDGHelpers::isAQuark(MYIDUP_tmp[2]) && MYIDUP_tmp[2]<0))
@@ -4755,7 +4760,7 @@ double TUtil::HJJMatEl(
               ){
               __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &msq_tmp);
               MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-              if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+              if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
             }
           }
           else{ // gg->gg
@@ -4767,7 +4772,7 @@ double TUtil::HJJMatEl(
               ){
               __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &msq_tmp);
               MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-              if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+              if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
             }
           }
         }
@@ -4779,7 +4784,7 @@ double TUtil::HJJMatEl(
             ){
             __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &msq_tmp);
             MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-            if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+            if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
           }
           if (
             (partonIsUnknown[2] || ((PDGHelpers::isAGluon(MYIDUP_tmp[2]) && ssel==0) || MYIDUP_tmp[2]==ssel))
@@ -4788,7 +4793,7 @@ double TUtil::HJJMatEl(
             ){
             __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &msq_tmp);
             MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-            if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+            if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
           }
         }
         else if ((isel>0 && jsel<0) || (isel<0 && jsel>0)){ // qQb/qbQ->?
@@ -4801,7 +4806,7 @@ double TUtil::HJJMatEl(
               ){
               __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &msq_tmp);
               MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-              if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+              if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
             }
           }
           else if (code==3 && isel==-jsel){ // qqb->QQb
@@ -4815,7 +4820,7 @@ double TUtil::HJJMatEl(
               ){
               __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &msq_tmp);
               MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-              if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+              if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
             }
             if (
               (partonIsUnknown[2] || MYIDUP_tmp[2]==ssel)
@@ -4824,7 +4829,7 @@ double TUtil::HJJMatEl(
               ){
               __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &msq_tmp);
               MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-              if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+              if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
             }
           }
           else{ // qQb/qbQ->qQb/qbQ
@@ -4835,7 +4840,7 @@ double TUtil::HJJMatEl(
               ){
               __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &msq_tmp);
               MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-              if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+              if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
             }
             if (
               (partonIsUnknown[2] || MYIDUP_tmp[2]==ssel)
@@ -4844,7 +4849,7 @@ double TUtil::HJJMatEl(
               ){
               __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &msq_tmp);
               MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-              if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+              if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
             }
           }
         }
@@ -4856,7 +4861,7 @@ double TUtil::HJJMatEl(
             ){
             __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &msq_tmp);
             MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-            if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+            if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
           }
           if (
             rsel!=ssel
@@ -4867,7 +4872,7 @@ double TUtil::HJJMatEl(
             ){
             __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &msq_tmp);
             MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-            if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+            if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
           }
         }
       } // End unswapped isel>=jsel cases
@@ -4876,7 +4881,7 @@ double TUtil::HJJMatEl(
       isel = ijsel[ic][1];
       jsel = ijsel[ic][0];
 
-      if (verbosity >= TVar::DEBUG_VERBOSE) cout << "HJJ mother swapped case" << endl;
+      if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "HJJ mother swapped case" << endl;
       // Reset to default assignments
       rsel=isel;
       ssel=jsel;
@@ -4895,7 +4900,7 @@ double TUtil::HJJMatEl(
             ){
             __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &msq_tmp);
             MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-            if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+            if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
           }
           if (
             (partonIsUnknown[2] || ((PDGHelpers::isAGluon(MYIDUP_tmp[2]) && ssel==0) || MYIDUP_tmp[2]==ssel))
@@ -4904,7 +4909,7 @@ double TUtil::HJJMatEl(
             ){
             __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &msq_tmp);
             MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-            if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+            if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
           }
         }
         else if ((isel>0 && jsel<0) || (isel<0 && jsel>0)){ // qQb/qbQ->?
@@ -4917,7 +4922,7 @@ double TUtil::HJJMatEl(
               ){
               __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &msq_tmp);
               MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-              if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+              if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
             }
           }
           else if(code==3 && isel==-jsel){ // qqb->QQb
@@ -4931,7 +4936,7 @@ double TUtil::HJJMatEl(
               ){
               __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &msq_tmp);
               MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-              if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+              if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
             }
             if (
               (partonIsUnknown[2] || MYIDUP_tmp[2]==ssel)
@@ -4940,7 +4945,7 @@ double TUtil::HJJMatEl(
               ){
               __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &msq_tmp);
               MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-              if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+              if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
             }
           }
           else{ // qQb/qbQ->qQb/qbQ
@@ -4951,7 +4956,7 @@ double TUtil::HJJMatEl(
               ){
               __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &msq_tmp);
               MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-              if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+              if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
             }
             if (
               (partonIsUnknown[2] || MYIDUP_tmp[2]==ssel)
@@ -4960,7 +4965,7 @@ double TUtil::HJJMatEl(
               ){
               __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &msq_tmp);
               MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-              if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+              if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
             }
           }
         }
@@ -4972,7 +4977,7 @@ double TUtil::HJJMatEl(
             ){
             __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &msq_tmp);
             MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-            if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+            if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
           }
           if (
             rsel!=ssel
@@ -4983,7 +4988,7 @@ double TUtil::HJJMatEl(
             ){
             __modhiggsjj_MOD_evalamp_sbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &msq_tmp);
             MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-            if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+            if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
           }
         }
       } // End swapped isel<jsel cases
@@ -5468,9 +5473,9 @@ double TUtil::HJJMatEl(
     }
 
     if (verbosity>=TVar::DEBUG_VERBOSE){
-      cout << "TUtil::HJJMatEl: The pre-computed MEs:" << endl;
+      MELAout << "TUtil::HJJMatEl: The pre-computed MEs:" << endl;
       for (unsigned int iswap=0; iswap<2; iswap++){
-        cout
+        MELAout
           << "\tmsq_uu_zz_ijrs1234[" << iswap << "] = " << msq_uu_zz_ijrs1234[iswap] << '\n'
           << "\tmsq_uu_zz_ijrs1243[" << iswap << "] = " << msq_uu_zz_ijrs1243[iswap] << '\n'
           << "\tmsq_dd_zz_ijrs1234[" << iswap << "] = " << msq_dd_zz_ijrs1234[iswap] << '\n'
@@ -5520,10 +5525,10 @@ double TUtil::HJJMatEl(
       bool ijselIsParticle[2];
       bool ijselIsAntiparticle[2];
 
-      if (verbosity >= TVar::DEBUG_VERBOSE) cout << "VBF channel " << ic << " code " << code << endl;
+      if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "VBF channel " << ic << " code " << code << endl;
 
       // Default assignments
-      if (verbosity >= TVar::DEBUG_VERBOSE) cout << "VBF mother unswapped case" << endl;
+      if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "VBF mother unswapped case" << endl;
       // Set r=i, s=j default values
       rsel=isel;
       ssel=jsel;
@@ -5573,7 +5578,7 @@ double TUtil::HJJMatEl(
             else if (ijselIsUpType[0] && ijselIsDownType[1] && ijselIsParticle[0] && ijselIsAntiparticle[1]) msq_tmp = msq_udbar_zz_ijrs1234[0];
             else if (ijselIsDownType[0] && ijselIsUpType[1] && ijselIsParticle[0] && ijselIsAntiparticle[1]) msq_tmp = msq_dubar_zz_ijrs1234[0];
             MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-            if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+            if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
           }
           if (
             rsel!=ssel
@@ -5608,7 +5613,7 @@ double TUtil::HJJMatEl(
             else if (ijselIsUpType[0] && ijselIsDownType[1] && ijselIsParticle[0] && ijselIsAntiparticle[1]) msq_tmp = msq_udbar_zz_ijrs1243[0];
             else if (ijselIsDownType[0] && ijselIsUpType[1] && ijselIsParticle[0] && ijselIsAntiparticle[1]) msq_tmp = msq_dubar_zz_ijrs1243[0];
             MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-            if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
+            if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
           }
         }
         else if (code==0){ // code==0 means WW->H is also possible with no interference to ZZ->H, for example u ub -> d db.
@@ -5647,7 +5652,7 @@ double TUtil::HJJMatEl(
                 else if (ijselIsDownType[0] && ijselIsDownType[1] && ijselIsParticle[0] && ijselIsAntiparticle[1]) msq_tmp = msq_ddbar_ww_ijrs1234[0];
                 msq_tmp *= ckmval;
                 MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-                if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+                if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
               }
               if (
                 rsel!=ssel
@@ -5661,7 +5666,7 @@ double TUtil::HJJMatEl(
                 else if (ijselIsDownType[0] && ijselIsDownType[1] && ijselIsParticle[0] && ijselIsAntiparticle[1]) msq_tmp = msq_ddbar_ww_ijrs1243[0];
                 msq_tmp *= ckmval;
                 MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-                if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
+                if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
               }
             }
           }
@@ -5705,12 +5710,12 @@ double TUtil::HJJMatEl(
                   }
                   msq_tmp *= ckmval;
                   MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-                  if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+                  if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
                 }
                 else{
                   __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &msq_tmp);
                   MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-                  if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+                  if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
                 }
               }
               if (
@@ -5728,12 +5733,12 @@ double TUtil::HJJMatEl(
                   }
                   msq_tmp *= ckmval;
                   MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-                  if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
+                  if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
                 }
                 else{
                   __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &msq_tmp);
                   MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-                  if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
+                  if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
                 }
               }
             }
@@ -5746,7 +5751,7 @@ double TUtil::HJJMatEl(
       jsel = ijsel[ic][0];
 
       // Reset to default assignments
-      if (verbosity >= TVar::DEBUG_VERBOSE) cout << "VBF mother swapped case" << endl;
+      if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "VBF mother swapped case" << endl;
       // Set r=i, s=j default values
       rsel=isel;
       ssel=jsel;
@@ -5797,7 +5802,7 @@ double TUtil::HJJMatEl(
             else if (ijselIsUpType[1] && ijselIsDownType[0] && ijselIsParticle[1] && ijselIsAntiparticle[0]) msq_tmp = msq_udbar_zz_ijrs1234[1];
             else if (ijselIsDownType[1] && ijselIsUpType[0] && ijselIsParticle[1] && ijselIsAntiparticle[0]) msq_tmp = msq_dubar_zz_ijrs1234[1];
             MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-            if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+            if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
           }
           if (
             rsel!=ssel
@@ -5832,7 +5837,7 @@ double TUtil::HJJMatEl(
             else if (ijselIsUpType[1] && ijselIsDownType[0] && ijselIsParticle[1] && ijselIsAntiparticle[0]) msq_tmp = msq_udbar_zz_ijrs1243[1];
             else if (ijselIsDownType[1] && ijselIsUpType[0] && ijselIsParticle[1] && ijselIsAntiparticle[0]) msq_tmp = msq_dubar_zz_ijrs1243[1];
             MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-            if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
+            if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
           }
         }
         else if (code==0){ // code==0 means WW->H is also possible with no interference to ZZ->H, for example u ub -> d db.
@@ -5871,7 +5876,7 @@ double TUtil::HJJMatEl(
                 else if (ijselIsDownType[1] && ijselIsDownType[0] && ijselIsParticle[1] && ijselIsAntiparticle[0]) msq_tmp = msq_ddbar_ww_ijrs1234[1];
                 msq_tmp *= ckmval;
                 MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-                if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+                if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
               }
               if (
                 rsel!=ssel
@@ -5885,7 +5890,7 @@ double TUtil::HJJMatEl(
                 else if (ijselIsDownType[1] && ijselIsDownType[0] && ijselIsParticle[1] && ijselIsAntiparticle[0]) msq_tmp = msq_ddbar_ww_ijrs1243[1];
                 msq_tmp *= ckmval;
                 MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-                if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
+                if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
               }
             }
           }
@@ -5929,12 +5934,12 @@ double TUtil::HJJMatEl(
                   }
                   msq_tmp *= ckmval;
                   MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-                  if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+                  if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
                 }
                 else{
                   __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &rsel, &ssel, &msq_tmp);
                   MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-                  if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
+                  if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << rsel << ", " << ssel << '\t' <<  msq_tmp << endl;
                 }
               }
               if (
@@ -5952,12 +5957,12 @@ double TUtil::HJJMatEl(
                   }
                   msq_tmp *= ckmval;
                   MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-                  if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
+                  if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
                 }
                 else{
                   __modhiggsjj_MOD_evalamp_wbfh_unsymm_sa_select_exact(p4, &isel, &jsel, &ssel, &rsel, &msq_tmp);
                   MatElsq[jsel+5][isel+5] += msq_tmp; // Assign only those that match gen. info, if present at all.
-                  if (verbosity >= TVar::DEBUG_VERBOSE) cout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
+                  if (verbosity >= TVar::DEBUG_VERBOSE) MELAout << "Channel (isel, jsel, rsel, ssel)=" << isel << ", " << jsel << ", " << ssel << ", " << rsel << '\t' <<  msq_tmp << endl;
                 }
               }
             }
@@ -5975,39 +5980,40 @@ double TUtil::HJJMatEl(
   //     parton flavor      bbar  cbar  sbar ubar dbar  g   d   u   s  c  b
   //      C++ convention     0      1    2    3    4    5   6   7   8  9  10
   if (verbosity >= TVar::DEBUG){
-    cout << "MatElsq:\n";
-    for (int ii = 0; ii < nmsq; ii++){ for (int jj = 0; jj < nmsq; jj++) cout << MatElsq[jj][ii] << '\t'; cout << endl; }
+    MELAout << "MatElsq:\n";
+    for (int ii = 0; ii < nmsq; ii++){ for (int jj = 0; jj < nmsq; jj++) MELAout << MatElsq[jj][ii] << '\t'; MELAout << endl; }
   }
   sum_msqjk = SumMEPDF(MomStore[0], MomStore[1], MatElsq, RcdME, EBEAM, verbosity);
   /*
   if (verbosity >= TVar::ERROR && (std::isnan(sum_msqjk) || std::isinf(sum_msqjk))){
-    cout << "TUtil::HJJMatEl: FAILURE!" << endl;
-    cout << "MatElsq:\n";
-    for (int ii = 0; ii < nmsq; ii++){ for (int jj = 0; jj < nmsq; jj++) cout << MatElsq[jj][ii] << '\t'; cout << endl; }
+    MELAout << "TUtil::HJJMatEl: FAILURE!" << endl;
+    MELAout << "MatElsq:\n";
+    for (int ii = 0; ii < nmsq; ii++){ for (int jj = 0; jj < nmsq; jj++) MELAout << MatElsq[jj][ii] << '\t'; MELAout << endl; }
     double fx[2][nmsq];
     RcdME->getPartonWeights(fx[0], fx[1]);
-    for (int ii = 0; ii < nmsq; ii++){ for (int jj = 0; jj < 2; jj++) cout << fx[jj][ii] << '\t'; cout << endl; }
-    for (int i=0; i<5; i++) cout << "p["<<i<<"] (Px, Py, Pz, E, M):\t" << p4[i][1]/GeV << '\t' << p4[i][2]/GeV << '\t' << p4[i][3]/GeV << '\t' << p4[i][0]/GeV << '\t' << sqrt(fabs(pow(p4[i][0], 2)-pow(p4[i][1], 2)-pow(p4[i][2], 2)-pow(p4[i][3], 2)))/GeV << endl;
+    for (int ii = 0; ii < nmsq; ii++){ for (int jj = 0; jj < 2; jj++) MELAout << fx[jj][ii] << '\t'; MELAout << endl; }
+    for (int i=0; i<5; i++) MELAout << "p["<<i<<"] (Px, Py, Pz, E, M):\t" << p4[i][1]/GeV << '\t' << p4[i][2]/GeV << '\t' << p4[i][3]/GeV << '\t' << p4[i][0]/GeV << '\t' << sqrt(fabs(pow(p4[i][0], 2)-pow(p4[i][1], 2)-pow(p4[i][2], 2)-pow(p4[i][3], 2)))/GeV << endl;
     TUtil::PrintCandidateSummary(RcdME->melaCand);
-    cout << endl;
+    MELAout << endl;
   }
   */
 
   if (verbosity>=TVar::DEBUG){
-    cout
+    MELAout
       << "TUtil::HJJMatEl: Reset AlphaS:\n"
       << "\tBefore reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << endl;
   }
   SetAlphaS(defaultRenScale, defaultFacScale, 1., 1., defaultNloop, defaultNflav, defaultPdflabel);
   if (verbosity>=TVar::DEBUG){
     GetAlphaS(&alphasVal, &alphasmzVal);
-    cout
+    MELAout
       << "TUtil::HJJMatEl: Reset AlphaS result:\n"
       << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << ", alphas(Qren): " << alphasVal << ", alphas(MZ): " << alphasmzVal << endl;
   }
   return sum_msqjk;
 }
 
+// VH, H undecayed or Hbb
 double TUtil::VHiggsMatEl(
   const TVar::Process& process, const TVar::Production& production, const TVar::MatrixElement& matrixElement,
   event_scales_type* event_scales, MelaIO* RcdME,
@@ -6026,8 +6032,8 @@ double TUtil::VHiggsMatEl(
   //      flavor_msq[jj][ii] = fx1[ii]*fx2[jj]*msq[jj][ii];
   double MatElsq[nmsq][nmsq]={ { 0 } };
 
-  if (matrixElement!=TVar::JHUGen){ if (verbosity>=TVar::ERROR) cerr << "TUtil::VHiggsMatEl: Non-JHUGen MEs are not supported" << endl; return sum_msqjk; }
-  if (!(production == TVar::Lep_ZH || production == TVar::Lep_WH || production == TVar::Had_ZH || production == TVar::Had_WH || production == TVar::GammaH)){ if (verbosity>=TVar::ERROR) cerr << "TUtil::VHiggsMatEl: Production is not supported!" << endl; return sum_msqjk; }
+  if (matrixElement!=TVar::JHUGen){ if (verbosity>=TVar::ERROR) MELAerr << "TUtil::VHiggsMatEl: Non-JHUGen MEs are not supported" << endl; return sum_msqjk; }
+  if (!(production == TVar::Lep_ZH || production == TVar::Lep_WH || production == TVar::Had_ZH || production == TVar::Had_WH || production == TVar::GammaH)){ if (verbosity>=TVar::ERROR) MELAerr << "TUtil::VHiggsMatEl: Production is not supported!" << endl; return sum_msqjk; }
 
   int nRequested_AssociatedJets=0;
   int nRequested_AssociatedLeptons=0;
@@ -6062,10 +6068,10 @@ double TUtil::VHiggsMatEl(
     );
   if ((mela_event.pAssociated.size()<(unsigned int)(nRequested_AssociatedJets+nRequested_AssociatedLeptons) && production!=TVar::GammaH) || (mela_event.pAssociated.size()<(unsigned int)nRequested_AssociatedPhotons && production==TVar::GammaH)){
     if (verbosity>=TVar::ERROR){
-      cerr << "TUtil::VHiggsMatEl: Number of associated particles (" << mela_event.pAssociated.size() << ") is less than ";
-      if (production!=TVar::GammaH) cerr << (nRequested_AssociatedJets+nRequested_AssociatedLeptons);
-      else cerr << nRequested_AssociatedPhotons;
-      cerr << endl;
+      MELAerr << "TUtil::VHiggsMatEl: Number of associated particles (" << mela_event.pAssociated.size() << ") is less than ";
+      if (production!=TVar::GammaH) MELAerr << (nRequested_AssociatedJets+nRequested_AssociatedLeptons);
+      else MELAerr << nRequested_AssociatedPhotons;
+      MELAerr << endl;
     }
     return sum_msqjk;
   }
@@ -6119,9 +6125,9 @@ double TUtil::VHiggsMatEl(
   }
   if (production==TVar::GammaH) MYIDUP_prod[3]=-9000;
 
-  if (PDGHelpers::isAGluon(MYIDUP_prod[0]) || PDGHelpers::isAGluon(MYIDUP_prod[1])){ if (verbosity>=TVar::INFO) cerr << "TUtil::VHiggsMatEl: Initial state gluons are not permitted!" << endl; return sum_msqjk; }
-  if (PDGHelpers::isAGluon(MYIDUP_prod[2]) || PDGHelpers::isAGluon(MYIDUP_prod[3])){ if (verbosity>=TVar::INFO) cerr << "TUtil::VHiggsMatEl: Final state gluons are not permitted!" << endl; return sum_msqjk; }
-  if (production==TVar::GammaH && !PDGHelpers::isAPhoton(MYIDUP_prod[2])){ if (verbosity>=TVar::ERROR) cerr << "TUtil::VHiggsMatEl: GammaH associated photon (id=" << MYIDUP_prod[2] << ") is not a photon! Please fix its id." << endl; return sum_msqjk; }
+  if (PDGHelpers::isAGluon(MYIDUP_prod[0]) || PDGHelpers::isAGluon(MYIDUP_prod[1])){ if (verbosity>=TVar::INFO) MELAerr << "TUtil::VHiggsMatEl: Initial state gluons are not permitted!" << endl; return sum_msqjk; }
+  if (PDGHelpers::isAGluon(MYIDUP_prod[2]) || PDGHelpers::isAGluon(MYIDUP_prod[3])){ if (verbosity>=TVar::INFO) MELAerr << "TUtil::VHiggsMatEl: Final state gluons are not permitted!" << endl; return sum_msqjk; }
+  if (production==TVar::GammaH && !PDGHelpers::isAPhoton(MYIDUP_prod[2])){ if (verbosity>=TVar::ERROR) MELAerr << "TUtil::VHiggsMatEl: GammaH associated photon (id=" << MYIDUP_prod[2] << ") is not a photon! Please fix its id." << endl; return sum_msqjk; }
 
   // Decay V/f ids
   // MYIDUP_dec as size=2 because JHUGen supports b-bbar decay
@@ -6205,12 +6211,12 @@ double TUtil::VHiggsMatEl(
   if (includeHiggsDecay && MYIDUP_dec[0]!=-9000 && MYIDUP_dec[1]!=-9000 && MYIDUP_dec[0]==-MYIDUP_dec[1]){ // H->ffb
     HDKon=1;
     __modjhugenmela_MOD_sethdk(&HDKon);
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::VHiggsMatEl: HDKon" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::VHiggsMatEl: HDKon" << endl;
   }
-  else if (verbosity>=TVar::INFO && includeHiggsDecay) cerr << "TUtil::VHiggsMatEl: includeHiggsDecay=true is not supported for the present decay mode." << endl;
+  else if (verbosity>=TVar::INFO && includeHiggsDecay) MELAerr << "TUtil::VHiggsMatEl: includeHiggsDecay=true is not supported for the present decay mode." << endl;
 
   if (verbosity>=TVar::DEBUG){
-    for (int i=0; i<9; i++) cout << "p4(" << vh_ids[i] << ") = "  << p4[i][0] << ", " <<  p4[i][1] << ", "  <<  p4[i][2] << ", "  <<  p4[i][3] << "\n";
+    for (int i=0; i<9; i++) MELAout << "p4(" << vh_ids[i] << ") = "  << p4[i][0] << ", " <<  p4[i][1] << ", "  <<  p4[i][2] << ", "  <<  p4[i][3] << "\n";
   }
 
   double defaultRenScale = scale_.scale;
@@ -6230,7 +6236,7 @@ double TUtil::VHiggsMatEl(
   RcdME->setHiggsMassWidth(masses_mcfm_.hmass, masses_mcfm_.hwidth, 0);
   RcdME->setHiggsMassWidth(spinzerohiggs_anomcoupl_.h2mass, spinzerohiggs_anomcoupl_.h2width, 1);
   if (verbosity>=TVar::DEBUG){
-    cout
+    MELAout
       << "TUtil::VHiggsMatEl: Set AlphaS:\n"
       << "\tBefore set, alphas scale: " << defaultRenScale << ", PDF scale: " << defaultFacScale << '\n'
       << "\trenQ: " << renQ << " ( x " << event_scales->ren_scale_factor << "), facQ: " << facQ << " ( x " << event_scales->fac_scale_factor << ")\n"
@@ -6240,7 +6246,7 @@ double TUtil::VHiggsMatEl(
   // Since we have a lot of these checks, do them here.
   bool partonIsKnown[4];
   for (unsigned int ip=0; ip<4; ip++) partonIsKnown[ip] = (MYIDUP_prod[ip]!=0);
-  if ((production==TVar::Lep_WH || production==TVar::Lep_ZH || production==TVar::GammaH) && !(partonIsKnown[2] && partonIsKnown[3])){ if (verbosity>=TVar::INFO) cerr << "TUtil::VHiggsMatEl: Final state particles in leptonic/photonic VH have to have a definite id!" << endl; return sum_msqjk; }
+  if ((production==TVar::Lep_WH || production==TVar::Lep_ZH || production==TVar::GammaH) && !(partonIsKnown[2] && partonIsKnown[3])){ if (verbosity>=TVar::INFO) MELAerr << "TUtil::VHiggsMatEl: Final state particles in leptonic/photonic VH have to have a definite id!" << endl; return sum_msqjk; }
 
   const double allowed_helicities[2] ={ -1, 1 }; // L,R
   // Setup outgoing H decay products (H->f fbar), templated with H->b bar if both fermions are unknown.
@@ -6266,9 +6272,9 @@ double TUtil::VHiggsMatEl(
     }
   }
   if (verbosity>=TVar::DEBUG){
-    cout << "TUtil::VHiggsMatEl: Outgoing H-> f fbar particles to compute for the ME template:" << endl;
-    for (unsigned int ihf=0; ihf<Hffparticles.size(); ihf++) cout << "\t - (id8, id9) = (" << Hffparticles.at(ihf).first << ", " << Hffparticles.at(ihf).second << ")" << endl;
-    cout << "TUtil::VHiggsMatEl: ME scale for the H-> f fbar particles: " << Hffscale << endl;
+    MELAout << "TUtil::VHiggsMatEl: Outgoing H-> f fbar particles to compute for the ME template:" << endl;
+    for (unsigned int ihf=0; ihf<Hffparticles.size(); ihf++) MELAout << "\t - (id8, id9) = (" << Hffparticles.at(ihf).first << ", " << Hffparticles.at(ihf).second << ")" << endl;
+    MELAout << "TUtil::VHiggsMatEl: ME scale for the H-> f fbar particles: " << Hffscale << endl;
   }
 
   if (production==TVar::Lep_WH || production==TVar::Had_WH){
@@ -6322,8 +6328,8 @@ double TUtil::VHiggsMatEl(
       }
     }
     if (verbosity>=TVar::DEBUG){
-      cout << "TUtil::VHiggsMatEl: Incoming partons to compute for the ME template:" << endl;
-      for (unsigned int ip=0; ip<incomingPartons.size(); ip++) cout << "\t - (id1, id2) = (" << incomingPartons.at(ip).first << ", " << incomingPartons.at(ip).second << ")" << endl;
+      MELAout << "TUtil::VHiggsMatEl: Incoming partons to compute for the ME template:" << endl;
+      for (unsigned int ip=0; ip<incomingPartons.size(); ip++) MELAout << "\t - (id1, id2) = (" << incomingPartons.at(ip).first << ", " << incomingPartons.at(ip).second << ")" << endl;
     }
 
     // Setup outgoing partons
@@ -6376,8 +6382,8 @@ double TUtil::VHiggsMatEl(
       }
     }
     if (verbosity>=TVar::DEBUG){
-      cout << "TUtil::VHiggsMatEl: Outgoing particles to compute for the ME template:" << endl;
-      for (unsigned int op=0; op<outgoingPartons.size(); op++) cout << "\t - (id6, id7) = (" << outgoingPartons.at(op).first << ", " << outgoingPartons.at(op).second << ")" << endl;
+      MELAout << "TUtil::VHiggsMatEl: Outgoing particles to compute for the ME template:" << endl;
+      for (unsigned int op=0; op<outgoingPartons.size(); op++) MELAout << "\t - (id6, id7) = (" << outgoingPartons.at(op).first << ", " << outgoingPartons.at(op).second << ")" << endl;
     }
 
     for (unsigned int ip=0; ip<incomingPartons.size(); ip++){
@@ -6385,17 +6391,17 @@ double TUtil::VHiggsMatEl(
       vh_ids[1] = incomingPartons.at(ip).second;
       vh_ids[2] = PDGHelpers::getCoupledVertex(vh_ids[0], vh_ids[1]);
       if (!PDGHelpers::isAWBoson(vh_ids[2])) continue;
-      if (verbosity>=TVar::DEBUG) cout << "\tIncoming " << vh_ids[0] << "," << vh_ids[1] << " -> " << vh_ids[2] << endl;
+      if (verbosity>=TVar::DEBUG) MELAout << "\tIncoming " << vh_ids[0] << "," << vh_ids[1] << " -> " << vh_ids[2] << endl;
 
       double Vckmsq_in = pow(__modparameters_MOD_ckmbare(&(vh_ids[0]), &(vh_ids[1])), 2);
-      if (verbosity>=TVar::DEBUG) cout << "\tNeed to divide the ME by |VCKM_incoming|**2 = " << Vckmsq_in << endl;
+      if (verbosity>=TVar::DEBUG) MELAout << "\tNeed to divide the ME by |VCKM_incoming|**2 = " << Vckmsq_in << endl;
 
       for (unsigned int op=0; op<outgoingPartons.size(); op++){
         vh_ids[5] = outgoingPartons.at(op).first;
         vh_ids[6] = outgoingPartons.at(op).second;
         vh_ids[3] = PDGHelpers::getCoupledVertex(vh_ids[5], vh_ids[6]);
         if (vh_ids[2]!=vh_ids[3]) continue;
-        if (verbosity>=TVar::DEBUG) cout << "\t\tOutgoing " << vh_ids[3] << " -> " << vh_ids[5] << "," << vh_ids[6] << endl;
+        if (verbosity>=TVar::DEBUG) MELAout << "\t\tOutgoing " << vh_ids[3] << " -> " << vh_ids[5] << "," << vh_ids[6] << endl;
 
         // Compute a raw ME
         double msq=0;
@@ -6430,7 +6436,7 @@ double TUtil::VHiggsMatEl(
         double scalesum_out=0;
         if (!(partonIsKnown[2] && partonIsKnown[3])){
           double Vckmsq_out = pow(__modparameters_MOD_ckm(&(vh_ids[5]), &(vh_ids[6])), 2);
-          if (verbosity>=TVar::DEBUG) cout << "\t\tDividing ME by |VCKM_outgoing|**2 = " << Vckmsq_out << endl;
+          if (verbosity>=TVar::DEBUG) MELAout << "\t\tDividing ME by |VCKM_outgoing|**2 = " << Vckmsq_out << endl;
           msq /= Vckmsq_out;
           for (int outgoing1=1; outgoing1<=nf; outgoing1++){
             if (partonIsKnown[2] && outgoing1!=abs(vh_ids[5])) continue;
@@ -6445,11 +6451,11 @@ double TUtil::VHiggsMatEl(
           }
         }
         else scalesum_out = 1;
-        if (verbosity>=TVar::DEBUG) cout << "\t\tScale for outgoing particles: " << scalesum_out << endl;
+        if (verbosity>=TVar::DEBUG) MELAout << "\t\tScale for outgoing particles: " << scalesum_out << endl;
 
         // Divide ME by the incoming scale factor (will be multiplied again inside the loop)
         if (!partonIsKnown[0] || !partonIsKnown[1]){
-          if (verbosity>=TVar::DEBUG) cout << "\t\tDividing ME by |VCKM_incoming|**2 = " << Vckmsq_in << endl;
+          if (verbosity>=TVar::DEBUG) MELAout << "\t\tDividing ME by |VCKM_incoming|**2 = " << Vckmsq_in << endl;
           msq /= Vckmsq_in;
         }
 
@@ -6462,11 +6468,11 @@ double TUtil::VHiggsMatEl(
             if (partonIsKnown[1] && incoming2!=abs(vh_ids[1])) continue;
             if (incoming2%2!=abs(vh_ids[1])%2 || incoming2==6) continue;
             int jin = incoming2 * TMath::Sign(1, vh_ids[1]);
-            if (verbosity>=TVar::DEBUG) cout << "\t\t\tiin,jin = " << iin << "," << jin << endl;
+            if (verbosity>=TVar::DEBUG) MELAout << "\t\t\tiin,jin = " << iin << "," << jin << endl;
             double scale_in=1;
             if (!partonIsKnown[0] || !partonIsKnown[1]){
               scale_in = pow(__modparameters_MOD_ckmbare(&(iin), &(jin)), 2);
-              if (verbosity>=TVar::DEBUG) cout << "\t\tScale for incoming particles: " << scale_in << endl;
+              if (verbosity>=TVar::DEBUG) MELAout << "\t\tScale for incoming particles: " << scale_in << endl;
             }
             MatElsq[jin+5][iin+5] += msq * 0.25 * scale_in *scalesum_out;
           }
@@ -6491,8 +6497,8 @@ double TUtil::VHiggsMatEl(
     else/* if (!partonIsKnown[0] && partonIsKnown[1])*/ // Parton 1 is known
       incomingPartons.push_back(pair<int, int>(-MYIDUP_prod[1], MYIDUP_prod[1])); // -id2, id2
     if (verbosity>=TVar::DEBUG){
-      cout << "TUtil::VHiggsMatEl: Incoming partons to compute for the ME template:" << endl;
-      for (unsigned int ip=0; ip<incomingPartons.size(); ip++) cout << "\t - (id1, id2) = (" << incomingPartons.at(ip).first << ", " << incomingPartons.at(ip).second << ")" << endl;
+      MELAout << "TUtil::VHiggsMatEl: Incoming partons to compute for the ME template:" << endl;
+      for (unsigned int ip=0; ip<incomingPartons.size(); ip++) MELAout << "\t - (id1, id2) = (" << incomingPartons.at(ip).first << ", " << incomingPartons.at(ip).second << ")" << endl;
     }
 
     // Setup outgoing partons
@@ -6510,8 +6516,8 @@ double TUtil::VHiggsMatEl(
     else/* if (!partonIsKnown[2] && partonIsKnown[3])*/ // Parton 1 is known
       outgoingPartons.push_back(pair<int, int>(-MYIDUP_prod[3], MYIDUP_prod[3])); // -id2, id2
     if (verbosity>=TVar::DEBUG){
-      cout << "TUtil::VHiggsMatEl: Outgoing particles to compute for the ME template:" << endl;
-      for (unsigned int op=0; op<outgoingPartons.size(); op++) cout << "\t - (id6, id7) = (" << outgoingPartons.at(op).first << ", " << outgoingPartons.at(op).second << ")" << endl;
+      MELAout << "TUtil::VHiggsMatEl: Outgoing particles to compute for the ME template:" << endl;
+      for (unsigned int op=0; op<outgoingPartons.size(); op++) MELAout << "\t - (id6, id7) = (" << outgoingPartons.at(op).first << ", " << outgoingPartons.at(op).second << ")" << endl;
     }
 
     for (unsigned int ip=0; ip<incomingPartons.size(); ip++){
@@ -6519,7 +6525,7 @@ double TUtil::VHiggsMatEl(
       vh_ids[1] = incomingPartons.at(ip).second;
       vh_ids[2] = PDGHelpers::getCoupledVertex(vh_ids[0], vh_ids[1]);
       if (!PDGHelpers::isAZBoson(vh_ids[2])) continue; // Notice, Z-> Gamma + H should also have the id of the Z!
-      if (verbosity>=TVar::DEBUG) cout << "\tIncoming " << vh_ids[0] << "," << vh_ids[1] << " -> " << vh_ids[2] << endl;
+      if (verbosity>=TVar::DEBUG) MELAout << "\tIncoming " << vh_ids[0] << "," << vh_ids[1] << " -> " << vh_ids[2] << endl;
 
       // Scale for the incoming state is 1
 
@@ -6531,7 +6537,7 @@ double TUtil::VHiggsMatEl(
           vh_ids[3] = PDGHelpers::getCoupledVertex(vh_ids[5], vh_ids[6]);
           if (vh_ids[2]!=vh_ids[3]) continue;
         }
-        if (verbosity>=TVar::DEBUG) cout << "\t\tOutgoing " << vh_ids[3] << " -> " << vh_ids[5] << "," << vh_ids[6] << endl;
+        if (verbosity>=TVar::DEBUG) MELAout << "\t\tOutgoing " << vh_ids[3] << " -> " << vh_ids[5] << "," << vh_ids[6] << endl;
 
         // Compute a raw ME
         double msq=0;
@@ -6568,7 +6574,7 @@ double TUtil::VHiggsMatEl(
           if (PDGHelpers::isDownTypeQuark(vh_ids[5])) scale_out=3;
           else if (PDGHelpers::isUpTypeQuark(vh_ids[5])) scale_out=2;
         }
-        if (verbosity>=TVar::DEBUG) cout << "\t\tScale for outgoing particles: " << scale_out << endl;
+        if (verbosity>=TVar::DEBUG) MELAout << "\t\tScale for outgoing particles: " << scale_out << endl;
 
         // Sum all possible combinations
         for (int incoming1=1; incoming1<=nf; incoming1++){
@@ -6576,7 +6582,7 @@ double TUtil::VHiggsMatEl(
           if (incoming1%2!=abs(vh_ids[0])%2 || incoming1==6) continue;
           int iin = incoming1 * TMath::Sign(1, vh_ids[0]);
           int jin=-iin;
-          if (verbosity>=TVar::DEBUG) cout << "\t\t\tiin,jin = " << iin << "," << jin << endl;
+          if (verbosity>=TVar::DEBUG) MELAout << "\t\t\tiin,jin = " << iin << "," << jin << endl;
           MatElsq[jin+5][iin+5] += msq * 0.25 * scale_out; // No incoming state scale
         }
         // msq is now added to MatElSq.
@@ -6590,8 +6596,8 @@ double TUtil::VHiggsMatEl(
   double constant = pow(GeV, -GeVexponent_MEsq);
   for (int ii=0; ii<nmsq; ii++){ for (int jj=0; jj<nmsq; jj++) MatElsq[jj][ii] *= constant; }
   if (verbosity >= TVar::DEBUG){
-    cout << "MatElsq:\n";
-    for (int ii = 0; ii < nmsq; ii++){ for (int jj = 0; jj < nmsq; jj++) cout << MatElsq[jj][ii] << '\t'; cout << endl; }
+    MELAout << "MatElsq:\n";
+    for (int ii = 0; ii < nmsq; ii++){ for (int jj = 0; jj < nmsq; jj++) MELAout << MatElsq[jj][ii] << '\t'; MELAout << endl; }
   }
   sum_msqjk = SumMEPDF(MomStore[0], MomStore[1], MatElsq, RcdME, EBEAM, verbosity);
 
@@ -6602,22 +6608,21 @@ double TUtil::VHiggsMatEl(
   }
 
   if (verbosity>=TVar::DEBUG){
-    cout
+    MELAout
       << "TUtil::VHiggsMatEl: Reset AlphaS:\n"
       << "\tBefore reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << endl;
   }
   SetAlphaS(defaultRenScale, defaultFacScale, 1., 1., defaultNloop, defaultNflav, defaultPdflabel);
   if (verbosity>=TVar::DEBUG){
     GetAlphaS(&alphasVal, &alphasmzVal);
-    cout
+    MELAout
       << "TUtil::VHiggsMatEl: Reset AlphaS result:\n"
       << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << ", alphas(Qren): " << alphasVal << ", alphas(MZ): " << alphasmzVal << endl;
   }
   return sum_msqjk;
 }
 
-
-// ttH
+// ttH, H undecayed
 double TUtil::TTHiggsMatEl(
   const TVar::Process& process, const TVar::Production& production, const TVar::MatrixElement& matrixElement,
   event_scales_type* event_scales, MelaIO* RcdME,
@@ -6629,8 +6634,8 @@ double TUtil::TTHiggsMatEl(
   double sum_msqjk = 0;
   double MatElsq[nmsq][nmsq]={ { 0 } };
 
-  if (matrixElement!=TVar::JHUGen){ if (verbosity>=TVar::ERROR) cerr << "TUtil::TTHiggsMatEl: Non-JHUGen MEs are not supported." << endl; return sum_msqjk; }
-  if (production!=TVar::ttH){ if (verbosity>=TVar::ERROR) cerr << "TUtil::TTHiggsMatEl: Only ttH is supported." << endl; return sum_msqjk; }
+  if (matrixElement!=TVar::JHUGen){ if (verbosity>=TVar::ERROR) MELAerr << "TUtil::TTHiggsMatEl: Non-JHUGen MEs are not supported." << endl; return sum_msqjk; }
+  if (production!=TVar::ttH){ if (verbosity>=TVar::ERROR) MELAerr << "TUtil::TTHiggsMatEl: Only ttH is supported." << endl; return sum_msqjk; }
 
   int partIncCode;
   int nRequested_Tops=1;
@@ -6650,21 +6655,21 @@ double TUtil::TTHiggsMatEl(
 
 
   if (topDecay==0 && (mela_event.pStableTops.size()<1 || mela_event.pStableAntitops.size()<1)){
-    if (verbosity>=TVar::ERROR) cerr
+    if (verbosity>=TVar::ERROR) MELAerr
       << "TUtil::TTHiggsMatEl: Number of stable tops (" << mela_event.pStableTops.size() << ")"
       << " and number of stable antitops (" << mela_event.pStableAntitops.size() << ")"
       << " in ttH process are not 1!" << endl;
     return sum_msqjk;
   }
   else if (topDecay>0 && (mela_event.pTopDaughters.size()<1 || mela_event.pAntitopDaughters.size()<1)){
-    if (verbosity>=TVar::ERROR) cerr
+    if (verbosity>=TVar::ERROR) MELAerr
       << "TUtil::TTHiggsMatEl: Number of set of top daughters (" << mela_event.pTopDaughters.size() << ")"
       << " and number of set of antitop daughters (" << mela_event.pAntitopDaughters.size() << ")"
       << " in ttH process are not 1!" << endl;
     return sum_msqjk;
   }
   else if (topDecay>0 && (mela_event.pTopDaughters.at(0).size()!=3 || mela_event.pAntitopDaughters.at(0).size()!=3)){
-    if (verbosity>=TVar::ERROR) cerr
+    if (verbosity>=TVar::ERROR) MELAerr
       << "TUtil::TTHiggsMatEl: Number of top daughters (" << mela_event.pTopDaughters.at(0).size() << ")"
       << " and number of antitop daughters (" << mela_event.pAntitopDaughters.at(0).size() << ")"
       << " in ttH process are not 3!" << endl;
@@ -6821,7 +6826,7 @@ double TUtil::TTHiggsMatEl(
   }
 
   if (verbosity >= TVar::DEBUG){
-    for (int ii=0; ii<13; ii++){ cout << "p4[" << ii << "] = "; for (int jj=0; jj<4; jj++) cout << p4[ii][jj]/GeV << '\t'; cout << endl; }
+    for (int ii=0; ii<13; ii++){ MELAout << "p4[" << ii << "] = "; for (int jj=0; jj<4; jj++) MELAout << p4[ii][jj]/GeV << '\t'; MELAout << endl; }
   }
 
   double defaultRenScale = scale_.scale;
@@ -6841,7 +6846,7 @@ double TUtil::TTHiggsMatEl(
   RcdME->setHiggsMassWidth(masses_mcfm_.hmass, masses_mcfm_.hwidth, 0);
   RcdME->setHiggsMassWidth(spinzerohiggs_anomcoupl_.h2mass, spinzerohiggs_anomcoupl_.h2width, 1);
   if (verbosity>=TVar::DEBUG){
-    cout
+    MELAout
       << "TUtil::TTHiggsMatEl: Set AlphaS:\n"
       << "\tBefore set, alphas scale: " << defaultRenScale << ", PDF scale: " << defaultFacScale << '\n'
       << "\trenQ: " << renQ << " ( x " << event_scales->ren_scale_factor << "), facQ: " << facQ << " ( x " << event_scales->fac_scale_factor << ")\n"
@@ -6914,7 +6919,7 @@ double TUtil::TTHiggsMatEl(
                 p4_current[Wm_pos][ix] = p4_current[Wmf_pos][ix] + p4_current[Wmfb_pos][ix]; // Re-sum W- momentum.
               }
               if (verbosity>=TVar::DEBUG){
-                cout
+                MELAout
                   << "TUtil::TTHiggsMatEl: Unswapped instance for "
                   << "b(" << b_pos << ") -> " << b1index << ", "
                   << "Wpf(" << Wpf_pos << ") -> " << f1index << ", "
@@ -6922,8 +6927,8 @@ double TUtil::TTHiggsMatEl(
                   << "bb(" << bb_pos << ") -> " << b2index << ", "
                   << "Wmf(" << Wmf_pos << ") -> " << f2index << ", "
                   << "Wmfb(" << Wmfb_pos << ") -> " << fb2index << endl;
-                for (int ii=0; ii<13; ii++){ cout << "p4_instance[" << ii << "] = "; for (int jj=0; jj<4; jj++) cout << p4_current[ii][jj]/GeV << '\t'; cout << endl; }
-                cout << endl;
+                for (int ii=0; ii<13; ii++){ MELAout << "p4_instance[" << ii << "] = "; for (int jj=0; jj<4; jj++) MELAout << p4_current[ii][jj]/GeV << '\t'; MELAout << endl; }
+                MELAout << endl;
               }
 
               double MatElsq_tmp[nmsq][nmsq]={ { 0 } };
@@ -6942,7 +6947,7 @@ double TUtil::TTHiggsMatEl(
               }
               for (int ix=0; ix<11; ix++){ for (int iy=0; iy<11; iy++) MatElsq[iy][ix] += MatElsq_tmp[iy][ix]; }
               if (verbosity>=TVar::DEBUG){
-                cout
+                MELAout
                   << "TUtil::TTHiggsMatEl: Swapped instance for "
                   << "b(" << b_pos << ") -> " << b1index << ", "
                   << "Wpf(" << Wpf_pos << ") -> " << f1index << ", "
@@ -6950,8 +6955,8 @@ double TUtil::TTHiggsMatEl(
                   << "bb(" << bb_pos << ") -> " << b2index << ", "
                   << "Wmf(" << Wmf_pos << ") -> " << f2index << ", "
                   << "Wmfb(" << Wmfb_pos << ") -> " << fb2index << endl;
-                for (int ii=0; ii<13; ii++){ cout << "p4_instance[" << ii << "] = "; for (int jj=0; jj<4; jj++) cout << p4_current[ii][jj]/GeV << '\t'; cout << endl; }
-                cout << endl;
+                for (int ii=0; ii<13; ii++){ MELAout << "p4_instance[" << ii << "] = "; for (int jj=0; jj<4; jj++) MELAout << p4_current[ii][jj]/GeV << '\t'; MELAout << endl; }
+                MELAout << endl;
               }
             } // End loop over ifb2
           } // End loop over if2
@@ -6969,30 +6974,30 @@ double TUtil::TTHiggsMatEl(
   double constant = pow(GeV, -GeVexponent_MEsq);
   for (int ii=0; ii<nmsq; ii++){ for (int jj=0; jj<nmsq; jj++) MatElsq[jj][ii] *= constant; }
   if (verbosity>=TVar::DEBUG){
-    cout << "TUtil::TTHiggsMatEl: MEsq[ip][jp] = " << endl;
+    MELAout << "TUtil::TTHiggsMatEl: MEsq[ip][jp] = " << endl;
     for (int iquark=-5; iquark<=5; iquark++){
-      for (int jquark=-5; jquark<=5; jquark++) cout << MatElsq[jquark+5][iquark+5] << '\t';
-      cout << endl;
+      for (int jquark=-5; jquark<=5; jquark++) MELAout << MatElsq[jquark+5][iquark+5] << '\t';
+      MELAout << endl;
     }
   }
   sum_msqjk = SumMEPDF(MomStore[0], MomStore[1], MatElsq, RcdME, EBEAM, verbosity);
 
   if (verbosity>=TVar::DEBUG){
-    cout
+    MELAout
       << "TUtil::TTHiggsMatEl: Reset AlphaS:\n"
       << "\tBefore reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << endl;
   }
   SetAlphaS(defaultRenScale, defaultFacScale, 1., 1., defaultNloop, defaultNflav, defaultPdflabel);
   if (verbosity>=TVar::DEBUG){
     GetAlphaS(&alphasVal, &alphasmzVal);
-    cout
+    MELAout
       << "TUtil::TTHiggsMatEl: Reset AlphaS result:\n"
       << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << ", alphas(Qren): " << alphasVal << ", alphas(MZ): " << alphasmzVal << endl;
   }
   return sum_msqjk;
 }
 
-// bbH
+// bbH, H undecayed
 double TUtil::BBHiggsMatEl(
   const TVar::Process& process, const TVar::Production& production, const TVar::MatrixElement& matrixElement,
   event_scales_type* event_scales, MelaIO* RcdME,
@@ -7005,8 +7010,8 @@ double TUtil::BBHiggsMatEl(
   double MatElsq[nmsq][nmsq]={ { 0 } };
   double MatElsq_tmp[nmsq][nmsq]={ { 0 } };
 
-  if (matrixElement!=TVar::JHUGen){ if (verbosity>=TVar::ERROR) cerr << "TUtil::BBHiggsMatEl: Non-JHUGen MEs are not supported." << endl; return sum_msqjk; }
-  if (production!=TVar::bbH){ if (verbosity>=TVar::ERROR) cerr << "TUtil::BBHiggsMatEl: Only bbH is supported." << endl; return sum_msqjk; }
+  if (matrixElement!=TVar::JHUGen){ if (verbosity>=TVar::ERROR) MELAerr << "TUtil::BBHiggsMatEl: Non-JHUGen MEs are not supported." << endl; return sum_msqjk; }
+  if (production!=TVar::bbH){ if (verbosity>=TVar::ERROR) MELAerr << "TUtil::BBHiggsMatEl: Only bbH is supported." << endl; return sum_msqjk; }
 
   int partIncCode=TVar::kUseAssociated_Jets; // Look for jets
   int nRequested_AssociatedJets=2;
@@ -7021,7 +7026,7 @@ double TUtil::BBHiggsMatEl(
     );
 
   if (mela_event.pAssociated.size()<2){
-    if (verbosity>=TVar::ERROR) cerr
+    if (verbosity>=TVar::ERROR) MELAerr
       << "TUtil::BBHiggsMatEl: Number of stable bs (" << mela_event.pAssociated.size() << ")"
       <<" in bbH process is not 2!" << endl;
     return sum_msqjk;
@@ -7097,12 +7102,12 @@ double TUtil::BBHiggsMatEl(
   }
 
   if (verbosity >= TVar::DEBUG){
-    for (int ii=0; ii<13; ii++){ cout << "p4[" << ii << "] = "; for (int jj=0; jj<4; jj++) cout << p4[ii][jj]/GeV << '\t'; cout << endl; }
+    for (int ii=0; ii<13; ii++){ MELAout << "p4[" << ii << "] = "; for (int jj=0; jj<4; jj++) MELAout << p4[ii][jj]/GeV << '\t'; MELAout << endl; }
   }
 
   double defaultRenScale = scale_.scale;
   double defaultFacScale = facscale_.facscale;
-  //cout << "Default scales: " << defaultRenScale << '\t' << defaultFacScale << endl;
+  //MELAout << "Default scales: " << defaultRenScale << '\t' << defaultFacScale << endl;
   int defaultNloop = nlooprun_.nlooprun;
   int defaultNflav = nflav_.nflav;
   string defaultPdflabel = pdlabel_.pdlabel;
@@ -7118,7 +7123,7 @@ double TUtil::BBHiggsMatEl(
   RcdME->setHiggsMassWidth(masses_mcfm_.hmass, masses_mcfm_.hwidth, 0);
   RcdME->setHiggsMassWidth(spinzerohiggs_anomcoupl_.h2mass, spinzerohiggs_anomcoupl_.h2width, 1);
   if (verbosity>=TVar::DEBUG){
-    cout
+    MELAout
       << "TUtil::BBHiggsMatEl: Set AlphaS:\n"
       << "\tBefore set, alphas scale: " << defaultRenScale << ", PDF scale: " << defaultFacScale << '\n'
       << "\trenQ: " << renQ << " ( x " << event_scales->ren_scale_factor << "), facQ: " << facQ << " ( x " << event_scales->fac_scale_factor << ")\n"
@@ -7136,23 +7141,23 @@ double TUtil::BBHiggsMatEl(
   double constant = pow(GeV, -GeVexponent_MEsq);
   for (int ii=0; ii<nmsq; ii++){ for (int jj=0; jj<nmsq; jj++) MatElsq[jj][ii] *= constant; }
   if (verbosity>=TVar::DEBUG){
-    cout << "TUtil::BBHiggsMatEl: MEsq[ip][jp] = " << endl;
+    MELAout << "TUtil::BBHiggsMatEl: MEsq[ip][jp] = " << endl;
     for (int iquark=-5; iquark<=5; iquark++){
-      for (int jquark=-5; jquark<=5; jquark++) cout << MatElsq[jquark+5][iquark+5] << '\t';
-      cout << endl;
+      for (int jquark=-5; jquark<=5; jquark++) MELAout << MatElsq[jquark+5][iquark+5] << '\t';
+      MELAout << endl;
     }
   }
   sum_msqjk = SumMEPDF(MomStore[0], MomStore[1], MatElsq, RcdME, EBEAM, verbosity);
 
   if (verbosity>=TVar::DEBUG){
-    cout
+    MELAout
       << "TUtil::BBHiggsMatEl: Reset AlphaS:\n"
       << "\tBefore reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << endl;
   }
   SetAlphaS(defaultRenScale, defaultFacScale, 1., 1., defaultNloop, defaultNflav, defaultPdflabel);
   if (verbosity>=TVar::DEBUG){
     GetAlphaS(&alphasVal, &alphasmzVal);
-    cout
+    MELAout
       << "TUtil::BBHiggsMatEl: Reset AlphaS result:\n"
       << "\tAfter reset, alphas scale: " << scale_.scale << ", PDF scale: " << facscale_.facscale << ", alphas(Qren): " << alphasVal << ", alphas(MZ): " << alphasmzVal << endl;
   }
@@ -7162,10 +7167,10 @@ double TUtil::BBHiggsMatEl(
 // Wipe MEs
 int TUtil::WipeMEArray(const TVar::Process& process, const TVar::Production& production, const int id[mxpart], double msq[nmsq][nmsq], const TVar::VerbosityLevel& verbosity){
   if (verbosity>=TVar::DEBUG){
-    cout << "TUtil::WipeMEArray: Initial MEsq:" << endl;
+    MELAout << "TUtil::WipeMEArray: Initial MEsq:" << endl;
     for (int iquark=-5; iquark<=5; iquark++){
-      for (int jquark=-5; jquark<=5; jquark++) cout << msq[jquark+5][iquark+5] << '\t';
-      cout << endl;
+      for (int jquark=-5; jquark<=5; jquark++) MELAout << msq[jquark+5][iquark+5] << '\t';
+      MELAout << endl;
     }
   }
   int nInstances=0;
@@ -7296,27 +7301,27 @@ bool TUtil::CheckPartonMomFraction(const TLorentzVector& p0, const TLorentzVecto
     EBEAM<=0.
     ){
     if (verbosity>=TVar::ERROR){
-      if (xx[0]>1. || xx[1]>1.) cerr << "TUtil::CheckPartonMomFraction: At least one of the parton momentum fractions is greater than 1." << endl;
-      else if (xx[0]<=xmin_.xmin || xx[1]<=xmin_.xmin) cerr << "TUtil::CheckPartonMomFraction: At least one of the parton momentum fractions is less than or equal to " << xmin_.xmin << "." << endl;
-      else cerr << "TUtil::CheckPartonMomFraction: EBEAM=" << EBEAM << "<=0." << endl;
+      if (xx[0]>1. || xx[1]>1.) MELAerr << "TUtil::CheckPartonMomFraction: At least one of the parton momentum fractions is greater than 1." << endl;
+      else if (xx[0]<=xmin_.xmin || xx[1]<=xmin_.xmin) MELAerr << "TUtil::CheckPartonMomFraction: At least one of the parton momentum fractions is less than or equal to " << xmin_.xmin << "." << endl;
+      else MELAerr << "TUtil::CheckPartonMomFraction: EBEAM=" << EBEAM << "<=0." << endl;
     }
     return false;
   }
   else{
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::CheckPartonMomFraction: xx[0]: " << xx[0] << ", xx[1] = " << xx[1] << ", xmin = " << xmin_.xmin << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::CheckPartonMomFraction: xx[0]: " << xx[0] << ", xx[1] = " << xx[1] << ", xmin = " << xmin_.xmin << endl;
     return true;
   }
 }
 // ComputePDF does the PDF computation
 void TUtil::ComputePDF(const TLorentzVector& p0, const TLorentzVector& p1, double fx1[nmsq], double fx2[nmsq], const double& EBEAM, const TVar::VerbosityLevel& verbosity){
-  if (verbosity>=TVar::DEBUG) cout << "Begin TUtil::ComputePDF"<< endl;
+  if (verbosity>=TVar::DEBUG) MELAout << "Begin TUtil::ComputePDF"<< endl;
   double xx[2]={ 0 };
   if (CheckPartonMomFraction(p0, p1, xx, EBEAM, verbosity)){
     ///// USE JHUGEN SUBROUTINE (Accomodates LHAPDF) /////
     double fx1x2_jhu[2][13]={ { 0 } };
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::ComputePDF: Calling setpdfs with xx[0]: " << xx[0] << ", xx[1] = " << xx[1] << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::ComputePDF: Calling setpdfs with xx[0]: " << xx[0] << ", xx[1] = " << xx[1] << endl;
     __modkinematics_MOD_setpdfs(&(xx[0]), &(xx[1]), fx1x2_jhu);
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::ComputePDF: called"<< endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::ComputePDF: called"<< endl;
     for (int ip=-6; ip<=6; ip++){
       // JHUGen assignment is in JHU id coventions (up <-> down, g==g)
       int fac=0;
@@ -7337,24 +7342,24 @@ void TUtil::ComputePDF(const TLorentzVector& p0, const TLorentzVector& p1, doubl
     */
   }
   if (verbosity>=TVar::DEBUG){
-    cout << "End TUtil::ComputePDF:"<< endl;
-    for (int ip=-nf; ip<=nf; ip++) cout << "(fx1, fx2)[" << ip << "] = (" << fx1[ip+5] << " , " << fx2[ip+5] << ")" << endl;
+    MELAout << "End TUtil::ComputePDF:"<< endl;
+    for (int ip=-nf; ip<=nf; ip++) MELAout << "(fx1, fx2)[" << ip << "] = (" << fx1[ip+5] << " , " << fx2[ip+5] << ")" << endl;
   }
 }
 // SumMEPDF sums over all production parton flavors according to PDF and calls ComputePDF
 double TUtil::SumMEPDF(const TLorentzVector& p0, const TLorentzVector& p1, double msq[nmsq][nmsq], MelaIO* RcdME, const double& EBEAM, const TVar::VerbosityLevel& verbosity){
-  if (verbosity>=TVar::DEBUG) cout << "Begin TUtil::SumMEPDF"<< endl;
+  if (verbosity>=TVar::DEBUG) MELAout << "Begin TUtil::SumMEPDF"<< endl;
   double fx1[nmsq]={ 0 };
   double fx2[nmsq]={ 0 };
   //double wgt_msq[nmsq][nmsq]={ { 0 } };
 
   ComputePDF(p0, p1, fx1, fx2, EBEAM, verbosity);
-  if (verbosity>=TVar::DEBUG) cout << "TUtil::SumMEPDF: Setting RcdME"<< endl;
+  if (verbosity>=TVar::DEBUG) MELAout << "TUtil::SumMEPDF: Setting RcdME"<< endl;
   RcdME->setPartonWeights(fx1, fx2);
   RcdME->setMEArray(msq, true);
   RcdME->computeWeightedMEArray();
   //RcdME->getWeightedMEArray(wgt_msq);
-  if (verbosity>=TVar::DEBUG) cout << "End TUtil::SumMEPDF"<< endl;
+  if (verbosity>=TVar::DEBUG) MELAout << "End TUtil::SumMEPDF"<< endl;
   return RcdME->getSumME();
 }
 
@@ -7383,11 +7388,11 @@ void TUtil::GetBoostedParticleVectors(
   simple_event_record& mela_event,
   TVar::VerbosityLevel verbosity
   ){
-  if (verbosity>=TVar::DEBUG) cout << "Begin GetBoostedParticleVectors" << endl;
+  if (verbosity>=TVar::DEBUG) MELAout << "Begin GetBoostedParticleVectors" << endl;
   // This is the beginning of one long function.
 
   int code = mela_event.AssociationCode;
-  if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: code=" << code << endl;
+  if (verbosity>=TVar::DEBUG) MELAout << "TUtil::GetBoostedParticleVectors: code=" << code << endl;
   int aVhypo = mela_event.AssociationVCompatibility;
   TLorentzVector nullFourVector(0, 0, 0, 0);
 
@@ -7442,9 +7447,9 @@ void TUtil::GetBoostedParticleVectors(
 
   /***** ASSOCIATED PARTICLES *****/
   if (verbosity>=TVar::DEBUG){
-    cout << "TUtil::GetBoostedParticleVectors: nRequestedLeps=" << mela_event.nRequested_AssociatedLeptons << endl;
-    cout << "TUtil::GetBoostedParticleVectors: nRequestedJets=" << mela_event.nRequested_AssociatedJets << endl;
-    cout << "TUtil::GetBoostedParticleVectors: nRequestedPhotons=" << mela_event.nRequested_AssociatedPhotons << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors: nRequestedLeps=" << mela_event.nRequested_AssociatedLeptons << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors: nRequestedJets=" << mela_event.nRequested_AssociatedJets << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors: nRequestedPhotons=" << mela_event.nRequested_AssociatedPhotons << endl;
   }
   int nsatisfied_jets=0;
   int nsatisfied_lnus=0;
@@ -7452,7 +7457,7 @@ void TUtil::GetBoostedParticleVectors(
   vector<MELAParticle*> candidateVs; // Used if aVhypo!=0
   SimpleParticleCollection_t associated;
   if (aVhypo!=0){
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: aVhypo!=0 case start" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::GetBoostedParticleVectors: aVhypo!=0 case start" << endl;
 
     int nsortedvsstart=(melaCand->getDecayMode()!=TVar::CandidateDecay_Stable ? 2 : 0);
     for (int iv=nsortedvsstart; iv<melaCand->getNSortedVs(); iv++){ // Loop over associated Vs
@@ -7480,7 +7485,7 @@ void TUtil::GetBoostedParticleVectors(
       }
     } // End loop over associated Vs
 
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: candidateVs size = " << candidateVs.size() << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::GetBoostedParticleVectors: candidateVs size = " << candidateVs.size() << endl;
 
     // Pick however many candidates necessary to fill up the requested number of jets or lepton(+)neutrinos
     for (unsigned int iv=0; iv<candidateVs.size(); iv++){
@@ -7534,11 +7539,11 @@ void TUtil::GetBoostedParticleVectors(
       for (unsigned int ias=0; ias<associated_tmp.size(); ias++) associated.push_back(associated_tmp.at(ias)); // Fill associated at the last step
     }
 
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: aVhypo!=0 case associated.size=" << associated.size() << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::GetBoostedParticleVectors: aVhypo!=0 case associated.size=" << associated.size() << endl;
   }
   else{ // Could be split to aVhypo==0 and aVhypo<0 if associated V+jets is needed
     // Associated leptons
-    if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: aVhypo==0 case begin" << endl;
+    if (verbosity>=TVar::DEBUG) MELAout << "TUtil::GetBoostedParticleVectors: aVhypo==0 case begin" << endl;
 
     if (code%TVar::kUseAssociated_Leptons==0){
       SimpleParticleCollection_t associated_tmp;
@@ -7550,13 +7555,13 @@ void TUtil::GetBoostedParticleVectors(
         }
       }
 
-      if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: aVhypo==0 lep case associated_tmp.size=" << associated_tmp.size() << endl;
+      if (verbosity>=TVar::DEBUG) MELAout << "TUtil::GetBoostedParticleVectors: aVhypo==0 lep case associated_tmp.size=" << associated_tmp.size() << endl;
 
       // Adjust the kinematics of associated non-V-originating particles
       if (associated_tmp.size()>=1){
         unsigned int nffs = associated_tmp.size()/2;
         for (unsigned int iv=0; iv<nffs; iv++){
-          if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: Removing mass from lepton pair " << 2*iv+0 << '\t' << 2*iv+1 << endl;
+          if (verbosity>=TVar::DEBUG) MELAout << "TUtil::GetBoostedParticleVectors: Removing mass from lepton pair " << 2*iv+0 << '\t' << 2*iv+1 << endl;
           pair<TLorentzVector, TLorentzVector> corrPair = TUtil::removeMassFromPair(
             associated_tmp.at(2*iv+0).second, associated_tmp.at(2*iv+0).first,
             associated_tmp.at(2*iv+1).second, associated_tmp.at(2*iv+1).first
@@ -7565,7 +7570,7 @@ void TUtil::GetBoostedParticleVectors(
           associated_tmp.at(2*iv+1).second = corrPair.second;
         }
         if (2*nffs<associated_tmp.size()){
-          if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: Removing mass from last lepton  " << associated_tmp.size()-1 << endl;
+          if (verbosity>=TVar::DEBUG) MELAout << "TUtil::GetBoostedParticleVectors: Removing mass from last lepton  " << associated_tmp.size()-1 << endl;
           TLorentzVector tmp = nullFourVector;
           pair<TLorentzVector, TLorentzVector> corrPair = TUtil::removeMassFromPair(
             associated_tmp.at(associated_tmp.size()-1).second, associated_tmp.at(associated_tmp.size()-1).first,
@@ -7587,13 +7592,13 @@ void TUtil::GetBoostedParticleVectors(
         }
       }
 
-      if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: aVhypo==0 jet case associated_tmp.size=" << associated_tmp.size() << endl;
+      if (verbosity>=TVar::DEBUG) MELAout << "TUtil::GetBoostedParticleVectors: aVhypo==0 jet case associated_tmp.size=" << associated_tmp.size() << endl;
 
       // Adjust the kinematics of associated non-V-originating particles
       if (associated_tmp.size()>=1){
         unsigned int nffs = associated_tmp.size()/2;
         for (unsigned int iv=0; iv<nffs; iv++){
-          if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: Removing mass from jet pair " << 2*iv+0 << '\t' << 2*iv+1 << endl;
+          if (verbosity>=TVar::DEBUG) MELAout << "TUtil::GetBoostedParticleVectors: Removing mass from jet pair " << 2*iv+0 << '\t' << 2*iv+1 << endl;
           pair<TLorentzVector, TLorentzVector> corrPair = TUtil::removeMassFromPair(
             associated_tmp.at(2*iv+0).second, associated_tmp.at(2*iv+0).first,
             associated_tmp.at(2*iv+1).second, associated_tmp.at(2*iv+1).first
@@ -7602,7 +7607,7 @@ void TUtil::GetBoostedParticleVectors(
           associated_tmp.at(2*iv+1).second = corrPair.second;
         }
         if (2*nffs<associated_tmp.size()){
-          if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: Removing mass from last jet  " << associated_tmp.size()-1 << endl;
+          if (verbosity>=TVar::DEBUG) MELAout << "TUtil::GetBoostedParticleVectors: Removing mass from last jet  " << associated_tmp.size()-1 << endl;
           TLorentzVector tmp = nullFourVector;
           pair<TLorentzVector, TLorentzVector> corrPair = TUtil::removeMassFromPair(
             associated_tmp.at(associated_tmp.size()-1).second, associated_tmp.at(associated_tmp.size()-1).first,
@@ -7627,7 +7632,7 @@ void TUtil::GetBoostedParticleVectors(
   }
   /***** END ASSOCIATED PARTICLES *****/
 
-  if (verbosity>=TVar::DEBUG) cout << "TUtil::GetBoostedParticleVectors: associated.size=" << associated.size() << endl;
+  if (verbosity>=TVar::DEBUG) MELAout << "TUtil::GetBoostedParticleVectors: associated.size=" << associated.size() << endl;
 
   /***** ASSOCIATED TOP OBJECTS *****/
   int nsatisfied_tops=0;
@@ -7640,7 +7645,7 @@ void TUtil::GetBoostedParticleVectors(
   vector<MELATopCandidate*> tops;
   vector<MELATopCandidate*> topbars;
   vector<MELATopCandidate*> unknowntops;
-  if (code%TVar::kUseAssociated_StableTops==0 && code%TVar::kUseAssociated_UnstableTops==0 && verbosity>=TVar::INFO) cerr << "TUtil::GetBoostedParticleVectors: Stable and unstable tops are not supported at the same time!"  << endl;
+  if (code%TVar::kUseAssociated_StableTops==0 && code%TVar::kUseAssociated_UnstableTops==0 && verbosity>=TVar::INFO) MELAerr << "TUtil::GetBoostedParticleVectors: Stable and unstable tops are not supported at the same time!"  << endl;
   else if (code%TVar::kUseAssociated_StableTops==0 || code%TVar::kUseAssociated_UnstableTops==0){
 
     for (int itop=0; itop<melaCand->getNAssociatedTops(); itop++){
@@ -7657,7 +7662,7 @@ void TUtil::GetBoostedParticleVectors(
           ) particleArray->push_back((MELATopCandidate*)theTop);
       }
     }
-    if (verbosity>=TVar::DEBUG){ cout << "TUtil::GetBoostedParticleVectors: tops.size=" << tops.size() << ", topbars.size=" << topbars.size() << ", unknowntops.size=" << unknowntops.size() << endl; }
+    if (verbosity>=TVar::DEBUG){ MELAout << "TUtil::GetBoostedParticleVectors: tops.size=" << tops.size() << ", topbars.size=" << topbars.size() << ", unknowntops.size=" << unknowntops.size() << endl; }
 
     // Fill the stable/unstable top arrays
     for (unsigned int itop=0; itop<tops.size(); itop++){
@@ -7751,12 +7756,12 @@ void TUtil::GetBoostedParticleVectors(
   }
   /***** END ASSOCIATED TOP OBJECTS *****/
   if (verbosity>=TVar::DEBUG){
-    cout << "TUtil::GetBoostedParticleVectors: stableTops.size=" << stableTops.size() << endl;
-    cout << "TUtil::GetBoostedParticleVectors: stableAntitops.size=" << stableAntitops.size() << endl;
-    cout << "TUtil::GetBoostedParticleVectors: topDaughters.size=" << topDaughters.size() << endl;
-    for (unsigned int itop=0; itop<topDaughters.size(); itop++) cout << "TUtil::GetBoostedParticleVectors: topDaughters.at(" << itop << ").size=" << topDaughters.at(itop).size() << endl;
-    cout << "TUtil::GetBoostedParticleVectors: antitopDaughters.size=" << antitopDaughters.size() << endl;
-    for (unsigned int itop=0; itop<antitopDaughters.size(); itop++) cout << "TUtil::GetBoostedParticleVectors: antitopDaughters.at(" << itop << ").size=" << antitopDaughters.at(itop).size() << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors: stableTops.size=" << stableTops.size() << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors: stableAntitops.size=" << stableAntitops.size() << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors: topDaughters.size=" << topDaughters.size() << endl;
+    for (unsigned int itop=0; itop<topDaughters.size(); itop++) MELAout << "TUtil::GetBoostedParticleVectors: topDaughters.at(" << itop << ").size=" << topDaughters.at(itop).size() << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors: antitopDaughters.size=" << antitopDaughters.size() << endl;
+    for (unsigned int itop=0; itop<antitopDaughters.size(); itop++) MELAout << "TUtil::GetBoostedParticleVectors: antitopDaughters.at(" << itop << ").size=" << antitopDaughters.at(itop).size() << endl;
   }
 
   /***** BOOSTS TO THE CORRECT PT=0 FRAME *****/
@@ -7837,15 +7842,15 @@ void TUtil::GetBoostedParticleVectors(
 
   // This is the end of one long function.
   if (verbosity>=TVar::DEBUG){
-    cout << "TUtil::GetBoostedParticleVectors mela_event.intermediateVid.size=" << mela_event.intermediateVid.size() << endl;
-    cout << "TUtil::GetBoostedParticleVectors mela_event.pMothers.size=" << mela_event.pMothers.size() << endl;
-    cout << "TUtil::GetBoostedParticleVectors mela_event.pDaughters.size=" << mela_event.pDaughters.size() << endl;
-    cout << "TUtil::GetBoostedParticleVectors mela_event.pAssociated.size=" << mela_event.pAssociated.size() << endl;
-    cout << "TUtil::GetBoostedParticleVectors mela_event.pStableTops.size=" << mela_event.pStableTops.size() << endl;
-    cout << "TUtil::GetBoostedParticleVectors mela_event.pStableAntitops.size=" << mela_event.pStableAntitops.size() << endl;
-    cout << "TUtil::GetBoostedParticleVectors mela_event.pTopDaughters.size=" << mela_event.pTopDaughters.size() << endl;
-    cout << "TUtil::GetBoostedParticleVectors mela_event.pAntitopDaughters.size=" << mela_event.pAntitopDaughters.size() << endl;
-    cout << "End GetBoostedParticleVectors" << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors mela_event.intermediateVid.size=" << mela_event.intermediateVid.size() << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors mela_event.pMothers.size=" << mela_event.pMothers.size() << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors mela_event.pDaughters.size=" << mela_event.pDaughters.size() << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors mela_event.pAssociated.size=" << mela_event.pAssociated.size() << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors mela_event.pStableTops.size=" << mela_event.pStableTops.size() << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors mela_event.pStableAntitops.size=" << mela_event.pStableAntitops.size() << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors mela_event.pTopDaughters.size=" << mela_event.pTopDaughters.size() << endl;
+    MELAout << "TUtil::GetBoostedParticleVectors mela_event.pAntitopDaughters.size=" << mela_event.pAntitopDaughters.size() << endl;
+    MELAout << "End GetBoostedParticleVectors" << endl;
   }
 }
 
@@ -7863,10 +7868,10 @@ MELACandidate* TUtil::ConvertVectorFormat(
   ){
   MELACandidate* cand=0;
 
-  if (pDaughters==0){ cerr << "TUtil::ConvertVectorFormat: No daughters!" << endl; return cand; }
-  else if (pDaughters->size()==0){ cerr << "TUtil::ConvertVectorFormat: Daughter size==0!" << endl; return cand; }
-  else if (pDaughters->size()>4){ cerr << "TUtil::ConvertVectorFormat: Daughter size " << pDaughters->size() << ">4 is not supported!" << endl; return cand; }
-  if (pMothers!=0 && pMothers->size()!=2){ cerr << "TUtil::ConvertVectorFormat: Mothers momentum size (" << pMothers->size() << ") has to have had been 2! Continuing by omitting mothers." << endl; /*return cand;*/ }
+  if (pDaughters==0){ MELAerr << "TUtil::ConvertVectorFormat: No daughters!" << endl; return cand; }
+  else if (pDaughters->size()==0){ MELAerr << "TUtil::ConvertVectorFormat: Daughter size==0!" << endl; return cand; }
+  else if (pDaughters->size()>4){ MELAerr << "TUtil::ConvertVectorFormat: Daughter size " << pDaughters->size() << ">4 is not supported!" << endl; return cand; }
+  if (pMothers!=0 && pMothers->size()!=2){ MELAerr << "TUtil::ConvertVectorFormat: Mothers momentum size (" << pMothers->size() << ") has to have had been 2! Continuing by omitting mothers." << endl; /*return cand;*/ }
 
   // Create mother, daughter and associated particle MELAParticle objects
   std::vector<MELAParticle*> daughters;
@@ -7964,8 +7969,8 @@ MELACandidate* TUtil::ConvertVectorFormat(
       && PDGHelpers::HDecayMode!=TVar::CandidateDecay_ZZ
       && PDGHelpers::HDecayMode!=TVar::CandidateDecay_ZW
       ){
-      cerr << "TUtil::ConvertVectorFormat: PDGHelpers::HDecayMode = " << PDGHelpers::HDecayMode << " is set incorrectly for Ndaughters=" << daughters.size() << ". There is no automatic mechnism for this scenario. ";
-      cerr << "Suggestion: Call PDGHelpers::setCandidateDecayMode(TVar::CandidateDecay_XY) before this call." << endl;
+      MELAerr << "TUtil::ConvertVectorFormat: PDGHelpers::HDecayMode = " << PDGHelpers::HDecayMode << " is set incorrectly for Ndaughters=" << daughters.size() << ". There is no automatic mechnism for this scenario. ";
+      MELAerr << "Suggestion: Call PDGHelpers::setCandidateDecayMode(TVar::CandidateDecay_XY) before this call." << endl;
       assert(0);
     }
     cand->sortDaughters();
@@ -8004,9 +8009,9 @@ MELATopCandidate* TUtil::ConvertTopCandidate(
   ){
   MELATopCandidate* cand=0;
 
-  if (TopDaughters==0){ cerr << "TUtil::ConvertTopCandidate: No daughters!" << endl; return cand; }
-  else if (TopDaughters->size()==0){ cerr << "TUtil::ConvertTopCandidate: Daughter size==0!" << endl; return cand; }
-  else if (!(TopDaughters->size()==1 || TopDaughters->size()==3)){ cerr << "TUtil::ConvertVectorFormat: Daughter size " << TopDaughters->size() << "!=1 or 3 is not supported!" << endl; return cand; }
+  if (TopDaughters==0){ MELAerr << "TUtil::ConvertTopCandidate: No daughters!" << endl; return cand; }
+  else if (TopDaughters->size()==0){ MELAerr << "TUtil::ConvertTopCandidate: Daughter size==0!" << endl; return cand; }
+  else if (!(TopDaughters->size()==1 || TopDaughters->size()==3)){ MELAerr << "TUtil::ConvertVectorFormat: Daughter size " << TopDaughters->size() << "!=1 or 3 is not supported!" << endl; return cand; }
 
   if (TopDaughters->size()==1){
     if (abs((TopDaughters->at(0)).first)==6 || (TopDaughters->at(0)).first==0){
@@ -8036,161 +8041,68 @@ MELATopCandidate* TUtil::ConvertTopCandidate(
 }
 
 void TUtil::PrintCandidateSummary(MELACandidate* cand){
-  cout << "***** TUtil::PrintCandidateSummary *****" << endl;
-  cout << "Candidate: " << cand << endl;
-  if (cand!=0){
-    cout << "\tHas " << cand->getNMothers() << " mothers" << endl;
-    for (int ip=0; ip<cand->getNMothers(); ip++){
-      MELAParticle* part = cand->getMother(ip);
-      cout
-        << "\t\tV" << ip << " (" << part->id << ") (X,Y,Z,T)=( "
-        << part->x() << " , "
-        << part->y() << " , "
-        << part->z() << " , "
-        << part->t() << " )" << endl;
-    }
-    cout << "\tHas " << cand->getNSortedVs() << " sorted Vs" << endl;
-    for (int iv=0; iv<cand->getNSortedVs(); iv++){
-      cout
-        << "\t\tV" << iv << " (" << cand->getSortedV(iv)->id << ") (X,Y,Z,T)=( "
-        << cand->getSortedV(iv)->x() << " , "
-        << cand->getSortedV(iv)->y() << " , "
-        << cand->getSortedV(iv)->z() << " , "
-        << cand->getSortedV(iv)->t() << " )" << endl;
-      for (int ivd=0; ivd<cand->getSortedV(iv)->getNDaughters(); ivd++){
-        cout
-          << "\t\t- V" << iv << ivd << " (" << cand->getSortedV(iv)->getDaughter(ivd)->id << ") (X,Y,Z,T)=( "
-          << cand->getSortedV(iv)->getDaughter(ivd)->x() << " , "
-          << cand->getSortedV(iv)->getDaughter(ivd)->y() << " , "
-          << cand->getSortedV(iv)->getDaughter(ivd)->z() << " , "
-          << cand->getSortedV(iv)->getDaughter(ivd)->t() << " )" << endl;
-      }
-    }
-
-    cout << "\tHas " << cand->getNAssociatedLeptons() << " leptons or neutrinos" << endl;
-    for (int ip=0; ip<cand->getNAssociatedLeptons(); ip++){
-      MELAParticle* part = cand->getAssociatedLepton(ip);
-      cout
-        << "\t\tV" << ip << " (" << part->id << ") (X,Y,Z,T)=( "
-        << part->x() << " , "
-        << part->y() << " , "
-        << part->z() << " , "
-        << part->t() << " )" << endl;
-    }
-    cout << "\tHas " << cand->getNAssociatedPhotons() << " photons" << endl;
-    for (int ip=0; ip<cand->getNAssociatedPhotons(); ip++){
-      MELAParticle* part = cand->getAssociatedPhoton(ip);
-      cout
-        << "\t\tV" << ip << " (" << part->id << ") (X,Y,Z,T)=( "
-        << part->x() << " , "
-        << part->y() << " , "
-        << part->z() << " , "
-        << part->t() << " )" << endl;
-    }
-    cout << "\tHas " << cand->getNAssociatedJets() << " jets" << endl;
-    for (int ip=0; ip<cand->getNAssociatedJets(); ip++){
-      MELAParticle* part = cand->getAssociatedJet(ip);
-      cout
-        << "\t\tV" << ip << " (" << part->id << ") (X,Y,Z,T)=( "
-        << part->x() << " , "
-        << part->y() << " , "
-        << part->z() << " , "
-        << part->t() << " )" << endl;
-    }
-    cout << "\tHas " << cand->getNAssociatedTops() << " tops" << endl;
-    for (int ip=0; ip<cand->getNAssociatedTops(); ip++){
-      MELATopCandidate* part = cand->getAssociatedTop(ip);
-      cout
-        << "\t\tTop" << ip << " (" << part->id << ") (X,Y,Z,T)=( "
-        << part->x() << " , "
-        << part->y() << " , "
-        << part->z() << " , "
-        << part->t() << " )" << endl;
-      if (part->getLightQuark()!=0){
-        cout
-          << "\t\t- Top" << ip << " b " << " (" << part->getLightQuark()->id << ") (X,Y,Z,T)=( "
-          << part->getLightQuark()->x() << " , "
-          << part->getLightQuark()->y() << " , "
-          << part->getLightQuark()->z() << " , "
-          << part->getLightQuark()->t() << " )" << endl;
-      }
-      if (part->getWFermion()!=0){
-        cout
-          << "\t\t- Top" << ip << " Wf " << " (" << part->getWFermion()->id << ") (X,Y,Z,T)=( "
-          << part->getWFermion()->x() << " , "
-          << part->getWFermion()->y() << " , "
-          << part->getWFermion()->z() << " , "
-          << part->getWFermion()->t() << " )" << endl;
-      }
-      if (part->getWAntifermion()!=0){
-        cout
-          << "\t\t- Top" << ip << " Wfb " << " (" << part->getWAntifermion()->id << ") (X,Y,Z,T)=( "
-          << part->getWAntifermion()->x() << " , "
-          << part->getWAntifermion()->y() << " , "
-          << part->getWAntifermion()->z() << " , "
-          << part->getWAntifermion()->t() << " )" << endl;
-      }
-    }
-  }
+  MELAout << "***** TUtil::PrintCandidateSummary *****" << endl;
+  MELAout << "Candidate: " << cand << endl;
+  if (cand) MELAout << *cand;
 }
 
 void TUtil::PrintCandidateSummary(simple_event_record* cand){
-  cout << "***** TUtil::PrintCandidateSummary (Simple Event Record) *****" << endl;
-  cout << "Candidate: " << cand << endl;
+  MELAout << "***** TUtil::PrintCandidateSummary (Simple Event Record) *****" << endl;
+  MELAout << "Candidate: " << cand << endl;
   if (cand!=0){
-    cout << "\tAssociationCode: " << cand->AssociationCode << endl;
-    cout << "\tAssociationVCompatibility: " << cand->AssociationVCompatibility << endl;
-    cout << "\tnRequested_AssociatedJets: " << cand->nRequested_AssociatedJets << endl;
-    cout << "\tnRequested_AssociatedLeptons: " << cand->nRequested_AssociatedLeptons << endl;
-    cout << "\tnRequested_AssociatedPhotons: " << cand->nRequested_AssociatedPhotons << endl;
-    cout << "\tnRequested_Tops: " << cand->nRequested_Tops << endl;
-    cout << "\tnRequested_Antitops: " << cand->nRequested_Antitops << endl;
-    cout << "\tHas " << cand->pMothers.size() << " mothers" << endl;
+    MELAout << "\tAssociationCode: " << cand->AssociationCode << endl;
+    MELAout << "\tAssociationVCompatibility: " << cand->AssociationVCompatibility << endl;
+    MELAout << "\tnRequested_AssociatedJets: " << cand->nRequested_AssociatedJets << endl;
+    MELAout << "\tnRequested_AssociatedLeptons: " << cand->nRequested_AssociatedLeptons << endl;
+    MELAout << "\tnRequested_AssociatedPhotons: " << cand->nRequested_AssociatedPhotons << endl;
+    MELAout << "\tnRequested_Tops: " << cand->nRequested_Tops << endl;
+    MELAout << "\tnRequested_Antitops: " << cand->nRequested_Antitops << endl;
+    MELAout << "\tHas " << cand->pMothers.size() << " mothers" << endl;
     for (unsigned int ip=0; ip<cand->pMothers.size(); ip++){
       SimpleParticle_t* part = &(cand->pMothers.at(ip));
-      cout
+      MELAout
         << "\t\tV" << ip << " (" << part->first << ") (X,Y,Z,T)=( "
         << part->second.X() << " , "
         << part->second.Y() << " , "
         << part->second.Z() << " , "
         << part->second.T() << " )" << endl;
     }
-    cout << "\tHas " << cand->intermediateVid.size() << " sorted daughter Vs" << endl;
-    for (unsigned int iv=0; iv<cand->intermediateVid.size(); iv++) cout << "\t\tV" << iv << " (" << cand->intermediateVid.at(iv) << ")" << endl;
-    cout << "\tHas " << cand->pDaughters.size() << " daughters" << endl;
+    MELAout << "\tHas " << cand->intermediateVid.size() << " sorted daughter Vs" << endl;
+    for (unsigned int iv=0; iv<cand->intermediateVid.size(); iv++) MELAout << "\t\tV" << iv << " (" << cand->intermediateVid.at(iv) << ")" << endl;
+    MELAout << "\tHas " << cand->pDaughters.size() << " daughters" << endl;
     for (unsigned int ip=0; ip<cand->pDaughters.size(); ip++){
       SimpleParticle_t* part = &(cand->pDaughters.at(ip));
-      cout
+      MELAout
         << "\t\tDau[" << ip << "] (" << part->first << ") (X,Y,Z,T)=( "
         << part->second.X() << " , "
         << part->second.Y() << " , "
         << part->second.Z() << " , "
         << part->second.T() << " )" << endl;
     }
-    cout << "\tHas " << cand->pAssociated.size() << " associated particles" << endl;
+    MELAout << "\tHas " << cand->pAssociated.size() << " associated particles" << endl;
     for (unsigned int ip=0; ip<cand->pAssociated.size(); ip++){
       SimpleParticle_t* part = &(cand->pAssociated.at(ip));
-      cout
+      MELAout
         << "\t\tAPart[" << ip << "] (" << part->first << ") (X,Y,Z,T)=( "
         << part->second.X() << " , "
         << part->second.Y() << " , "
         << part->second.Z() << " , "
         << part->second.T() << " )" << endl;
     }
-    cout << "\tHas " << cand->pStableTops.size() << " stable tops" << endl;
+    MELAout << "\tHas " << cand->pStableTops.size() << " stable tops" << endl;
     for (unsigned int ip=0; ip<cand->pStableTops.size(); ip++){
       SimpleParticle_t* part = &(cand->pStableTops.at(ip));
-      cout
+      MELAout
         << "\t\tAPart[" << ip << "] (" << part->first << ") (X,Y,Z,T)=( "
         << part->second.X() << " , "
         << part->second.Y() << " , "
         << part->second.Z() << " , "
         << part->second.T() << " )" << endl;
     }
-    cout << "\tHas " << cand->pStableAntitops.size() << " stable antitops" << endl;
+    MELAout << "\tHas " << cand->pStableAntitops.size() << " stable antitops" << endl;
     for (unsigned int ip=0; ip<cand->pStableAntitops.size(); ip++){
       SimpleParticle_t* part = &(cand->pStableAntitops.at(ip));
-      cout
+      MELAout
         << "\t\tAPart[" << ip << "] (" << part->first << ") (X,Y,Z,T)=( "
         << part->second.X() << " , "
         << part->second.Y() << " , "
@@ -8198,12 +8110,12 @@ void TUtil::PrintCandidateSummary(simple_event_record* cand){
         << part->second.T() << " )" << endl;
     }
 
-    cout << "\tHas " << cand->pTopDaughters.size() << " unstable tops" << endl;
+    MELAout << "\tHas " << cand->pTopDaughters.size() << " unstable tops" << endl;
     for (unsigned int ip=0; ip<cand->pTopDaughters.size(); ip++){
-      cout << "\t\tTop[" << ip << "] daughters:" << endl;
+      MELAout << "\t\tTop[" << ip << "] daughters:" << endl;
       for (unsigned int jp=0; jp<cand->pTopDaughters.at(ip).size(); jp++){
         SimpleParticle_t* part = &(cand->pTopDaughters.at(ip).at(jp));
-        cout
+        MELAout
           << "\t\t- Top daughter[" << ip << jp << "] (" << part->first << ") (X,Y,Z,T)=( "
           << part->second.X() << " , "
           << part->second.Y() << " , "
@@ -8211,12 +8123,12 @@ void TUtil::PrintCandidateSummary(simple_event_record* cand){
           << part->second.T() << " )" << endl;
       }
     }
-    cout << "\tHas " << cand->pAntitopDaughters.size() << " unstable antitops" << endl;
+    MELAout << "\tHas " << cand->pAntitopDaughters.size() << " unstable antitops" << endl;
     for (unsigned int ip=0; ip<cand->pAntitopDaughters.size(); ip++){
-      cout << "\t\tAntitop[" << ip << "] daughters:" << endl;
+      MELAout << "\t\tAntitop[" << ip << "] daughters:" << endl;
       for (unsigned int jp=0; jp<cand->pAntitopDaughters.at(ip).size(); jp++){
         SimpleParticle_t* part = &(cand->pAntitopDaughters.at(ip).at(jp));
-        cout
+        MELAout
           << "\t\t- Antitop daughter[" << ip << jp << "] (" << part->first << ") (X,Y,Z,T)=( "
           << part->second.X() << " , "
           << part->second.Y() << " , "
