@@ -16,14 +16,6 @@
 <export>
   <lib name="1"/>
   <use name="mcfm_705"/>   <!--For this to work, one needs to specify mcfm as a scram tool.-->
-</export>
-
-<export>
-  <lib name="1"/>
   <use name="jhugenmela"/>   <!--For this to work, one needs to specify mcfm as a scram tool.-->
-</export>
-
-<export>
-  <lib name="1"/>
   <use name="collier"/>   <!--For this to work, one needs to specify mcfm as a scram tool.-->
 </export>
