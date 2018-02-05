@@ -1,6 +1,5 @@
-#include <algorithm>
-#include <utility>
 #include "MELAParticle.h"
+#include "TUtilHelpers.hh"
 #include "MELAStreamHelpers.hh"
 
 
@@ -81,6 +80,9 @@ void MELAParticle::getRelatedParticles(std::vector<MELAParticle*>& particles){
   if (!checkParticleExists(this, particles)) particles.push_back(this);
 }
 
+bool MELAParticle::hasMother(MELAParticle const* part) const{ return MELAParticle::checkParticleExists(part, mothers); }
+bool MELAParticle::hasDaughter(MELAParticle const* part) const{ return MELAParticle::checkParticleExists(part, daughters); }
+
 double MELAParticle::charge()const{
   double cpos=0;
   if (isAWBoson(id) || abs(id)==37 || abs(id)==2212 || abs(id)==211 || abs(id)==321 || abs(id)==411 || abs(id)==521) cpos = 1.;
@@ -107,7 +109,6 @@ void MELAParticle::boost(const TVector3& vec, bool boostAll){
     << std::endl;
 }
 
-bool MELAParticle::checkParticleExists(MELAParticle* myParticle, std::vector<MELAParticle*>& particleArray){
-  for (auto& part : particleArray){ if (part==myParticle) return true; }
-  return false;
+bool MELAParticle::checkParticleExists(MELAParticle const* myParticle, std::vector<MELAParticle*> const& particleArray){
+  return TUtilHelpers::checkElementExists<MELAParticle const*, MELAParticle*>(myParticle, particleArray);
 }

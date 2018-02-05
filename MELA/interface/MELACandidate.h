@@ -41,6 +41,9 @@ public:
   const std::vector<MELAParticle*>& getAssociatedJets()const;
   const std::vector<MELATopCandidate*>& getAssociatedTops()const;
 
+  std::vector<MELAParticle*> getAssociatedSortedVs();
+  std::vector<MELAParticle*> getAssociatedSortedVs()const;
+
   void getRelatedParticles(std::vector<MELAParticle*>& particles);
 
   TLorentzVector getAlternativeVMomentum(int index)const;
@@ -78,7 +81,6 @@ public:
   void setAddAssociatedByHighestPt(bool associatedByHighestPt_);
   void setShallowCopy(bool flag);
 
-  static bool checkTopCandidateExists(MELATopCandidate* myParticle, std::vector<MELATopCandidate*>& particleArray);
   static void addUnordered(MELAParticle* myParticle, std::vector<MELAParticle*>& particleArray);
   static void addUnordered(MELATopCandidate* myParticle, std::vector<MELATopCandidate*>& particleArray);
   static void addByHighestPt(MELAParticle* myParticle, std::vector<MELAParticle*>& particleArray);
@@ -101,7 +103,7 @@ protected:
   void sortDaughtersInitial();
   void sortDaughtersByBestZ1();
   void createSortedVs();
-  bool checkDaughtership(MELAParticle* myParticle)const;
+  bool checkDaughtership(MELAParticle const* myParticle)const;
   void createAssociatedVs(std::vector<MELAParticle*>& particleArray);
 
   void addAssociatedParticleToArray(MELAParticle* myParticle, std::vector<MELAParticle*>& particleArray);

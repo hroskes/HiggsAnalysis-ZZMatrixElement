@@ -80,30 +80,30 @@ namespace TUtil{
   /// Leptons are re-ordered internally according to a standard convention:
   /// lept1 = negative-charged lepton (for OS pairs).
   void computeAngles(
-    TLorentzVector Z1_lept1, int Z1_lept1Id,
-    TLorentzVector Z1_lept2, int Z1_lept2Id,
-    TLorentzVector Z2_lept1, int Z2_lept1Id,
-    TLorentzVector Z2_lept2, int Z2_lept2Id,
     float& costhetastar,
     float& costheta1,
     float& costheta2,
     float& Phi,
-    float& Phi1
-    );
-  void computeAnglesCS(
+    float& Phi1,
     TLorentzVector Z1_lept1, int Z1_lept1Id,
     TLorentzVector Z1_lept2, int Z1_lept2Id,
     TLorentzVector Z2_lept1, int Z2_lept1Id,
-    TLorentzVector Z2_lept2, int Z2_lept2Id,
+    TLorentzVector Z2_lept2, int Z2_lept2Id
+    );
+  void computeAnglesCS(
     float pbeam,
     float& costhetastar,
     float& costheta1,
     float& costheta2,
     float& Phi,
-    float& Phi1
+    float& Phi1,
+    TLorentzVector Z1_lept1, int Z1_lept1Id,
+    TLorentzVector Z1_lept2, int Z1_lept2Id,
+    TLorentzVector Z2_lept1, int Z2_lept1Id,
+    TLorentzVector Z2_lept2, int Z2_lept2Id
     );
   // Angles of associated production
-  void computeVBFangles(
+  void computeVBFAngles(
     float& costhetastar,
     float& costheta1,
     float& costheta2,
@@ -120,7 +120,7 @@ namespace TUtil{
     TLorentzVector* injet1=0, int injet1Id=0, // Gen. partons in lab frame
     TLorentzVector* injet2=0, int injet2Id=0
     );
-  void computeVBFangles_ComplexBoost(
+  void computeVBFAngles_ComplexBoost(
     float& costhetastar,
     float& costheta1_real, float& costheta1_imag,
     float& costheta2_real, float& costheta2_imag,
@@ -137,7 +137,7 @@ namespace TUtil{
     TLorentzVector* injet1=0, int injet1Id=0, // Gen. partons in lab frame
     TLorentzVector* injet2=0, int injet2Id=0
     );
-  void computeVHangles(
+  void computeVHAngles(
     float& costhetastar,
     float& costheta1,
     float& costheta2,
@@ -187,20 +187,19 @@ namespace TUtil{
   void InitJHUGenMELA(const char* pathtoPDFSet, int PDFMember);
   void SetJHUGenHiggsMassWidth(double MReso, double GaReso);
   void SetJHUGenDistinguishWWCouplings(bool doAllow);
+  void ResetAmplitudeIncludes();
 
   // Spin-0 couplings
   void SetMCFMSpinZeroCouplings(bool useBSM, SpinZeroCouplings* Hcouplings, bool forceZZ);
-  void SetJHUGenSpinZeroVVCouplings(double Hvvcoupl[SIZE_HVV][2], int Hvvcoupl_cqsq[SIZE_HVV_CQSQ], double HvvLambda_qsq[SIZE_HVV_LAMBDAQSQ][SIZE_HVV_CQSQ], bool useWWcoupl);
+  void SetJHUGenSpinZeroVVCouplings(double Hvvcoupl[SIZE_HVV][2], double Hvvpcoupl[SIZE_HVV][2], double Hvpvpcoupl[SIZE_HVV][2], int Hvvcoupl_cqsq[SIZE_HVV_CQSQ], double HvvLambda_qsq[SIZE_HVV_LAMBDAQSQ][SIZE_HVV_CQSQ], bool useWWcoupl);
   void SetJHUGenSpinZeroGGCouplings(double Hggcoupl[SIZE_HGG][2]);
   void SetJHUGenSpinZeroQQCouplings(double Hqqcoupl[SIZE_HQQ][2]);
-  void SetJHUGenSpinZeroContactTerms(
-    double Hzzpcoupl[SIZE_HVV][2], double Hzpzpcoupl[SIZE_HVV][2], double Zpffcoupl[SIZE_Vpff][2],
-    double Hwwpcoupl[SIZE_HVV][2], double Hwpwpcoupl[SIZE_HVV][2], double Wpffcoupl[SIZE_Vpff][2]
-    );
   // Spin-1 couplings
   void SetJHUGenSpinOneCouplings(double Zqqcoupl[SIZE_ZQQ][2], double Zvvcoupl[SIZE_ZVV][2]);
   // Spin-2 couplings
-  void SetJHUGenSpinTwoCouplings(double Gacoupl[SIZE_GGG][2], double Gbcoupl[SIZE_GVV][2], double qLeftRightcoupl[SIZE_GQQ][2]);
+  void SetJHUGenSpinTwoCouplings(double Gacoupl[SIZE_GGG][2], double Gvvcoupl[SIZE_GVV][2], double Gvvpcoupl[SIZE_GVV][2], double Gvpvpcoupl[SIZE_GVV][2], double qLeftRightcoupl[SIZE_GQQ][2]);
+  // Vprime / contact couplings
+  void SetJHUGenVprimeContactCouplings(double Zpffcoupl[SIZE_Vpff][2], double Wpffcoupl[SIZE_Vpff][2]);
 
   // PS cuts, unused
   bool MCFM_masscuts(double s[][mxpart], const TVar::Process& process);

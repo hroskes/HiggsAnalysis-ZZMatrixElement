@@ -90,8 +90,8 @@ Mela::~Mela(){
   // ...then delete the observables.
   if (myVerbosity_>=TVar::DEBUG) MELAout << "Mela destructor: Destroying analytical PDFs observables" << endl;
   delete mzz_rrv;
-  delete z1mass_rrv; 
-  delete z2mass_rrv; 
+  delete z1mass_rrv;
+  delete z2mass_rrv;
   delete costhetastar_rrv;
   delete costheta1_rrv;
   delete costheta2_rrv;
@@ -222,8 +222,34 @@ void Mela::build(double mh_){
 }
 
 void Mela::printLogo() const{
-  // To be written
-  // e.g. MELAout << '*'; MELAout.writeCentered("Hello world!", ' ', 51); MELAout << '*' << endl;
+  vector<string> logolines;
+  logolines.push_back("MELA (Matrix Element Likelihood Approach)");
+  logolines.push_back("");
+  logolines.push_back("Data analysis and Monte Carlo weights package");
+  logolines.push_back("for analyses of resonances produced at pp, ppbar, and e+e- colliders, featuring:");
+  logolines.push_back("");
+  logolines.push_back("* JHUGenMELA *");
+  logolines.push_back("Signal calculations based on analytical pdf.s, and JHU Generator (JHUGen) matrix elements");
+  logolines.push_back("(See JHUGen credits below)");
+  logolines.push_back("");
+  logolines.push_back("* MCFM *");
+  logolines.push_back("Signal, background, and interference calculations, modified based on JHUGen matrix elements");
+  logolines.push_back("(See MCFM credits below)");
+  logolines.push_back("");
+  logolines.push_back("For more details: http://spin.pha.jhu.edu");
+  logolines.push_back("");
+  size_t maxlinesize = 0;
+  for (auto const& l:logolines) maxlinesize = std::max(maxlinesize, l.length());
+  MELAout.writeCentered("", '*', maxlinesize+10); MELAout << endl;
+  unsigned int iline=0;
+  for (auto const& l:logolines){
+    MELAout << '*';
+    MELAout.writeCentered(l, ' ', maxlinesize+8);
+    MELAout << '*' << endl;
+    if (iline==0){ MELAout.writeCentered("", '*', maxlinesize+10); MELAout << endl; }
+    iline++;
+  }
+  MELAout.writeCentered("", '*', maxlinesize+10); MELAout << endl;
 }
 
 // Set-functions
@@ -281,6 +307,54 @@ void Mela::setTempCandidate(
 void Mela::appendTopCandidate(SimpleParticleCollection_t* TopDaughters){ ZZME->append_TopCandidate(TopDaughters); }
 
 
+void Mela::setSpinZeroCouplings(){
+  ZZME->set_SpinZeroCouplings(
+    selfDHggcoupl,
+    selfDHg4g4coupl,
+    selfDHqqcoupl,
+    selfDHbbcoupl,
+    selfDHttcoupl,
+    selfDHb4b4coupl,
+    selfDHt4t4coupl,
+    selfDHzzcoupl,
+    selfDHwwcoupl,
+    selfDHzzLambda_qsq,
+    selfDHwwLambda_qsq,
+    selfDHzzCLambda_qsq,
+    selfDHwwCLambda_qsq,
+    differentiate_HWW_HZZ
+  );
+  ZZME->set_SpinZeroContact(
+    selfDHzzpcoupl,
+    selfDHzpzpcoupl,
+    selfDHwwpcoupl,
+    selfDHwpwpcoupl
+  );
+  ZZME->set_VprimeContactCouplings(
+    selfDZpffcoupl,
+    selfDWpffcoupl,
+    selfDM_Zprime,
+    selfDGa_Zprime,
+    selfDM_Wprime,
+    selfDGa_Wprime
+  );
+}
+void Mela::setSpinOneCouplings(){
+  ZZME->set_SpinOneCouplings(selfDZqqcoupl, selfDZvvcoupl);
+}
+void Mela::setSpinTwoCouplings(){
+  ZZME->set_SpinTwoCouplings(selfDGqqcoupl, selfDGggcoupl, selfDGvvcoupl);
+  ZZME->set_SpinTwoContact(selfDGvvpcoupl, selfDGvpvpcoupl);
+  ZZME->set_VprimeContactCouplings(
+    selfDZpffcoupl,
+    selfDWpffcoupl,
+    selfDM_Zprime,
+    selfDGa_Zprime,
+    selfDM_Wprime,
+    selfDGa_Wprime
+  );
+}
+
 // Notice that this only sets the members of MELA, not TEvtProb. TEvtProb resets itself.
 void Mela::reset_SelfDCouplings(){
   // We have a lot of them, now even more!
@@ -313,8 +387,7 @@ void Mela::reset_SelfDCouplings(){
       }
     }
   }
-
-  //contact terms
+  // Spin-0 contact terms
   for (int im=0; im<2; im++){
     for (int ic=0; ic<SIZE_HVV; ic++){
       selfDHzzpcoupl[ic][im] = 0;
@@ -322,15 +395,7 @@ void Mela::reset_SelfDCouplings(){
       selfDHwwpcoupl[ic][im] = 0;
       selfDHwpwpcoupl[ic][im] = 0;
     }
-    for (int ic=0; ic<SIZE_Vpff; ic++) {
-      selfDZpffcoupl[ic][im] = 0;
-      selfDWpffcoupl[ic][im] = 0;
-    }
   }
-  selfDM_Zprime = -1;
-  selfDGa_Zprime = 0;
-  selfDM_Wprime = -1;
-  selfDGa_Wprime = 0;
 
   //****Spin-1****//
   for (int im=0; im<2; im++){
@@ -340,10 +405,26 @@ void Mela::reset_SelfDCouplings(){
 
   //****Spin-2****//
   for (int im=0; im<2; im++){
-    for (int ic=0; ic<SIZE_GVV; ic++) selfDGvvcoupl[ic][im] = 0;
+    for (int ic=0; ic<SIZE_GVV; ic++){
+      selfDGvvcoupl[ic][im] = 0;
+      selfDGvvpcoupl[ic][im] = 0;
+      selfDGvpvpcoupl[ic][im] = 0;
+    }
     for (int ic=0; ic<SIZE_GGG; ic++) selfDGggcoupl[ic][im] = 0;
     for (int ic=0; ic<SIZE_GQQ; ic++) selfDGqqcoupl[ic][im] = 0;
   }
+
+  // Vprime / contact couplings
+  for (int im=0; im<2; im++){
+    for (int ic=0; ic<SIZE_Vpff; ic++){
+      selfDZpffcoupl[ic][im] = 0;
+      selfDWpffcoupl[ic][im] = 0;
+    }
+  }
+  selfDM_Zprime = -1;
+  selfDGa_Zprime = 0;
+  selfDM_Wprime = -1;
+  selfDGa_Wprime = 0;
 
   // Did I tell you that we have a lot of them?
 }
@@ -406,31 +487,44 @@ void Mela::computeDecayAngles(
   float& Phi,
   float& costhetastar,
   float& Phi1
-  ){
+){
+  using TVar::simple_event_record;
+
   qH=0; m1=0; m2=0; costheta1=0; costheta2=0; Phi=0; costhetastar=0; Phi1=0;
 
   if (melaCand==0) melaCand = getCurrentCandidate();
   if (melaCand!=0){
     TLorentzVector nullVector(0, 0, 0, 0);
 
-    qH = melaCand->m();
-    m1 = melaCand->getSortedV(0)->m();
-    m2 = melaCand->getSortedV(1)->m();
+    int partIncCode=TVar::kNoAssociated; // Only use associated partons in the pT=0 frame boost
+    simple_event_record mela_event;
+    mela_event.AssociationCode=partIncCode;
+    TUtil::GetBoostedParticleVectors(melaCand, mela_event, myVerbosity_);
+    SimpleParticleCollection_t& daughters = mela_event.pDaughters;
 
-    if (melaCand->getSortedV(0)->getNDaughters()>=1 && melaCand->getSortedV(1)->getNDaughters()>=1){
-      MELAParticle* dau[2][2]={ { 0 } };
-      for (int vv=0; vv<2; vv++){
-        MELAParticle* Vi = melaCand->getSortedV(vv);
-        for (int dd=0; dd<Vi->getNDaughters(); dd++) dau[vv][dd] = Vi->getDaughter(dd);
-      }
-      TUtil::computeAngles(
-        (dau[0][0]!=0 ? dau[0][0]->p4 : nullVector), (dau[0][0]!=0 ? dau[0][0]->id : -9000),
-        (dau[0][1]!=0 ? dau[0][1]->p4 : nullVector), (dau[0][1]!=0 ? dau[0][1]->id : -9000),
-        (dau[1][0]!=0 ? dau[1][0]->p4 : nullVector), (dau[1][0]!=0 ? dau[1][0]->id : -9000),
-        (dau[1][1]!=0 ? dau[1][1]->p4 : nullVector), (dau[1][1]!=0 ? dau[1][1]->id : -9000),
-        costhetastar, costheta1, costheta2, Phi, Phi1
-        );
+    if (daughters.size()<2 || daughters.size()>4 || mela_event.intermediateVid.size()!=2){
+      if (myVerbosity_>=TVar::ERROR) MELAerr << "Mela::computeDecayAngles: Number of daughters " << daughters.size() << " or number of intermediate Vs " << mela_event.intermediateVid << " not supported!" << endl;
+      return;
     }
+
+    // Make sure there are exactly 4 daughters, null or not
+    if (daughters.size()%2==1){ for (unsigned int ipar=daughters.size(); ipar<4; ipar++) daughters.push_back(SimpleParticle_t(-9000, nullVector)); }
+    else if (daughters.size()==2){
+      daughters.push_back(SimpleParticle_t(-9000, nullVector));
+      daughters.insert(daughters.begin()+1, SimpleParticle_t(-9000, nullVector));
+    }
+    qH = (daughters.at(0).second+daughters.at(1).second+daughters.at(2).second+daughters.at(3).second).M();
+    m1 = (daughters.at(0).second+daughters.at(1).second).M();
+    m2 = (daughters.at(2).second+daughters.at(3).second).M();
+
+    TUtil::computeAngles(
+      costhetastar, costheta1, costheta2, Phi, Phi1,
+      daughters.at(0).second, daughters.at(0).first,
+      daughters.at(1).second, daughters.at(1).first,
+      daughters.at(2).second, daughters.at(2).first,
+      daughters.at(3).second, daughters.at(3).first
+    );
+
     // Protect against NaN
     if (!(costhetastar==costhetastar)) costhetastar=0;
     if (!(costheta1==costheta1)) costheta1=0;
@@ -439,6 +533,262 @@ void Mela::computeDecayAngles(
     if (!(Phi1==Phi1)) Phi1=0;
   }
   else if (myVerbosity_>=TVar::DEBUG) MELAerr << "Mela::computeDecayAngles: No possible melaCand in TEvtProb to compute angles." << endl;
+}
+
+// VBF angles computation script of Mela to convert MELACandidates to m1, m2 etc.
+void Mela::computeVBFAngles(
+  float& Q2V1,
+  float& Q2V2,
+  float& costheta1,
+  float& costheta2,
+  float& Phi,
+  float& costhetastar,
+  float& Phi1
+){
+  using TVar::simple_event_record;
+
+  Q2V1=0; Q2V2=0; costheta1=0; costheta2=0; Phi=0; costhetastar=0; Phi1=0;
+
+  if (melaCand==0) melaCand = getCurrentCandidate();
+  if (melaCand!=0){
+    TLorentzVector nullVector(0, 0, 0, 0);
+
+    int nRequested_AssociatedJets=2;
+    int partIncCode=TVar::kUseAssociated_Jets; // Only use associated partons in the pT=0 frame boost
+    simple_event_record mela_event;
+    mela_event.AssociationCode=partIncCode;
+    mela_event.nRequested_AssociatedJets=nRequested_AssociatedJets;
+    TUtil::GetBoostedParticleVectors(melaCand, mela_event, myVerbosity_);
+    SimpleParticleCollection_t& mothers = mela_event.pMothers;
+    SimpleParticleCollection_t& aparts = mela_event.pAssociated;
+    SimpleParticleCollection_t& daughters = mela_event.pDaughters;
+
+    if ((int)aparts.size()!=nRequested_AssociatedJets){ if (myVerbosity_>=TVar::ERROR) MELAerr << "Mela::computeVBFAngles: Number of associated particles is not 2!" << endl; return; }
+
+    // Make sure there are exactly 4 daughters, null or not
+    if (daughters.size()>4){ // Unsupported size, default to undecayed Higgs
+      SimpleParticle_t& firstPart = daughters.at(0);
+      firstPart.first=25;
+      for (auto it=daughters.cbegin()+1; it!=daughters.cend(); it++){ firstPart.second = firstPart.second + it->second; }
+      daughters.erase(daughters.begin()+4, daughters.end());
+    }
+    if (daughters.size()%2==1){ for (unsigned int ipar=daughters.size(); ipar<4; ipar++) daughters.push_back(SimpleParticle_t(-9000, nullVector)); }
+    else if (daughters.size()==2){
+      daughters.push_back(SimpleParticle_t(-9000, nullVector));
+      daughters.insert(daughters.begin()+1, SimpleParticle_t(-9000, nullVector));
+    }
+
+    if (myVerbosity_>=TVar::DEBUG){
+      MELAout << "Mela::computeVBFAngles: Giving the following particles to TUtil::computeVBFAngles:" << endl;
+      for (unsigned int i=0; i<std::min(daughters.size(), (SimpleParticleCollection_t::size_type) 4); i++) MELAout << daughters.at(i) << endl;
+      for (unsigned int i=0; i<std::min(aparts.size(), (SimpleParticleCollection_t::size_type) 2); i++) MELAout << aparts.at(i) << endl;
+      for (unsigned int i=0; i<std::min(mothers.size(), (SimpleParticleCollection_t::size_type) 2); i++) MELAout << mothers.at(i) << endl;
+    }
+
+    TUtil::computeVBFAngles(
+      costhetastar, costheta1, costheta2, Phi, Phi1, Q2V1, Q2V2,
+      daughters.at(0).second, daughters.at(0).first,
+      daughters.at(1).second, daughters.at(1).first,
+      daughters.at(2).second, daughters.at(2).first,
+      daughters.at(3).second, daughters.at(3).first,
+      aparts.at(0).second, aparts.at(0).first,
+      aparts.at(1).second, aparts.at(1).first,
+      &(mothers.at(0).second), mothers.at(0).first,
+      &(mothers.at(1).second), mothers.at(1).first
+    );
+
+    // Protect against NaN
+    if (!(costhetastar==costhetastar)) costhetastar=0;
+    if (!(costheta1==costheta1)) costheta1=0;
+    if (!(costheta2==costheta2)) costheta2=0;
+    if (!(Phi==Phi)) Phi=0;
+    if (!(Phi1==Phi1)) Phi1=0;
+
+    if (myVerbosity_>=TVar::DEBUG) MELAout
+      << "Mela::computeVBFAngles: (Q2_1, Q2_2, h1, h2, Phi, hs, Phi1) = "
+      << Q2V1 << ", " << Q2V2 << ", "
+      << costheta1 << ", " << costheta2 << ", " << Phi << ", "
+      << costhetastar << ", " << Phi1 << endl;
+  }
+  else if (myVerbosity_>=TVar::DEBUG) MELAerr << "Mela::computeVBFAngles: No possible melaCand in TEvtProb to compute angles." << endl;
+}
+void Mela::computeVBFAngles_ComplexBoost(
+  float& Q2V1,
+  float& Q2V2,
+  float& costheta1_real, float& costheta1_imag,
+  float& costheta2_real, float& costheta2_imag,
+  float& Phi,
+  float& costhetastar,
+  float& Phi1
+){
+  using TVar::simple_event_record;
+
+  Q2V1=0; Q2V2=0; costheta1_real=0; costheta2_real=0; costheta1_imag=0; costheta2_imag=0; Phi=0; costhetastar=0; Phi1=0;
+
+  if (melaCand==0) melaCand = getCurrentCandidate();
+  if (melaCand!=0){
+    TLorentzVector nullVector(0, 0, 0, 0);
+
+    int nRequested_AssociatedJets=2;
+    int partIncCode=TVar::kUseAssociated_Jets; // Only use associated partons in the pT=0 frame boost
+    simple_event_record mela_event;
+    mela_event.AssociationCode=partIncCode;
+    mela_event.nRequested_AssociatedJets=nRequested_AssociatedJets;
+    TUtil::GetBoostedParticleVectors(melaCand, mela_event, myVerbosity_);
+    SimpleParticleCollection_t& mothers = mela_event.pMothers;
+    SimpleParticleCollection_t& aparts = mela_event.pAssociated;
+    SimpleParticleCollection_t& daughters = mela_event.pDaughters;
+
+    if ((int) aparts.size()!=nRequested_AssociatedJets){ if (myVerbosity_>=TVar::ERROR) MELAerr << "Mela::computeVBFAngles_ComplexBoost: Number of associated particles is not 2!" << endl; return; }
+
+    // Make sure there are exactly 4 daughters, null or not
+    if (daughters.size()>4){ // Unsupported size, default to undecayed Higgs
+      SimpleParticle_t& firstPart = daughters.at(0);
+      firstPart.first=25;
+      for (auto it=daughters.cbegin()+1; it!=daughters.cend(); it++){ firstPart.second = firstPart.second + it->second; }
+      daughters.erase(daughters.begin()+4, daughters.end());
+    }
+    if (daughters.size()%2==1){ for (unsigned int ipar=daughters.size(); ipar<4; ipar++) daughters.push_back(SimpleParticle_t(-9000, nullVector)); }
+    else if (daughters.size()==2){
+      daughters.push_back(SimpleParticle_t(-9000, nullVector));
+      daughters.insert(daughters.begin()+1, SimpleParticle_t(-9000, nullVector));
+    }
+
+    TUtil::computeVBFAngles_ComplexBoost(
+      costhetastar, costheta1_real, costheta1_imag, costheta2_real, costheta2_imag, Phi, Phi1, Q2V1, Q2V2,
+      daughters.at(0).second, daughters.at(0).first,
+      daughters.at(1).second, daughters.at(1).first,
+      daughters.at(2).second, daughters.at(2).first,
+      daughters.at(3).second, daughters.at(3).first,
+      aparts.at(0).second, aparts.at(0).first,
+      aparts.at(1).second, aparts.at(1).first,
+      &(mothers.at(0).second), mothers.at(0).first,
+      &(mothers.at(1).second), mothers.at(1).first
+    );
+
+    // Protect against NaN
+    if (!(costhetastar==costhetastar)) costhetastar=0;
+    if (!(costheta1_real==costheta1_real)) costheta1_real=0;
+    if (!(costheta2_real==costheta2_real)) costheta2_real=0;
+    if (!(costheta1_imag==costheta1_imag)) costheta1_imag=0;
+    if (!(costheta2_imag==costheta2_imag)) costheta2_imag=0;
+    if (!(Phi==Phi)) Phi=0;
+    if (!(Phi1==Phi1)) Phi1=0;
+
+    if (myVerbosity_>=TVar::DEBUG) MELAout << "Mela::computeVBFAngles_ComplexBoost: result = " << Q2V1 << ", " << Q2V2
+                                           << ", " << costheta1_real << " + " << costheta1_imag << "i, "
+                                           << costheta2_real << " + " << costheta2_imag << "i, " << Phi << ", "
+                                           << costhetastar << ", " << Phi1 << endl;
+    if (myVerbosity_>=TVar::DEBUG) MELAout
+      << "Mela::computeVBFAngles_ComplexBoost: (Q2_1, Q2_2, h1, h2, Phi, hs, Phi1) = "
+      << Q2V1 << ", " << Q2V2 << ", "
+      << costheta1_real << " + " << costheta1_imag << "i, "
+      << costheta2_real << " + " << costheta2_imag << "i, "
+      << Phi << ", " << costhetastar << ", " << Phi1 << endl;
+  }
+  else if (myVerbosity_>=TVar::DEBUG) MELAerr << "Mela::computeVBFAngles_ComplexBoost: No possible melaCand in TEvtProb to compute angles." << endl;
+}
+
+// VH angles computation script of Mela to convert MELACandidates to production angles.
+void Mela::computeVHAngles(
+  float& costheta1,
+  float& costheta2,
+  float& Phi,
+  float& costhetastar,
+  float& Phi1
+){
+  using TVar::simple_event_record;
+
+  costheta1=0; costheta2=0; Phi=0; costhetastar=0; Phi1=0;
+
+  if (melaCand==0) melaCand = getCurrentCandidate();
+  if (melaCand!=0){
+    TLorentzVector nullVector(0, 0, 0, 0);
+
+    if (!(myProduction_ == TVar::Lep_ZH || myProduction_ == TVar::Lep_WH || myProduction_ == TVar::Had_ZH || myProduction_ == TVar::Had_WH || myProduction_ == TVar::GammaH)){
+      if (myVerbosity_>=TVar::ERROR) MELAerr << "Mela::computeVHAngles: Production is not supported! " << ProductionName(myProduction_) << endl;
+      return;
+    }
+
+    int nRequested_AssociatedJets=0;
+    int nRequested_AssociatedLeptons=0;
+    int nRequested_AssociatedPhotons=0;
+    int AssociationVCompatibility=0;
+    int partIncCode=TVar::kNoAssociated; // Just to avoid warnings
+    if (myProduction_ == TVar::Had_ZH || myProduction_ == TVar::Had_WH){ // Only use associated partons
+      partIncCode=TVar::kUseAssociated_Jets;
+      nRequested_AssociatedJets=2;
+    }
+    else if (myProduction_ == TVar::Lep_ZH || myProduction_ == TVar::Lep_WH){ // Only use associated leptons(+)neutrinos
+      partIncCode=TVar::kUseAssociated_Leptons;
+      nRequested_AssociatedLeptons=2;
+    }
+    else if (myProduction_ == TVar::GammaH){ // Only use associated photon
+      partIncCode=TVar::kUseAssociated_Photons;
+      nRequested_AssociatedPhotons=1;
+    }
+    if (myProduction_==TVar::Lep_WH || myProduction_==TVar::Had_WH) AssociationVCompatibility=24;
+    else if (myProduction_==TVar::Lep_ZH || myProduction_==TVar::Had_ZH) AssociationVCompatibility=23;
+    else if (myProduction_==TVar::GammaH) AssociationVCompatibility=22;
+    simple_event_record mela_event;
+    mela_event.AssociationCode=partIncCode;
+    mela_event.AssociationVCompatibility=AssociationVCompatibility;
+    mela_event.nRequested_AssociatedJets=nRequested_AssociatedJets;
+    mela_event.nRequested_AssociatedLeptons=nRequested_AssociatedLeptons;
+    mela_event.nRequested_AssociatedPhotons=nRequested_AssociatedPhotons;
+    TUtil::GetBoostedParticleVectors(melaCand, mela_event, myVerbosity_);
+    SimpleParticleCollection_t& mothers = mela_event.pMothers;
+    SimpleParticleCollection_t& aparts = mela_event.pAssociated;
+    SimpleParticleCollection_t& daughters = mela_event.pDaughters;
+
+    if ((aparts.size()<(unsigned int) (nRequested_AssociatedJets+nRequested_AssociatedLeptons) && myProduction_!=TVar::GammaH) || (aparts.size()<(unsigned int) nRequested_AssociatedPhotons && myProduction_==TVar::GammaH)){
+      if (myVerbosity_>=TVar::ERROR){
+        MELAerr << "Mela::computeVHAngles: Number of associated particles (" << aparts.size() << ") is less than ";
+        if (myProduction_!=TVar::GammaH) MELAerr << (nRequested_AssociatedJets+nRequested_AssociatedLeptons);
+        else MELAerr << nRequested_AssociatedPhotons;
+        MELAerr << endl;
+      }
+      return;
+    }
+
+    // Make sure there are exactly 4 daughters, null or not
+    if (daughters.size()>4){ // Unsupported size, default to undecayed Higgs
+      SimpleParticle_t& firstPart = daughters.at(0);
+      firstPart.first=25;
+      for (auto it=daughters.cbegin()+1; it!=daughters.cend(); it++){ firstPart.second = firstPart.second + it->second; }
+      daughters.erase(daughters.begin()+4, daughters.end());
+    }
+    if (daughters.size()%2==1){ for (unsigned int ipar=daughters.size(); ipar<4; ipar++) daughters.push_back(SimpleParticle_t(-9000, nullVector)); }
+    else if (daughters.size()==2){
+      daughters.push_back(SimpleParticle_t(-9000, nullVector));
+      daughters.insert(daughters.begin()+1, SimpleParticle_t(-9000, nullVector));
+    }
+
+    TUtil::computeVHAngles(
+      costhetastar, costheta1, costheta2, Phi, Phi1,
+      daughters.at(0).second, daughters.at(0).first,
+      daughters.at(1).second, daughters.at(1).first,
+      daughters.at(2).second, daughters.at(2).first,
+      daughters.at(3).second, daughters.at(3).first,
+      aparts.at(0).second, aparts.at(0).first,
+      aparts.at(1).second, aparts.at(1).first,
+      &(mothers.at(0).second), mothers.at(0).first,
+      &(mothers.at(1).second), mothers.at(1).first
+    );
+
+    // Protect against NaN
+    if (!(costhetastar==costhetastar)) costhetastar=0;
+    if (!(costheta1==costheta1)) costheta1=0;
+    if (!(costheta2==costheta2)) costheta2=0;
+    if (!(Phi==Phi)) Phi=0;
+    if (!(Phi1==Phi1)) Phi1=0;
+
+    if (myVerbosity_>=TVar::DEBUG) MELAout
+      << "Mela::computeVHAngles: (h1, h2, Phi, hs, Phi1) = "
+      << costheta1 << ", " << costheta2 << ", " << Phi << ", "
+      << costhetastar << ", " << Phi1 << endl;
+  }
+  else if (myVerbosity_>=TVar::DEBUG) MELAerr << "Mela::computeVHAngles: No possible melaCand in TEvtProb to compute angles." << endl;
 }
 
 // Regular probabilities
@@ -591,38 +941,9 @@ void Mela::computeP(
     }
     else if (myME_ == TVar::JHUGen || myME_ == TVar::MCFM){
       if (!(myME_ == TVar::MCFM  && myProduction_ == TVar::ZZINDEPENDENT &&  (myModel_ == TVar::bkgZZ || myModel_ == TVar::bkgWW || myModel_ == TVar::bkgZGamma))){
-        if (myME_ == TVar::MCFM || myModel_ == TVar::SelfDefine_spin0){
-          ZZME->set_SpinZeroCouplings(
-            selfDHggcoupl,
-            selfDHg4g4coupl,
-            selfDHqqcoupl,
-            selfDHbbcoupl,
-            selfDHttcoupl,
-            selfDHb4b4coupl,
-            selfDHt4t4coupl,
-            selfDHzzcoupl,
-            selfDHwwcoupl,
-            selfDHzzLambda_qsq,
-            selfDHwwLambda_qsq,
-            selfDHzzCLambda_qsq,
-            selfDHwwCLambda_qsq,
-            differentiate_HWW_HZZ
-            );
-          ZZME->set_SpinZeroContact(
-            selfDHzzpcoupl,
-            selfDHzpzpcoupl,
-            selfDZpffcoupl,
-            selfDHwwpcoupl,
-            selfDHwpwpcoupl,
-            selfDWpffcoupl,
-            selfDM_Zprime,
-            selfDGa_Zprime,
-            selfDM_Wprime,
-            selfDGa_Wprime
-            );
-        }
-        else if (myModel_ == TVar::SelfDefine_spin1) ZZME->set_SpinOneCouplings(selfDZqqcoupl, selfDZvvcoupl);
-        else if (myModel_ == TVar::SelfDefine_spin2) ZZME->set_SpinTwoCouplings(selfDGqqcoupl, selfDGggcoupl, selfDGvvcoupl);
+        if (myME_ == TVar::MCFM || myModel_ == TVar::SelfDefine_spin0) setSpinZeroCouplings();
+        else if (myModel_ == TVar::SelfDefine_spin1) setSpinOneCouplings();
+        else if (myModel_ == TVar::SelfDefine_spin2) setSpinTwoCouplings();
         ZZME->computeXS(prob);
       }
       else{
@@ -669,9 +990,9 @@ void Mela::computeP(
         double phi1_max = TMath::Pi();
         double phi1_step = (phi1_max - phi1_min) / double(gridsize_phi1);
 
-        for (int i_hs = 0; i_hs < gridsize_hs + 1; i_hs++) {
+        for (int i_hs = 0; i_hs < gridsize_hs + 1; i_hs++){
           double hs_val = hs_min + i_hs * hs_step;
-          for (int i_phi1 = 0; i_phi1 < gridsize_phi1 +1; i_phi1++) {
+          for (int i_phi1 = 0; i_phi1 < gridsize_phi1 + 1; i_phi1++){
             double phi1_val = phi1_min + i_phi1 * phi1_step;
             float temp_prob=0;
 
@@ -686,13 +1007,15 @@ void Mela::computeP(
             }
             if (myVerbosity_>=TVar::DEBUG){ // Summarize the integrated particles
               MELAout << "Mela::computeP: hs, Phi1 are now " << hs_val << " " << phi1_val << endl;
-              for (unsigned int idau=0; idau<daughters.size(); idau++){
+              unsigned int idau=1;
+              for (SimpleParticle_t const& tmpPart:daughters){
                 MELAout << "Dau " << idau << " "
-                  << "id=" << daughters.at(idau).first << " "
-                  << "x=" << daughters.at(idau).second.X() << " "
-                  << "y=" << daughters.at(idau).second.Y() << " "
-                  << "z=" << daughters.at(idau).second.Z() << " "
-                  << "t=" << daughters.at(idau).second.T() << endl;
+                  << "id=" << tmpPart.first << " "
+                  << "x=" << tmpPart.second.X() << " "
+                  << "y=" << tmpPart.second.Y() << " "
+                  << "z=" << tmpPart.second.Z() << " "
+                  << "t=" << tmpPart.second.T() << endl;
+                idau++;
               }
             }
             vector<MELAParticle*> partList_tmp;
@@ -711,8 +1034,8 @@ void Mela::computeP(
             // calculate the ME
             ZZME->computeXS(temp_prob);
             // Delete the temporary particles
-            for (unsigned int ic=0; ic<candList_tmp.size(); ic++){ if (candList_tmp.at(ic)!=0) delete candList_tmp.at(ic); } // Only one candidate should really be here
-            for (unsigned int ip=0; ip<partList_tmp.size(); ip++){ if (partList_tmp.at(ip)!=0) delete partList_tmp.at(ip); }
+            for (MELACandidate* tmpPart:candList_tmp) delete tmpPart; // Only one candidate should really be here
+            for (MELAParticle* tmpPart:partList_tmp) delete tmpPart;
             setCurrentCandidate(melaCand);
             prob += temp_prob;
           }
@@ -872,34 +1195,7 @@ void Mela::computeProdDecP(
   if (melaCand==0) hasFailed=true;
   if (hasFailed) prob=0;
   else{
-    ZZME->set_SpinZeroCouplings(
-      selfDHggcoupl,
-      selfDHg4g4coupl,
-      selfDHqqcoupl,
-      selfDHbbcoupl,
-      selfDHttcoupl,
-      selfDHb4b4coupl,
-      selfDHt4t4coupl,
-      selfDHzzcoupl,
-      selfDHwwcoupl,
-      selfDHzzLambda_qsq,
-      selfDHwwLambda_qsq,
-      selfDHzzCLambda_qsq,
-      selfDHwwCLambda_qsq,
-      differentiate_HWW_HZZ
-      );
-    ZZME->set_SpinZeroContact(
-      selfDHzzpcoupl,
-      selfDHzpzpcoupl,
-      selfDZpffcoupl,
-      selfDHwwpcoupl,
-      selfDHwpwpcoupl,
-      selfDWpffcoupl,
-      selfDM_Zprime,
-      selfDGa_Zprime,
-      selfDM_Wprime,
-      selfDGa_Wprime
-      );
+    setSpinZeroCouplings();
     ZZME->computeProdXS_VVHVV(prob);
     if (useConstant) computeConstant(prob);
   }
@@ -954,13 +1250,17 @@ void Mela::computeProdP(
       higgs=melaCand->p4;
       if (myProduction_ == TVar::JJQCD || myProduction_ == TVar::JJVBF){
         int njets=0;
-        for (int ip=0; ip<melaCand->getNAssociatedJets(); ip++){
-          if (melaCand->getAssociatedJet(ip)->passSelection){
-            njets++;
-            if (njets==1){
-              firstJetIndex = ip;
-              jet1 = melaCand->getAssociatedJet(ip)->p4;
+        {
+          int ip=0;
+          for (MELAParticle* tmpPart:melaCand->getAssociatedJets()){
+            if (tmpPart->passSelection){
+              njets++;
+              if (njets==1){
+                firstJetIndex = ip;
+                jet1 = tmpPart->p4;
+              }
             }
+            ip++;
           }
         }
         if (njets==1){
@@ -996,36 +1296,7 @@ void Mela::computeProdP(
         candCopy->addAssociatedJets(&fakeJet);
         setCurrentCandidate(candCopy);
 
-        if (myModel_ == TVar::SelfDefine_spin0){
-          ZZME->set_SpinZeroCouplings(
-            selfDHggcoupl,
-            selfDHg4g4coupl,
-            selfDHqqcoupl,
-            selfDHbbcoupl,
-            selfDHttcoupl,
-            selfDHb4b4coupl,
-            selfDHt4t4coupl,
-            selfDHzzcoupl,
-            selfDHwwcoupl,
-            selfDHzzLambda_qsq,
-            selfDHwwLambda_qsq,
-            selfDHzzCLambda_qsq,
-            selfDHwwCLambda_qsq,
-            differentiate_HWW_HZZ
-            );
-          ZZME->set_SpinZeroContact(
-            selfDHzzpcoupl,
-            selfDHzpzpcoupl,
-            selfDZpffcoupl,
-            selfDHwwpcoupl,
-            selfDHwpwpcoupl,
-            selfDWpffcoupl,
-            selfDM_Zprime,
-            selfDGa_Zprime,
-            selfDM_Wprime,
-            selfDGa_Wprime
-            );
-        }
+        if (myModel_ == TVar::SelfDefine_spin0) setSpinZeroCouplings();
         ZZME->computeProdXS_JJH(prob); // Higgs + 2 jets: SBF or WBF main probability
 
         int nGrid=11;
@@ -1050,34 +1321,7 @@ void Mela::computeProdP(
           TLorentzVector pTotal = higgs+jet1massless+fakeJet.p4;
           double sys = (pTotal.T()+fabs(pTotal.Z()))/2.;
           if (fabs(sys)<threshold){
-            if (myModel_ == TVar::SelfDefine_spin0) ZZME->set_SpinZeroCouplings(
-              selfDHggcoupl,
-              selfDHg4g4coupl,
-              selfDHqqcoupl,
-              selfDHbbcoupl,
-              selfDHttcoupl,
-              selfDHb4b4coupl,
-              selfDHt4t4coupl,
-              selfDHzzcoupl,
-              selfDHwwcoupl,
-              selfDHzzLambda_qsq,
-              selfDHwwLambda_qsq,
-              selfDHzzCLambda_qsq,
-              selfDHwwCLambda_qsq,
-              differentiate_HWW_HZZ
-              );
-            ZZME->set_SpinZeroContact(
-              selfDHzzpcoupl,
-              selfDHzpzpcoupl,
-              selfDZpffcoupl,
-              selfDHwwpcoupl,
-              selfDHwpwpcoupl,
-              selfDWpffcoupl,
-              selfDM_Zprime,
-              selfDGa_Zprime,
-              selfDM_Wprime,
-              selfDGa_Wprime
-              );
+            if (myModel_ == TVar::SelfDefine_spin0) setSpinZeroCouplings();
             ZZME->computeProdXS_JJH(prob_temp);
           }
           pArray.push_back((double)prob_temp);
@@ -1134,36 +1378,7 @@ void Mela::computeProdP(
             TLorentzVector pTotal = higgs+jet1massless+fakeJet.p4;
             double sys = (pTotal.T()+fabs(pTotal.Z()))/2.;
             if (fabs(sys)<threshold){
-              if (myModel_ == TVar::SelfDefine_spin0){
-                ZZME->set_SpinZeroCouplings(
-                  selfDHggcoupl,
-                  selfDHg4g4coupl,
-                  selfDHqqcoupl,
-                  selfDHbbcoupl,
-                  selfDHttcoupl,
-                  selfDHb4b4coupl,
-                  selfDHt4t4coupl,
-                  selfDHzzcoupl,
-                  selfDHwwcoupl,
-                  selfDHzzLambda_qsq,
-                  selfDHwwLambda_qsq,
-                  selfDHzzCLambda_qsq,
-                  selfDHwwCLambda_qsq,
-                  differentiate_HWW_HZZ
-                  );
-                ZZME->set_SpinZeroContact(
-                  selfDHzzpcoupl,
-                  selfDHzpzpcoupl,
-                  selfDZpffcoupl,
-                  selfDHwwpcoupl,
-                  selfDHwpwpcoupl,
-                  selfDWpffcoupl,
-                  selfDM_Zprime,
-                  selfDGa_Zprime,
-                  selfDM_Wprime,
-                  selfDGa_Wprime
-                  );
-              }
+              if (myModel_ == TVar::SelfDefine_spin0) setSpinZeroCouplings();
               ZZME->computeProdXS_JJH(prob_temp);
             }
             gridIt = pArray.begin()+iG+1;
@@ -1216,36 +1431,7 @@ void Mela::computeProdP(
       }
       else{
         if (myProduction_ == TVar::JJQCD || myProduction_ == TVar::JJVBF){
-          if (myModel_ == TVar::SelfDefine_spin0){
-            ZZME->set_SpinZeroCouplings(
-              selfDHggcoupl,
-              selfDHg4g4coupl,
-              selfDHqqcoupl,
-              selfDHbbcoupl,
-              selfDHttcoupl,
-              selfDHb4b4coupl,
-              selfDHt4t4coupl,
-              selfDHzzcoupl,
-              selfDHwwcoupl,
-              selfDHzzLambda_qsq,
-              selfDHwwLambda_qsq,
-              selfDHzzCLambda_qsq,
-              selfDHwwCLambda_qsq,
-              differentiate_HWW_HZZ
-              );
-            ZZME->set_SpinZeroContact(
-              selfDHzzpcoupl,
-              selfDHzpzpcoupl,
-              selfDZpffcoupl,
-              selfDHwwpcoupl,
-              selfDHwpwpcoupl,
-              selfDWpffcoupl,
-              selfDM_Zprime,
-              selfDGa_Zprime,
-              selfDM_Wprime,
-              selfDGa_Wprime
-              );
-          }
+          if (myModel_ == TVar::SelfDefine_spin0) setSpinZeroCouplings();
           ZZME->computeProdXS_JJH(prob); // Higgs + 2 jets: SBF or WBF
         }
         else if (myProduction_ == TVar::JQCD){
@@ -1298,36 +1484,7 @@ void Mela::computeProdP_VH(
   melaCand = getCurrentCandidate();
   if (melaCand!=0){
     if (myProduction_ == TVar::Lep_ZH || myProduction_ == TVar::Lep_WH || myProduction_ == TVar::Had_ZH || myProduction_ == TVar::Had_WH || myProduction_ == TVar::GammaH){
-      if (myModel_ == TVar::SelfDefine_spin0){
-        ZZME->set_SpinZeroCouplings(
-          selfDHggcoupl,
-          selfDHg4g4coupl,
-          selfDHqqcoupl,
-          selfDHbbcoupl,
-          selfDHttcoupl,
-          selfDHb4b4coupl,
-          selfDHt4t4coupl,
-          selfDHzzcoupl,
-          selfDHwwcoupl,
-          selfDHzzLambda_qsq,
-          selfDHwwLambda_qsq,
-          selfDHzzCLambda_qsq,
-          selfDHwwCLambda_qsq,
-          differentiate_HWW_HZZ
-          );
-        ZZME->set_SpinZeroContact(
-          selfDHzzpcoupl,
-          selfDHzpzpcoupl,
-          selfDZpffcoupl,
-          selfDHwwpcoupl,
-          selfDHwpwpcoupl,
-          selfDWpffcoupl,
-          selfDM_Zprime,
-          selfDGa_Zprime,
-          selfDM_Wprime,
-          selfDGa_Wprime
-          );
-      }
+      if (myModel_ == TVar::SelfDefine_spin0) setSpinZeroCouplings();
       ZZME->computeProdXS_VH(prob, includeHiggsDecay); // VH
 
       if (useConstant) computeConstant(prob);
@@ -1351,36 +1508,7 @@ void Mela::computeProdP_ttH(
 
   melaCand = getCurrentCandidate();
   if (melaCand!=0){
-    if (myModel_ == TVar::SelfDefine_spin0){
-      ZZME->set_SpinZeroCouplings(
-        selfDHggcoupl,
-        selfDHg4g4coupl,
-        selfDHqqcoupl,
-        selfDHbbcoupl,
-        selfDHttcoupl,
-        selfDHb4b4coupl,
-        selfDHt4t4coupl,
-        selfDHzzcoupl,
-        selfDHwwcoupl,
-        selfDHzzLambda_qsq,
-        selfDHwwLambda_qsq,
-        selfDHzzCLambda_qsq,
-        selfDHwwCLambda_qsq,
-        differentiate_HWW_HZZ
-        );
-      ZZME->set_SpinZeroContact(
-        selfDHzzpcoupl,
-        selfDHzpzpcoupl,
-        selfDZpffcoupl,
-        selfDHwwpcoupl,
-        selfDHwpwpcoupl,
-        selfDWpffcoupl,
-        selfDM_Zprime,
-        selfDGa_Zprime,
-        selfDM_Wprime,
-        selfDGa_Wprime
-        );
-    }
+    if (myModel_ == TVar::SelfDefine_spin0) setSpinZeroCouplings();
     ZZME->computeProdXS_ttH(prob,topProcess, topDecay);
     if (useConstant) computeConstant(prob);
   }
@@ -1561,9 +1689,9 @@ void Mela::computeD_gg(
 
 
 bool Mela::configureAnalyticalPDFs(){
-  // 
-  // Configure the analytical calculations 
-  // 
+  //
+  // Configure the analytical calculations
+  //
   bool noPass=false;
   pdf=0;
 
@@ -1710,7 +1838,7 @@ bool Mela::configureAnalyticalPDFs(){
     if (myModel_ == TVar::H2_g10) spin2Model->addHypothesis(10, 1.);
     // Self-defined spin-2
     if (myModel_ == TVar::SelfDefine_spin2){
-      for (int i=0; i<SIZE_GVV; i++){ if (selfDGvvcoupl[i][1]!=0){ if (myVerbosity_>=TVar::ERROR) MELAerr << "Mela::configureAnalyticalPDFs: MELA does not support complex couplings for spin-2 at the moment! " << endl; noPass=true; break; } }
+      for (int i=0; i<SIZE_GVV; i++){ if (selfDGvvcoupl[i][1]!=0.){ if (myVerbosity_>=TVar::ERROR) MELAerr << "Mela::configureAnalyticalPDFs: MELA does not support complex couplings for spin-2 at the moment! " << endl; noPass=true; break; } }
       if (!noPass){
         for (int ig=0; ig<SIZE_GVV; ig++){
           for (int im=0; im<2; im++) ((RooRealVar*)spin2Model->couplings.bList[ig][im])->setVal(selfDGvvcoupl[ig][im]);
@@ -2297,7 +2425,7 @@ MelaPConstant* Mela::getPConstantHandle(
       }
       if (!inserted) trysqrts.push_back(val);
     }
-    for (auto& dsqrts : trysqrts){
+    for (auto& dsqrts:trysqrts){
       TString strsqrts = Form("%s_%.0f%s", relpath.Data(), dsqrts, "TeV");
       cfile_fullpath = path;
       cfile_fullpath.append(strsqrts.Data());

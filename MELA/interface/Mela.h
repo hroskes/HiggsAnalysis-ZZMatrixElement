@@ -110,6 +110,31 @@ public:
     float& costhetastar,
     float& Phi1
     );
+  void computeVBFAngles(
+    float& Q2V1,
+    float& Q2V2,
+    float& costheta1,
+    float& costheta2,
+    float& Phi,
+    float& costhetastar,
+    float& Phi1
+  );
+  void computeVBFAngles_ComplexBoost(
+    float& Q2V1,
+    float& Q2V2,
+    float& costheta1_real, float& costheta1_imag,
+    float& costheta2_real, float& costheta2_imag,
+    float& Phi,
+    float& costhetastar,
+    float& Phi1
+  );
+  void computeVHAngles(
+    float& costheta1,
+    float& costheta2,
+    float& Phi,
+    float& costhetastar,
+    float& Phi1
+  );
 
   void computeP_selfDspin0(
     double selfDHvvcoupl_input[nSupportedHiggses][SIZE_HVV][2],
@@ -280,6 +305,8 @@ public:
   double selfDGqqcoupl[SIZE_GQQ][2];
   double selfDGggcoupl[SIZE_GGG][2];
   double selfDGvvcoupl[SIZE_GVV][2];
+  double selfDGvvpcoupl[SIZE_GVV][2];
+  double selfDGvpvpcoupl[SIZE_GVV][2];
   // That is a lot of them!
 
 protected:
@@ -366,6 +393,10 @@ protected:
   /*** Functions ***/
   /*****************/
   void printLogo() const;
+
+  void setSpinZeroCouplings();
+  void setSpinOneCouplings();
+  void setSpinTwoCouplings();
 
   bool configureAnalyticalPDFs();
   void reset_SelfDCouplings();
