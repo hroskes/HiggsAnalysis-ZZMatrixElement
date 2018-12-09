@@ -1,6 +1,10 @@
 #include "ScalarPdfFactory.h"
 
 
+using namespace std;
+using namespace MELAStreamHelpers;
+
+
 ScalarPdfFactory::ScalarPdfFactory(RooSpin::modelMeasurables measurables_, bool acceptance_, RooSpin::VdecayType V1decay_, RooSpin::VdecayType V2decay_, Bool_t OnshellH_) :
 SpinPdfFactory(measurables_, V1decay_, V2decay_, OnshellH_),
 parameterization(0),
@@ -509,7 +513,8 @@ void ScalarPdfFactory::initGVals(){
     for (int v=0; v<8; v++){
       for (int im=0; im<2; im++){
         TString strcore;
-        double initval = 0;
+        double initval = ((v==0 && im==0) ? 1 : 0);
+
         TString strapp = "Val";
         if (im==1) strapp.Append("Im");
         if (v>1) strapp.Prepend(Form("%i", v));
@@ -517,7 +522,6 @@ void ScalarPdfFactory::initGVals(){
 
         strcore = "g1";
         strcore.Append(strapp);
-        if (v==0 && im==0) initval = 1;
         RooRealVar* g1Val = new RooRealVar(strcore, strcore, initval, -1e15, 1e15);
         g1Val->removeMin();
         g1Val->removeMax();
@@ -730,9 +734,9 @@ void ScalarPdfFactory::destroyGVals(){
 }
 
 void ScalarPdfFactory::addHypothesis(int ig, int ilam, double iphase, double altparam_fracval){
-  if ((ig==4 && ilam!=2) || (ig>4 && ilam!=0)){ cerr << "Invalid ZG/GG/VVp/VpVp g" << ig << "_prime" << ilam << endl; return; }
-  if (ig>=16 || ig<0 || (ig<15 && ig>11)){ cerr << "Invalid g" << ig << endl; return; }
-  if (ilam>=8 || ilam<0){ cerr << "Out-of-range g" << ig << "_prime" << ilam << endl; return; }
+  if ((ig==4 && ilam!=2) || (ig>4 && ilam!=0)){ MELAerr << "Invalid ZG/GG/VVp/VpVp g" << ig << "_prime" << ilam << endl; return; }
+  if (ig>=16 || ig<0 || (ig<15 && ig>11)){ MELAerr << "Invalid g" << ig << endl; return; }
+  if (ilam>=8 || ilam<0){ MELAerr << "Out-of-range g" << ig << "_prime" << ilam << endl; return; }
 
   if (parameterization==0){
     double mVval;
@@ -824,9 +828,9 @@ void ScalarPdfFactory::addHypothesis(int ig, int ilam, double iphase, double alt
     }
   }
   else{
-    if (ig==0 && ilam==0){ cerr << "Cannot set fa1! Try to set everything else." << endl; return; }
-    else if (ig>4 && ilam!=0){ cerr << "Cannot set fa1 for the g_primes of ZG, GG, VVp or VpVp! Try to set everything else." << endl; return; }
-    else if (ig==4 && ilam!=2){ cerr << "Cannot set fa1 for the g_primes of ZG or GG! Try to set everything else." << endl; return; }
+    if (ig==0 && ilam==0){ MELAerr << "Cannot set fa1! Try to set everything else." << endl; return; }
+    else if (ig>4 && ilam!=0){ MELAerr << "Cannot set fa1 for the g_primes of ZG, GG, VVp or VpVp! Try to set everything else." << endl; return; }
+    else if (ig==4 && ilam!=2){ MELAerr << "Cannot set fa1 for the g_primes of ZG or GG! Try to set everything else." << endl; return; }
     else{
       if (ig==0){
         g1Frac[ilam-1]->setVal(altparam_fracval);
